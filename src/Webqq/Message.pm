@@ -13,7 +13,7 @@ sub create_msg{
 sub _create_msg {
     my $client = shift;
     my %p = @_;
-    $p{content} =~s/\r|\n/\\n/g;
+    $p{content} =~s/\r|\n/\n/g;
     my %msg = (
         type        => $p{type},
         msg_id      => $p{msg_id} || ++$client->{qq_param}{send_msg_id},
@@ -66,7 +66,7 @@ sub parse_receive_msg{
                     #将整个hash从unicode转为UTF8编码
                     $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
                     $msg->{content}=~s/ $//;
-                    $msg->{content}=~s/\r|\n/\\n/g;
+                    $msg->{content}=~s/\r|\n/\n/g;
                     
                     $client->{receive_message_queue}->put($msg);
                 }   
@@ -85,7 +85,7 @@ sub parse_receive_msg{
                     #将整个hash从unicode转为UTF8编码
                     $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
                     $msg->{content}=~s/ $//;
-                    $msg->{content}=~s/\r|\n/\\n/g;
+                    $msg->{content}=~s/\r|\n/\n/g;
                     $client->{receive_message_queue}->put($msg);
                 }
                 #还未识别和处理的消息

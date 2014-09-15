@@ -21,10 +21,11 @@ sub Webqq::Client::_send_message{
     };
     my $api_url = 'http://d.web2.qq.com/channel/send_buddy_msg2';
     my @headers = (Referer=>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3');
+    my $content = [$msg->{content},"",[]];
     my %s = (
         to      => $msg->{to_uin},
         face    => 570,
-        content => qq{["$msg->{content}","",[]]},
+        content => JSON->new->ascii->encode($content),
         msg_id  =>  $msg->{msg_id},
         clientid => $self->{qq_param}{clientid},
         psessionid  => $self->{qq_param}{psessionid},

@@ -11,7 +11,7 @@ $client->login( qq=> $qq, pwd => $pwd);
 $client->on_receive_message = sub{
     my $msg = shift;
     my $line_h = join " ",strftime('[%Y/%m/%d %H:%M:%S]',localtime($msg->{msg_time})),$msg->{type},"" ;
-    my @content = split /\\n/,$msg->{content};
+    my @content = split /\n/,$msg->{content};
     my @line_h = ($line_h,(' ' x length($line_h)) x $#content  );
     while(@content){
         my $lh = shift @line_h;
