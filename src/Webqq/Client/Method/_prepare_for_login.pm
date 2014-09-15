@@ -1,7 +1,8 @@
 use URI::Escape qw(uri_escape);
+use Webqq::Client::Util qw(console);
 sub Webqq::Client::_prepare_for_login{
     my $self = shift;
-    print "初始化客户端参数...\n";
+    console "初始化客户端参数...\n";
     my $ua = $self->{ua};
     my $api_url = 'https://ui.ptlogin2.qq.com/cgi-bin/login?daid=164&target=self&style=5&mibao_css=m_webqq&appid=1003903&enable_qlogin=0&no_verifyimg=1&s_url=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&f_url=loginerroralert&strong_login=1&login_state=10&t=20140612002';  
     my @headers = (Referer=>'http://web2.qq.com/webqq.html');

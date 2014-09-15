@@ -1,5 +1,6 @@
+use Webqq::Client::Util qw(console);
 sub Webqq::Client::_check_verify_code{
-    print "检查验证码...\n";
+    console "检查验证码...\n";
     my $self = shift;
     my $ua = $self->{ua};
     my $api_url = 'https://ssl.ptlogin2.qq.com/check';
@@ -28,11 +29,11 @@ sub Webqq::Client::_check_verify_code{
         $self->{qq_param}{cap_cd} = $d{cap_cd};
         $self->{qq_param}{verifysession} = $d{verifysession};
         if($d{retcode} ==0){
-            print "检查结果: 很幸运，本次登录不需要验证码\n";
+            console "检查结果: 很幸运，本次登录不需要验证码\n";
             $self->{qq_param}{verifycode} = $d{cap_cd};
         }
         elsif($d{retcode} == 1){
-            print "检查结果: 需要输入图片验证码\n";
+            console "检查结果: 需要输入图片验证码\n";
             $self->{qq_param}{is_need_img_verifycode} = 1
         }
         

@@ -1,5 +1,5 @@
 package Webqq::Client;
-use base Webqq::Message;
+use base qw(Webqq::Message);
 use Webqq::Message::Queue;
 
 #定义模块的版本号
@@ -7,6 +7,8 @@ our $VERSION = v1.3;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
+
+use Webqq::Client::Util qw(console);
 
 #为避免在主文件中包含大量Method的代码，降低阅读性，故采用分文件加载的方式
 #类似c语言中的.h文件和.c文件的关系
@@ -111,7 +113,7 @@ sub login{
     my $self = shift;
     my %p = @_;
     @{$self->{qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
-    print "QQ账号: $self->{qq_param}{qq} 密码: $self->{qq_param}{pwd}\n";
+    console "QQ账号: $self->{qq_param}{qq} 密码: $self->{qq_param}{pwd}\n";
     #my $is_big_endian = unpack( 'xc', pack( 's', 1 ) ); 
     $self->{qq_param}{pwd} = pack "H*",lc $self->{qq_param}{pwd};
     return  
@@ -157,7 +159,7 @@ sub run {
     my $self = shift;
     #登录不成功，客户端退出运行
     if($self->{qq_param}{login_state} ne 'success'){
-        print "登录失败\n";
+        console "登录失败\n";
         return ;
     }
     
@@ -177,9 +179,9 @@ sub run {
         $self->_send_group_message($msg)  if $msg->{type} eq 'group_message';
     });
 
-    print "开始接收消息\n";
+    console "开始接收消息\n";
     $self->_recv_message();
-    print "客户端运行中...\n";
+    console "客户端运行中...\n";
     AE::cv->recv;
 };
 sub search_cookie{

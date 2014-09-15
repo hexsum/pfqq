@@ -1,11 +1,8 @@
 use lib '../src/';
 use Webqq::Client;
 use Webqq::Message;
+use Webqq::Client::Util qw(console);
 use Digest::MD5 qw(md5_hex);
-
-#程序默认输出的是UTF8编码，你的终端可能是其他编码，
-use Encode::Locale;
-use Encode;
 
 my $qq = 12345678;
 my $pwd = md5_hex('your password');
@@ -16,7 +13,7 @@ $client->login( qq=> $qq, pwd => $pwd);
 $client->on_send_message = sub{
     my ($msg,$is_success,$status) = @_;
     ##程序默认输出的是UTF8编码，你的终端可能是其他编码，做下自适应
-    print encode("console_out",decode("utf8",join "","msg_id: ",$msg->{msg_id}," ",$status,"\n") );
+    console "msg_id: ",$msg->{msg_id}," ",$status,"\n" ;
 };
 
 #设置接收到消息后的回调函数

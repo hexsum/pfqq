@@ -1,6 +1,7 @@
 use Digest::MD5 qw(md5 md5_hex);
+use Webqq::Client::Util qw(console);
 sub Webqq::Client::_login1{ 
-    print "尝试进行登录(阶段1)...\n";
+    console "尝试进行登录(阶段1)...\n";
     my $self = shift;
     my $ua = $self->{ua};
     my $api_url = 'https://ssl.ptlogin2.qq.com/login';

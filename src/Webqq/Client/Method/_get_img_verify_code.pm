@@ -1,4 +1,5 @@
 use File::Temp qw/tempfile/;
+use Webqq::Client::Util qw(console);
 sub Webqq::Client::_get_img_verify_code{
     my $self = shift;
     return 1 if $self->{qq_param}{is_need_img_verifycode} == 0;
@@ -21,7 +22,7 @@ sub Webqq::Client::_get_img_verify_code{
         binmode $fh;
         print $fh $response->content();
         close $fh; 
-        print "input verifycode[ $filename ]: ";
+        console "请输入图片验证码 [ $filename ]: ";
         chomp($self->{qq_param}{verifycode} = <STDIN>);
         $self->{qq_param}{verifysession} = $self->search_cookie("verifysession") if $self->{qq_param}{verifysession} eq '';
         return 1;

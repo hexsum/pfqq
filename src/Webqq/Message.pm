@@ -1,6 +1,7 @@
 package Webqq::Message;
 use JSON;
 use Encode;
+use Webqq::Client::Util qw(console_stderr);
 sub create_group_msg{   
     my $client = shift;
     return $client->_create_msg(@_,type=>'group_message');
@@ -12,6 +13,7 @@ sub create_msg{
 sub _create_msg {
     my $client = shift;
     my %p = @_;
+    $p{content} =~s/\r|\n/\\n/g;
     my %msg = (
         type        => $p{type},
         msg_id      => $p{msg_id} || ++$client->{qq_param}{send_msg_id},
@@ -29,7 +31,7 @@ sub parse_send_status_msg{
     my ($json_txt) = @_;
     my $json     = undef;
     eval{$json = JSON->new->decode($json_txt)};
-    warn "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@;
+    console_stderr "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@;
     if($json){
         #发送消息成功
         if($json->{retcode}==0){
@@ -46,7 +48,7 @@ sub parse_receive_msg{
     my ($json_txt) = @_;  
     my $json     = undef;
     eval{$json = JSON->new->decode($json_txt)};
-    warn "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@;
+    console_stderr "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@;
     if($json){
         #一个普通的消息
         if($json->{retcode}==0){
@@ -64,7 +66,7 @@ sub parse_receive_msg{
                     #将整个hash从unicode转为UTF8编码
                     $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
                     $msg->{content}=~s/ $//;
-                    $msg->{content}=~s/\r|\n/\\n/;
+                    $msg->{content}=~s/\r|\n/\\n/g;
                     
                     $client->{receive_message_queue}->put($msg);
                 }   
@@ -83,7 +85,7 @@ sub parse_receive_msg{
                     #将整个hash从unicode转为UTF8编码
                     $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
                     $msg->{content}=~s/ $//;
-                    $msg->{content}=~s/\r|\n/\\n/;
+                    $msg->{content}=~s/\r|\n/\\n/g;
                     $client->{receive_message_queue}->put($msg);
                 }
                 #还未识别和处理的消息
@@ -97,7 +99,7 @@ sub parse_receive_msg{
         }
         #其他未知消息
         else{
-            warn "读取到未知消息: $json_txt\n";
+            console_stderr "读取到未知消息: $json_txt\n";
         }
     } 
 }
