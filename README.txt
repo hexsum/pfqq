@@ -20,7 +20,6 @@ client
        +                        \ Webqq::Message::Queue /
        +                             /              \
        +->send_group_message()-[put]-                -[get]-> $send_group_message()
-                       +
 
 2014-09-14 Webqq::Client v1.2
 1）源码改为UTF8编写，git commit亦采用UTF8字符集，以兼容github显示
