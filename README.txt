@@ -17,10 +17,13 @@ client
     +->run() 
         +->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
         +
-        +->send_message() -[put]-                         +[get]-> _send_message() 
-        +                        \ Webqq::Message::Queue /
-        +                             /              \
-        +->send_group_message()-[put]-                -[get]-> _send_group_message()
+    +---+->send_message() -[put]-                         +[get]-> _send_message() 
+    |   +                        \ Webqq::Message::Queue /
+    |   +                             /              \
+    | +->send_group_message()-[put]-                -[get]-> _send_group_message()
+    | |
+    | +->msg->{cb}--->on_send_message()
+    +--->msg->{cb}--/
 
 2014-09-14 Webqq::Client v1.2
 1）源码改为UTF8编写，git commit亦采用UTF8字符集，以兼容github显示
