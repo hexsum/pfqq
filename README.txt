@@ -11,15 +11,16 @@
 2）demo/*.pl示例代码为防止打印乱码，添加终端编码自适应
 3）添加Webqq::Message::Queue消息队列，实现接收消息、处理消息、发送消息等函数解耦
 client 
- + 
+ | 
  ->login()
-    +-run() 
-       +->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
-       +
-       +->send_message() -[put]-                         +[get]->_send_message() 
-       +                        \ Webqq::Message::Queue /
-       +                             /              \
-       +->send_group_message()-[put]-                -[get]-> $send_group_message()
+    |
+    +->run() 
+        +->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
+        +
+        +->send_message() -[put]-                         +[get]-> _send_message() 
+        +                        \ Webqq::Message::Queue /
+        +                             /              \
+        +->send_group_message()-[put]-                -[get]-> _send_group_message()
 
 2014-09-14 Webqq::Client v1.2
 1）源码改为UTF8编写，git commit亦采用UTF8字符集，以兼容github显示
