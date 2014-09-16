@@ -1,3 +1,4 @@
+#将接收到的普通信息和群信息打印到终端
 use lib '../src/';
 use POSIX qw(strftime);
 use Webqq::Client;
