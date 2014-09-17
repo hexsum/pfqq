@@ -38,10 +38,12 @@ $client->on_receive_message = sub{
         ) ;
     }
     elsif($msg->{type} eq 'group_message'){
+        my $to_uin = $client->search_group($msg->{group_code})->{gid} || $msg->{from_uin};
         $client->send_group_message(
             #使用create_group_msg生成一个群消息，设置发送者和消息内容为接收到的群和群消息
-            $client->create_group_msg( to_uin=>$msg->{from_uin},content=>$msg->{content}  )
+            $client->create_group_msg( to_uin=>$to_uin,content=>$msg->{content}  )
         ) ;        
     }
 };
+$SIG{INT} = sub{$client->logout();exit;};
 $client->run;

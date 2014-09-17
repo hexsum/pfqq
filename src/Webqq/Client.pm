@@ -1,9 +1,11 @@
 package Webqq::Client;
+use Storable qw(dclone);
 use base qw(Webqq::Message);
+use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v1.3;
+our $VERSION = v1.4;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -20,9 +22,13 @@ use Webqq::Client::Method::_check_sig;
 use Webqq::Client::Method::_login2;
 use Webqq::Client::Method::_recv_message;
 use Webqq::Client::Method::_get_group_info;
+use Webqq::Client::Method::_get_group_list_info;
+use Webqq::Client::Method::_get_friends_list_info;
 use Webqq::Client::Method::_get_user_info;
 use Webqq::Client::Method::_send_message;
 use Webqq::Client::Method::_send_group_message;
+use Webqq::Client::Method::logout;
+use Webqq::Client::Method::get_qq_from_uin;
 
 
 sub new {
@@ -48,8 +54,8 @@ sub new {
             qq                      =>  undef,
             pwd                     =>  undef,    
             is_need_img_verifycode  =>  0,
-            send_msg_id             =>  1,
-            clientid                =>  1+int(rand(99999999)),
+            send_msg_id             =>  11111111+int(rand(99999999)),
+            clientid                =>  11111111+int(rand(99999999)),
             psessionid              =>  'null',
             vfwebqq                 =>  undef,
             ptwebqq                 =>  undef,
@@ -70,11 +76,13 @@ sub new {
             g_pt_version            =>  10092,
         },
         qq_database     =>  {
-            user    =>  {},
-            friends =>  {},
-            group   =>  {},
-            discuss =>  {},
+            user        =>  {},
+            friends     =>  [],
+            group_list  =>  [],
+            group       =>  [],
+            discuss     =>  [],
         },
+        cache_for_uin_to_qq => Webqq::Client::Cache->new,
         on_receive_message  =>  undef,
         on_send_message     =>  undef,
         receive_message_queue    =>  Webqq::Message::Queue->new,
@@ -139,6 +147,7 @@ sub _get_discuss_list_info;
 sub _send_message;
 sub _send_group_message;
 sub change_status;
+sub get_qq_from_uin;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -153,7 +162,36 @@ sub send_group_message{
     my $msg = shift;
     $self->{send_message_queue}->put($msg);
 };
-sub show_message;
+sub welcome{
+    my $self = shift;
+    my $w = $self->{qq_database}{user};
+    console "欢迎回来, $w->{nick}($w->{province})\n";
+    console "个人说明: " . ($w->{personal}?$w->{personal}:"（无）") . "\n"
+    #个人信息存储在$self->{qq_database}{user}中
+    #    face
+    #    birthday
+    #    occupation
+    #    phone
+    #    allow
+    #    college
+    #    uin
+    #    constel
+    #    blood
+    #    homepage
+    #    stat
+    #    vip_info
+    #    country
+    #    city
+    #    personal
+    #    nick
+    #    shengxiao
+    #    email
+    #    client_type
+    #    province
+    #    gender
+    #    mobile
+ 
+};
 sub logout;
 sub run {
     my $self = shift;
@@ -161,6 +199,17 @@ sub run {
     if($self->{qq_param}{login_state} ne 'success'){
         console "登录失败\n";
         return ;
+    }
+    #获取个人资料信息
+    $self->_get_user_info() && $self->welcome();
+    #获取群列表信息
+    $self->_get_group_list_info();
+    #获取好友信息
+    $self->_get_friends_list_info();
+    #获取群列表中每个群的成员信息
+    console "获取群成员信息...\n";
+    for(@{ $self->{qq_database}{group_list} }){
+        $self->_get_group_info($_->{code});
     }
     
     #设置从接收消息队列中接收到消息后对应的处理函数
@@ -179,6 +228,7 @@ sub run {
         $self->_send_group_message($msg)  if $msg->{type} eq 'group_message';
     });
 
+
     console "开始接收消息\n";
     $self->_recv_message();
     console "客户端运行中...\n";
@@ -196,5 +246,76 @@ sub search_cookie{
     });
     return $result;
 }
+
+#根据uin进行查询，返回一个friend的hash引用
+#这个hash引用的结构是：
+#{
+#    flag        #标志，作用未知
+#    face        #表情
+#    uin         #uin
+#    categories  #所属分组
+#    nick        #昵称
+#    markname    #备注名称
+#    is_vip      #是否是vip会员
+#    vip_level   #vip等级
+#}
+sub search_friend {
+    my ($self,$uin) = @_;
+    for my $f( @{ $self->{qq_database}{friends} }){
+        return dclone($f) if $f->{uin} eq $uin;
+    } 
+    return {};
+}
+
+#根据群的gcode和群成员的uin进行查询，返回群成员相关信息
+#返回结果是一个群成员的hash引用
+#{
+#    nick        #昵称
+#    province    #省份
+#    gender      #性别
+#    uin         #uin
+#    country     #国家
+#    city        #城市
+#}
+sub search_member_in_group{
+    my ($self,$gcode,$member_uin) = @_;
+    for my $g (@{$self->{qq_database}{group}}){
+        if($g->{ginfo}{code} eq $gcode){
+            for my $m(@{$g->{minfo} }){
+                return dclone($m) if $m->{uin} eq $member_uin; 
+            }
+        }
+    }
+    return {};
+}
+
+#根据gcode查询对应的群信息,返回的是一个hash的引用
+#{
+#    face        #群头像
+#    memo        #群描述
+#    class       #群类型
+#    fingermemo  #
+#    code        #group_code
+#    createtime  #创建时间
+#    flag        #
+#    level       #群等级
+#    name        #群名称
+#    gid         #gid
+#    owner       #群拥有者
+#}
+sub search_group{
+    my($self,$gcode) = @_;
+    for(@{ $self->{qq_database}{group} }){
+        return dclone($_->{ginfo}) if $_->{ginfo}{code} eq $gcode;
+    }
+    return {};
+}
+#sub search_group{
+#    my($self,$gcode) = @_;
+#    for(@{ $self->{qq_database}{group_list} }){
+#        return dclone($_) if $_->{gcode} eq $gcode;
+#    } 
+#    return {};
+#}
 
 1;

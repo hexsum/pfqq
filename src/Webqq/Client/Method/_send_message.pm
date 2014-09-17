@@ -40,6 +40,7 @@ sub Webqq::Client::_send_message{
         require URI;
         my $uri = URI->new('http:');
         $uri->query_form($post_content);    
+        print $api_url,"\n";
         print $uri->query(),"\n";
     }
     $ua->post(

@@ -23,12 +23,12 @@ sub Webqq::Client::_send_group_message{
     
     my $api_url = 'http://d.web2.qq.com/channel/send_qun_msg2';
     my @headers = (Referer=>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3');
-    my $content = [$msg->{content},"",[]];
+    my $content = [$msg->{content},[]];
     my %s = (
-        group_uin      => $msg->{to_uin},
-        content =>  JSON->new->ascii->encode($content),
-        msg_id  =>  $msg->{msg_id},
-        clientid => $self->{qq_param}{clientid},
+        group_uin   => $msg->{to_uin},
+        content     => JSON->new->ascii->encode($content),
+        msg_id      => $msg->{msg_id},
+        clientid    => $self->{qq_param}{clientid},
         psessionid  => $self->{qq_param}{psessionid},
     );
        
@@ -41,6 +41,7 @@ sub Webqq::Client::_send_group_message{
         require URI;
         my $uri = URI->new('http:');
         $uri->query_form($post_content);
+        print $api_url,"\n";
         print $uri->query(),"\n";
     }
 

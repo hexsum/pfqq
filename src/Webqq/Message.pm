@@ -1,7 +1,7 @@
 package Webqq::Message;
 use JSON;
 use Encode;
-use Webqq::Client::Util qw(console_stderr);
+use Webqq::Client::Util qw(console_stderr console);
 sub create_group_msg{   
     my $client = shift;
     return $client->_create_msg(@_,type=>'group_message');
@@ -82,11 +82,24 @@ sub parse_receive_msg{
                         send_uin    =>  $m->{value}{send_uin},
                         group_code  =>  $m->{value}{group_code}, 
                     };
+                    if(ref $msg->{content} eq 'ARRAY'){
+                        if($msg->{content}[0] eq 'cface'){$msg->{content} = decode("utf8","[图片]")}
+                        elsif($msg->{content}[0] eq 'face'){$msg->{content} = decode("utf8","[系统表情]")}
+                        else{$msg->{content} = decode("utf8","未识别内容")}
+                    }
                     #将整个hash从unicode转为UTF8编码
                     $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
                     $msg->{content}=~s/ $//;
                     $msg->{content}=~s/\r|\n/\n/g;
                     $client->{receive_message_queue}->put($msg);
+                }
+                #收到强制下线消息
+                elsif($m->{poll_type} eq 'kick_message'){
+                    if($m->{value}{show_reason} ==1){
+                        console "$m->{value}{reason}\n" ;
+                    }
+                    else {console "您已被迫下线\n" }
+                    exit;                    
                 }
                 #还未识别和处理的消息
                 else{
