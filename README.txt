@@ -11,21 +11,21 @@ client
  ->login()
     |
     +->run()
-        +
-        +->timer(60s)->_get_msg_tip()#heartbeat 
-        +
-        +        +-------------------------<------------------------------+
-        +        |                                                        |
-        +->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
-        +
-        +->send_message() -[put]+                         +[get]-> _send_message() -----+
-        +                        \ Webqq::Message::Queue /                              +
-        +                            /              \                                   +
-        +send_group_message()-[put]-+                +-[get]->_send_group_message() --+ +
-                                                                                      + +
-                                  on_send_message() ------- msg->{cb} ----<-----------+ +
-                                                    \                                   +
-                                                     +----- msg->{cb} ----<-------------+   
+       +
+       +->timer(60s)->_get_msg_tip()#heartbeat 
+       +
+       +        +-------------------------<------------------------------+
+       +        |                                                        |
+       +->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
+       +
+       +->send_message() -[put]+                         +[get]-> _send_message() ----+
+       +                        \ Webqq::Message::Queue /                             +
+       +                            /              \                                  +
+       +send_group_message()-[put]-+                +-[get]->_send_group_message()--+ +
+                                                                                    + +
+                                  on_send_message() ------- msg->{cb} ----<---------+ +
+                                                    \                                 +
+                                                     +----- msg->{cb} ----<-----------+   
 版本更新记录:
 2014-09-18 Webqq::Client v1.5
 1）增加心跳检测
