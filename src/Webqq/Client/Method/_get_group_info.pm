@@ -16,6 +16,7 @@ sub Webqq::Client::_get_group_info {
     my @headers = (Referer => 'http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=3');
     my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);
     if($response->is_success){
+        print $response->content() if $self->{debug};
         my $json = JSON->new->utf8->decode($response->content()); 
         return 0 if $json->{retcode}!=0;
         $json->{result}{ginfo}{name} = encode("utf8",$json->{result}{ginfo}{name});

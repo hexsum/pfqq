@@ -22,7 +22,10 @@ sub Webqq::Client::_send_group_message{
     };
     
     my $api_url = 'http://d.web2.qq.com/channel/send_qun_msg2';
-    my @headers = (Referer=>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3');
+    my @headers = (
+        Origin  =>'http://d.web2.qq.com',
+        Referer =>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3'
+    );
     my $content = [$msg->{content},[]];
     my %s = (
         group_uin   => $msg->{to_uin},

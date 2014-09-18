@@ -5,7 +5,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v1.4;
+our $VERSION = v1.5;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -29,6 +29,7 @@ use Webqq::Client::Method::_send_message;
 use Webqq::Client::Method::_send_group_message;
 use Webqq::Client::Method::logout;
 use Webqq::Client::Method::get_qq_from_uin;
+use Webqq::Client::Method::_get_msg_tip;
 
 
 sub new {
@@ -74,6 +75,7 @@ sub new {
             g_daid                  =>  164,
             g_appid                 =>  1003903,
             g_pt_version            =>  10092,
+            rc                      =>  1,
         },
         qq_database     =>  {
             user        =>  {},
@@ -146,6 +148,7 @@ sub _get_friends_list_info;
 sub _get_discuss_list_info;
 sub _send_message;
 sub _send_group_message;
+sub _get_msg_tip;
 sub change_status;
 sub get_qq_from_uin;
 
@@ -232,6 +235,7 @@ sub run {
     console "开始接收消息\n";
     $self->_recv_message();
     console "客户端运行中...\n";
+    my $timer = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
     AE::cv->recv;
 };
 sub search_cookie{
