@@ -5,6 +5,28 @@
     AnyEvent::UserAgent
     LWP::UserAgent
 
+客户端异步框架:
+client 
+ | 
+ ->login()
+    |
+    +->run()
+        +
+        +->timer(60s)->_get_msg_tip()#heartbeat 
+        +
+        +        +-------------------------<------------------------------+
+        +        |                                                        |
+        +->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
+        +
+    +---+->send_message() -[put]+                         +[get]-> _send_message() 
+    |   +                        \ Webqq::Message::Queue /
+    |   +                             /              \
+    | +->send_group_message()-[put]--+                +--[get]-> _send_group_message()
+    | |
+    | +->msg->{cb}--->on_send_message()
+    |                /
+    +--->msg->{cb}--+
+
 版本更新记录:
 2014-09-18 Webqq::Client v1.5
 1）增加心跳检测
@@ -23,25 +45,10 @@
 1）再一次消息接收中如果包含多个消息，可能会导致只处理第一个消息，其他消息丢失
 2）偶尔会出现发送群消息提示成功，但对方无法接收到的问题（可能和JSON编码有关）
 
-
 2014-09-14 Webqq::Client v1.3
 1）添加一些代码注释
 2）demo/*.pl示例代码为防止打印乱码，添加终端编码自适应
 3）添加Webqq::Message::Queue消息队列，实现接收消息、处理消息、发送消息等函数解耦
-client 
- | 
- ->login()
-    |
-    +->run() 
-        +->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
-        +
-    +---+->send_message() -[put]-                         +[get]-> _send_message() 
-    |   +                        \ Webqq::Message::Queue /
-    |   +                             /              \
-    | +->send_group_message()-[put]-                -[get]-> _send_group_message()
-    | |
-    | +->msg->{cb}--->on_send_message()
-    +--->msg->{cb}--/
 
 2014-09-14 Webqq::Client v1.2
 1）源码改为UTF8编写，git commit亦采用UTF8字符集，以兼容github显示
