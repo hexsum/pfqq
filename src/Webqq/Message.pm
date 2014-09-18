@@ -63,6 +63,11 @@ sub parse_receive_msg{
                         msg_time    =>  $m->{value}{'time'},
                         content     =>  $m->{value}{content}[1],
                     };
+                    if(ref $msg->{content} eq 'ARRAY'){
+                        if($msg->{content}[0] eq 'cface'){$msg->{content} = decode("utf8","[图片]")}
+                        elsif($msg->{content}[0] eq 'face'){$msg->{content} = decode("utf8","[系统表情]")}
+                        else{$msg->{content} = decode("utf8","未识别内容")} 
+                    }
                     #将整个hash从unicode转为UTF8编码
                     $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
                     $msg->{content}=~s/ $//;
