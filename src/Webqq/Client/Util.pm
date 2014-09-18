@@ -19,7 +19,7 @@ sub hash {
     my $uin = shift;
     my $a = $ptwebqq  . "password error";
     my $i = "";
-    my @E = [];
+    my @E = ();
     while(1){
         if(length($i)<= length($a) ){
             $i .= $uin;
