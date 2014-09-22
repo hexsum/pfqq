@@ -20,7 +20,7 @@ sub format_msg{
         console $lh, $lc,"\n";
     } 
 }
-my $client = Webqq::Client->new(debug=>1);
+my $client = Webqq::Client->new(debug=>0);
 $client->login( qq=> $qq, pwd => $pwd);
 $client->on_receive_message = sub{
     my $msg = shift;

@@ -25,14 +25,14 @@ sub Webqq::Client::_send_message{
     my %s = (
         to      => $msg->{to_uin},
         face    => 570,
-        content => JSON->new->ascii->encode($content),
+        content => JSON->new->utf8->encode($content),
         msg_id  =>  $msg->{msg_id},
         clientid => $self->{qq_param}{clientid},
         psessionid  => $self->{qq_param}{psessionid},
     );
     
     my $post_content = [
-        r           =>  JSON->new->ascii(1)->encode(\%s),
+        r           =>  decode("utf8",JSON->new->encode(\%s)),
         clientid    =>  $self->{qq_param}{clientid},
         psessionid  =>  $self->{qq_param}{psessionid}
     ];
