@@ -10,6 +10,7 @@ open LOG,">>/tmp/webqq/log/exec.log" or die $!;
 sub Perlcode{
     my ($msg,$client) = @_;
     if($msg->{content} =~/^(?::code|:c|perlcode|__CODE__)(?:\n|[\t ]+)(.*?)(?:\n^|[\t ]+)(?::end|:e|__END__|end)$/ms){
+        my $doc = '';
         my $code = $1;
         unless($code=~/^\s+$/s){
             $code = q#$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chroot '/tmp/webqq/bin';setuid($u);setgid($g);%ENV=();}# .  $code;
