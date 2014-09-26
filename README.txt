@@ -18,13 +18,13 @@ client
        +        |                                                        |
        +->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
        +
-       +->send_message() -[put]++                         +[get]-> _send_message() ---+
-       +                          \                      /                            +
+       +->send_message() -[put]--+                       +-[get]-> _send_message() ---+
+       +                           \                   /                              +
        +->send_sess_message()-[put]-Webqq::Message::Queue-[get]->_send_sess_message()-+               
-       +                            /                \                                +
+       +                              /              \                                +
        +->send_group_message()-[put]-+                +-[get]->_send_group_message()--+
                                                                                       +
-                                  on_send_message() ------- msg->{cb} ----<-----------+
+                                  on_send_message() ---<---- msg->{cb} -------<-------+
 版本更新记录:
 2014-09-26 Webqq::Client v1.8
 1）增加->relogin()方法，在系统提示需要重新登录时尝试自动重新登录或者重新连接

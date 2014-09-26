@@ -18,7 +18,7 @@ sub Webqq::Client::_get_user_info{
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string);
     my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);
     if($response->is_success){
-        print $response->content() if $self->{debug};
+        print $response->content(),"\n" if $self->{debug};
         my $json = JSON->new->utf8->decode( $response->content() );    
         return 0 if $json->{retcode} !=0;
         for my $key (keys %{ $json->{result} }){
