@@ -22,7 +22,7 @@ sub Webqq::Client::_login2{
         if($data->{retcode} ==0){
             $self->{qq_param}{psessionid} = $data->{result}{psessionid};
             $self->{qq_param}{vfwebqq} = $data->{result}{vfwebqq};
-            $self->{qq_param}{login_state} = 'success';
+            $self->{login_state} = 'success';
             console "登录成功\n";
         }
         return 1;

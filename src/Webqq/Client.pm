@@ -140,7 +140,7 @@ sub login{
         && $self->_login2();
 
     #登录不成功，客户端退出运行
-    if($self->{qq_param}{login_state} ne 'success'){
+    if($self->{login_state} ne 'success'){
         console "登录失败\n";
         return ;
     }
