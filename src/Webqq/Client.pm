@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v1.7;
+our $VERSION = v1.8;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -39,22 +39,9 @@ use Webqq::Client::Method::_get_msg_tip;
 sub new {
     my $class = shift;
     my %p = @_;
-    my $cookie_jar  = HTTP::Cookies->new(hide_cookie2=>1);
-    my $agent       = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.103';
-    my $request_timeout = 300; 
+    my $agent = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062';
     my $self = {
-        ua      => LWP::UserAgent->new(
-                cookie_jar  =>  $cookie_jar,
-                agent       =>  $agent,
-                timeout     =>  $request_timeout
-        ),
-        asyn_ua => AnyEvent::UserAgent->new(
-                cookie_jar  =>  $cookie_jar,
-                agent       =>  $agent,
-                request_timeout =>  0,
-                inactivity_timeout  =>  0,
-        ),
-        cookie_jar  => $cookie_jar, 
+        cookie_jar  => HTTP::Cookies->new(hide_cookie2=>1), 
         qq_param        =>  {
             qq                      =>  undef,
             pwd                     =>  undef,    
@@ -94,9 +81,21 @@ sub new {
         on_send_message     =>  undef,
         receive_message_queue    =>  Webqq::Message::Queue->new,
         send_message_queue       =>  Webqq::Message::Queue->new,
-        debug => $p{debug},
+        debug               => $p{debug}, 
+        login_state         => "init",
         
     };
+    $self->{ua} = LWP::UserAgent->new(
+                cookie_jar  =>  $self->{cookie_jar},
+                agent       =>  $agent,
+                timeout     =>  300,
+    );
+    $self->{asyn_ua} = AnyEvent::UserAgent->new(
+                cookie_jar  =>  $self->{cookie_jar},
+                agent       =>  $agent,
+                request_timeout =>  0,
+                inactivity_timeout  =>  0,
+    );
     $self->{qq_param}{from_uin}  =$self->{qq_param}{qq};
     if($self->{debug}){
         $self->{ua}->add_handler(request_send => sub {
@@ -131,14 +130,48 @@ sub login{
     @{$self->{qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
     console "QQ账号: $self->{qq_param}{qq} 密码: $self->{qq_param}{pwd}\n";
     #my $is_big_endian = unpack( 'xc', pack( 's', 1 ) ); 
-    $self->{qq_param}{pwd} = pack "H*",lc $self->{qq_param}{pwd};
-    return  
+    $self->{qq_param}{pwd} = pack "H*",lc $self->{qq_param}{pwd} if $self->{login_state} eq 'init';
+
            $self->_prepare_for_login()    
         && $self->_check_verify_code()     
         && $self->_get_img_verify_code()   
         && $self->_login1()                
         && $self->_check_sig()             
         && $self->_login2();
+
+    #登录不成功，客户端退出运行
+    if($self->{qq_param}{login_state} ne 'success'){
+        console "登录失败\n";
+        return ;
+    }
+    #获取个人资料信息
+    $self->_get_user_info() && $self->welcome();
+    #获取群列表信息
+    $self->_get_group_list_info();
+    #获取好友信息
+    $self->_get_friends_list_info();
+    #获取群列表中每个群的成员信息
+    console "获取群成员信息...\n";
+    for(@{ $self->{qq_database}{group_list} }){
+        $self->_get_group_info($_->{code});
+    }
+    return 1;
+}
+sub relogin{
+    my $self = shift;
+    $self->{login_state} = 'relogin';
+    $self->logout();
+
+    #停止心跳请求
+    undef $self->{timer};
+    #重新设置一个心跳请求
+    $self->{timer} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
+    #清空cookie
+    $self->{cookie_jar} = HTTP::Cookies->new(hide_cookie2=>1);
+    #$self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
+    #$self->{cache_for_group_sig} = Webqq::Client::Cache->new;
+    $self->login(qq=>$self->{qq_param}{qq},pwd=>$self->{qq_param}{pwd});
+
 }
 sub _prepare_for_login;
 sub _check_verify_code;
@@ -210,22 +243,6 @@ sub welcome{
 sub logout;
 sub run {
     my $self = shift;
-    #登录不成功，客户端退出运行
-    if($self->{qq_param}{login_state} ne 'success'){
-        console "登录失败\n";
-        return ;
-    }
-    #获取个人资料信息
-    $self->_get_user_info() && $self->welcome();
-    #获取群列表信息
-    $self->_get_group_list_info();
-    #获取好友信息
-    $self->_get_friends_list_info();
-    #获取群列表中每个群的成员信息
-    console "获取群成员信息...\n";
-    for(@{ $self->{qq_database}{group_list} }){
-        $self->_get_group_info($_->{code});
-    }
     
     #设置从接收消息队列中接收到消息后对应的处理函数
     $self->{receive_message_queue}->get(sub{

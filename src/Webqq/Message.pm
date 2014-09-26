@@ -170,10 +170,12 @@ sub parse_receive_msg{
         #未重新登录
         elsif($json->{retcode} ==100){
             console_stderr "需要重新登录\n";
+            $client->relogin();
         }
         #重新连接失败
         elsif($json->{retcode} ==120 or $json->{retcode} ==121){
             console_stderr "重新连接失败\n";
+            $client->relogin();
         }
         #其他未知消息
         else{console_stderr "读取到未知消息: $json_txt\n";}
