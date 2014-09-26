@@ -28,7 +28,8 @@ client
 版本更新记录:
 2014-09-26 Webqq::Client v1.8
 1）增加->relogin()方法，在系统提示需要重新登录时尝试自动重新登录或者重新连接
-2) 修复客户端login_state设置bug
+2）修复客户端login_state设置bug
+3）修复perlcode可以写入和读取系统文件问题
 
 2014-09-26 Webqq::Client v1.7
 1）支持接收和回复群临时消息(sess_message)

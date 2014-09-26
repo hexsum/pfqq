@@ -13,7 +13,7 @@ sub Perlcode{
         my $doc = '';
         my $code = $1;
         unless($code=~/^\s+$/s){
-            $code = q#$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chroot '/tmp/webqq/bin';setuid($u);setgid($g);%ENV=();}# .  $code;
+            $code = q#$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chdir '/tmp/webqq/bin';chroot '/tmp/webqq/bin';setuid($u);setgid($g);%ENV=();}# .  $code;
             my ($fh, $filename) = tempfile("webqq_perlcode_XXXXXXXX",SUFFIX =>".pl",DIR => "/tmp/webqq/src");
             print $code,"\n",$filename,"\n" if $client->{debug};
             print $fh $code;
