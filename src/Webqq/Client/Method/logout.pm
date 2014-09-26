@@ -17,7 +17,7 @@ sub Webqq::Client::logout {
     if($response->is_success){
         my $content = $response->content();
         print $content,"\n" if $self->{debug};
-        console "注销完毕,客户端已退出\n";
+        console "注销完毕\n";
         return 1;
     }
     else{return 0}

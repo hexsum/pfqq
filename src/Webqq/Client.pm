@@ -1,11 +1,13 @@
 package Webqq::Client;
 use Storable qw(dclone);
+use Exporter 'import';
+our @EXPORT = qw(app add);
 use base qw(Webqq::Message);
 use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v1.6;
+our $VERSION = v1.7;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -22,11 +24,13 @@ use Webqq::Client::Method::_check_sig;
 use Webqq::Client::Method::_login2;
 use Webqq::Client::Method::_recv_message;
 use Webqq::Client::Method::_get_group_info;
+use Webqq::Client::Method::_get_group_sig;
 use Webqq::Client::Method::_get_group_list_info;
 use Webqq::Client::Method::_get_friends_list_info;
 use Webqq::Client::Method::_get_user_info;
 use Webqq::Client::Method::_send_message;
 use Webqq::Client::Method::_send_group_message;
+use Webqq::Client::Method::_send_sess_message;
 use Webqq::Client::Method::logout;
 use Webqq::Client::Method::get_qq_from_uin;
 use Webqq::Client::Method::_get_msg_tip;
@@ -38,7 +42,7 @@ sub new {
     my $cookie_jar  = HTTP::Cookies->new(hide_cookie2=>1);
     my $agent       = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.103';
     my $request_timeout = 300; 
-    $self = {
+    my $self = {
         ua      => LWP::UserAgent->new(
                 cookie_jar  =>  $cookie_jar,
                 agent       =>  $agent,
@@ -85,6 +89,7 @@ sub new {
             discuss     =>  [],
         },
         cache_for_uin_to_qq => Webqq::Client::Cache->new,
+        cache_for_group_sig => Webqq::Client::Cache->new,
         on_receive_message  =>  undef,
         on_send_message     =>  undef,
         receive_message_queue    =>  Webqq::Message::Queue->new,
@@ -106,7 +111,8 @@ sub new {
             return;
         });
     }
-
+    #全局变量，方便其他包引用$self
+    $Webqq::Client::_CLIENT = $self;
     return bless $self;
 }
 sub on_send_message :lvalue {
@@ -158,6 +164,12 @@ sub send_message{
     my $msg = shift;
     $self->{send_message_queue}->put($msg);
 };
+#接受一个群临时消息，将它放到发送消息队列中
+sub send_sess_message{
+    my $self = shift;
+    my $msg = shift;
+    $self->{send_message_queue}->put($msg);
+}
 
 #接受一个群消息，将它放到发送消息队列中
 sub send_group_message{
@@ -229,14 +241,16 @@ sub run {
         my $msg = shift;
         $self->_send_message($msg)  if $msg->{type} eq 'message';
         $self->_send_group_message($msg)  if $msg->{type} eq 'group_message';
+        $self->_send_sess_message($msg)  if $msg->{type} eq 'sess_message';
     });
 
 
     console "开始接收消息\n";
     $self->_recv_message();
     console "客户端运行中...\n";
-    my $timer = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
-    AE::cv->recv;
+    $self->{timer} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
+    $self->{cv} = AE::cv;
+    $self->{cv}->recv;
 };
 sub search_cookie{
     my($self,$cookie) = @_;

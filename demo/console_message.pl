@@ -54,6 +54,18 @@ $client->on_receive_message = sub{
             $msg->{content} 
         );
     }
+
+    #消息是临时消息
+    elsif($msg->{type} eq 'sess_message'){
+        my $msg_sender = $client->search_friend($msg->{from_uin});
+        my $msg_sender_qq = $client->get_qq_from_uin($msg_sender->{uin});
+        my $msg_sender_nick = $msg_sender->{nick};
+        format_msg(
+            strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
+            .   "\@$msg_sender_nick(临时消息 QQ:$msg_sender_qq) 说: ",
+            $msg->{content}
+        );
+    }
 };
 $SIG{INT} = sub{$client->logout();exit;};
 $client->run;

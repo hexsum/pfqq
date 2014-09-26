@@ -18,21 +18,32 @@ client
        +        |                                                        |
        +->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
        +
-       +->send_message() -[put]+                         +[get]-> _send_message() ----+
-       +                        \ Webqq::Message::Queue /                             +
-       +                            /              \                                  +
-       +send_group_message()-[put]-+                +-[get]->_send_group_message()--+ +
-                                                                                    + +
-                                  on_send_message() ------- msg->{cb} ----<---------+ +
-                                                    \                                 +
-                                                     +----- msg->{cb} ----<-----------+   
+       +->send_message() -[put]++                         +[get]-> _send_message() ---+
+       +                          \                      /                            +
+       +->send_sess_message()-[put]-Webqq::Message::Queue-[get]->_send_sess_message()-+               
+       +                            /                \                                +
+       +->send_group_message()-[put]-+                +-[get]->_send_group_message()--+
+                                                                                      +
+                                  on_send_message() ------- msg->{cb} ----<-----------+
 版本更新记录:
+2014-09-26 Webqq::Client v1.7
+1）支持接收和回复群临时消息(sess_message)
+2）由于机器人大部分情况下都是根据接收的消息进行回复，因此增加reply_message()
+   使得消息处理，更加便捷，传统的方式，你需要自己create_msg，再send_message
+   这种方式更适合主动发送消息，采用reply_message($msg,$content)
+   只需要传入接收到的消息结构和要发送的内容，即可快速回复消息，且不需要关心消息的具体类型
+3）根据聊天信息中的perldoc和perlcode指令进行文档查询和执行perl代码，源码公布
+   有兴趣可以参考:
+       Webqq::Client::App::Perldoc
+       Webqq::Client::App::Perlcode
+   后续会考虑形成中间件的开发框架，以实现即插即用，让更多的人参与,开发更多有趣的中间件
+
 2014-09-18 Webqq::Client v1.6
 1）修改发送消息数据编码，提高发送消息可靠些
 
 2014-09-18 Webqq::Client v1.5
 1）增加心跳检测
-2）发送群消息增加一个Origin： http://d.web2.qq.com 头部希望可以解决群消息偶尔发送不成功问题
+2）发送群消息增加一个Origin的HTTP请求头希望可以解决群消息偶尔发送不成功问题
 
 2014-09-17 Webqq::Client v1.4
 1）修复图片和表情无法正常显示问题，现在图片和表情会被转为文本形式 [图片][系统表情]

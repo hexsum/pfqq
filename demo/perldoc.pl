@@ -1,10 +1,12 @@
-#一个简单的echo-reply的qq机器人
-#你发送什么信息给它，它就回复相同的内容给你
 use lib '../src/';
 use Webqq::Client;
 use Webqq::Message;
 use Webqq::Client::Util qw(console);
 use Digest::MD5 qw(md5_hex);
+use Webqq::Client::App::Perldoc;
+use Webqq::Client::App::Perlcode;
+
+chdir '/tmp/webqq';
 
 my $qq = 12345678;
 my $pwd = md5_hex('your password');
@@ -22,7 +24,7 @@ $client->on_send_message = sub{
 $client->on_receive_message = sub{
     #传递给回调的参数是一个包含接收到的消息的hash引用
     #$msg = {
-    #    type        => message|group_message 消息类型
+    #    type        => message|group_message|sess_message 消息类型
     #    msg_id      => 系统生成的消息id
     #    from_uin    => 消息发送者uin，回复消息时需要用到
     #    to_uin      => 消息接受者uin，就是自己的qq
@@ -30,24 +32,11 @@ $client->on_receive_message = sub{
     #    msg_time    => 消息的接收时间
     #}
     my $msg = shift;
-    
-    #新的方式
-    $client->reply_message($msg,$msg->{content});
-
-    #老的方式，你需要手动创建一个消息结构，再进行发送，create_msg -> send_message
-    #if($msg->{type} eq 'message'){
-    #    $client->send_message(
-    #        #使用create_msg生成一个消息，设置发送者和消息内容 
-    #        $client->create_msg( to_uin=>$msg->{from_uin},content=>$msg->{content}  )
-    #    ) ;
-    #}
-    #elsif($msg->{type} eq 'group_message'){
-    #    my $to_uin = $client->search_group($msg->{group_code})->{gid} || $msg->{from_uin};
-    #    $client->send_group_message(
-    #        #使用create_group_msg生成一个群消息，设置发送者和消息内容为接收到的群和群消息
-    #        $client->create_group_msg( to_uin=>$to_uin,content=>$msg->{content}  )
-    #    ) ;        
-    #}
+    #响应聊天消息中的perldoc查询命令，必须是perldoc -f|-v形式
+    Perldoc     $msg,$client;
+    #响应聊天消息中的perl代码执行指令
+    #代码必须是以介于 :code|:c|perlcode|__CODE__ 和 :end|:e|end|__END__之间的代码
+    Perlcode    $msg,$client;     
 };
-$SIG{INT} = sub{$client->logout();exit;};
+local $SIG{INT} = sub{$client->logout();exit;};
 $client->run;
