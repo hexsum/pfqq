@@ -27,8 +27,9 @@ client
                                   on_send_message() ---<---- msg->{cb} -------<-------+
 版本更新记录:
 2014-09-27 Webqq::Client v1.9
-1）修复获取好友信息列表时，如果设置了好友备注名称会导致程序抛出的bug
+1）修复获取好友信息列表时，如果设置了好友备注名称会导致程序抛出异常的bug
    感谢来自[perl技术 @阳]的反馈
+2）完善了一些感谢人员信息
 
 2014-09-26 Webqq::Client v1.8
 1）增加->relogin()方法，在系统提示需要重新登录时尝试自动重新登录或者重新连接
@@ -75,7 +76,7 @@ client
 2014-09-14 Webqq::Client v1.2
 1）源码改为UTF8编写，git commit亦采用UTF8字符集，以兼容github显示
 2）优化JSON数据和perl内部数据格式之间转换，更好的兼容中文
-3）修复debug下的打印错误（感谢 @卖茶叶perl高手 的bug反馈）
+3）修复debug下的打印错误（感谢 [PERL学习交流 @卖茶叶perl高手] 的bug反馈）
 4）新增demo/console_message.pl示例代码，把接收到的普通消息和群消息打印到终端
 
 2014-09-12 Webqq::Client v1.1

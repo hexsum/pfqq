@@ -13,7 +13,7 @@ sub console_stderr{
 }
 
 #腾讯hash函数js代码 http://pidginlwqq.sinaapp.com/hash.js
-#感谢 @小狼 贡献代码
+#感谢[PERL学习交流 @小狼]贡献代码
 sub hash {
     my $ptwebqq = shift;
     my $uin = shift;
