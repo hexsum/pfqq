@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v1.8;
+our $VERSION = v1.9;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端

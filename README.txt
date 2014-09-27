@@ -26,6 +26,10 @@ client
                                                                                       +
                                   on_send_message() ---<---- msg->{cb} -------<-------+
 版本更新记录:
+2014-09-27 Webqq::Client v1.9
+1）修复获取好友信息列表时，如果设置了好友备注名称会导致程序抛出的bug
+   感谢来自[perl技术 @阳]的反馈
+
 2014-09-26 Webqq::Client v1.8
 1）增加->relogin()方法，在系统提示需要重新登录时尝试自动重新登录或者重新连接
 2）修复客户端login_state设置bug
@@ -36,12 +40,12 @@ client
 2）由于机器人大部分情况下都是根据接收的消息进行回复，因此增加reply_message()
    使得消息处理，更加便捷，传统的方式，你需要自己create_msg，再send_message
    这种方式更适合主动发送消息，采用reply_message($msg,$content)
-   只需要传入接收到的消息结构和要发送的内容，即可快速回复消息，且不需要关心消息的具体类型
+   只需要传入接收消息结构和要发送的内容，即可回复消息，且不需要关心消息的具体类型
 3）根据聊天信息中的perldoc和perlcode指令进行文档查询和执行perl代码，源码公布
    有兴趣可以参考:
        Webqq::Client::App::Perldoc
        Webqq::Client::App::Perlcode
-   后续会考虑形成中间件的开发框架，以实现即插即用，让更多的人参与,开发更多有趣的中间件
+   后续会考虑形成中间件的开发框架，让更多的人参与,开发更多有趣的中间件
 
 2014-09-18 Webqq::Client v1.6
 1）修改发送消息数据编码，提高发送消息可靠些
@@ -52,7 +56,7 @@ client
 
 2014-09-17 Webqq::Client v1.4
 1）修复图片和表情无法正常显示问题，现在图片和表情会被转为文本形式 [图片][系统表情]
-2）改进发送群消息机制，需要获取群消息的group_code，找到group_code对应的gid再进行群消息发送
+2）改进发送群消息机制，通过群消息group_code对应的gid再进行群消息发送
 3）增加Webqq::Client::Cache模块，用于缓存一些经常需要使用的信息，避免时时查询
 4）增加获取个人信息、好友信息、群信息、群成员信息功能
 5）增加查询好友QQ号码功能
@@ -72,11 +76,11 @@ client
 1）源码改为UTF8编写，git commit亦采用UTF8字符集，以兼容github显示
 2）优化JSON数据和perl内部数据格式之间转换，更好的兼容中文
 3）修复debug下的打印错误（感谢 @卖茶叶perl高手 的bug反馈）
-4）新增demo/console_message.pl示例代码，把接收到的普通消息和群消息打印到终端的简单程序
+4）新增demo/console_message.pl示例代码，把接收到的普通消息和群消息打印到终端
 
 2014-09-12 Webqq::Client v1.1
 1）debug模式下支持打印send_message，send_group_message的POST提交数据，方便调试
 2）修复了无法正常发送中文问题
 3）修复了无法正常发送包含换行符的内容
-4) on_receive_message/on_send_message属性改为是lvalue方法，可以支持getter和setter使用方式
+4) on_receive_message/on_send_message改为是lvalue方法，以支持getter和setter方式
 
