@@ -29,7 +29,7 @@ sub Webqq::Client::_get_friends_list_info{
             $info{$_->{uin}} = {face=>$_->{face},flag=>$_->{flag},nick=>encode("utf8",$_->{nick}),};
         }  
         for(@{ $json->{result}{marknames} }){
-            $marknames{$_->{uin}} = {markname=>encode("utf8",$_->{markname},type=>$_->{type})};
+            $marknames{$_->{uin}} = {markname=>encode("utf8",$_->{markname}),type=>$_->{type}};
         }
         for(@{ $json->{result}{vipinfo} }){
             $vipinfo{$_->{u}} = {vip_level=>$_->{vip_level},is_vip=>$_->{is_vip}};
