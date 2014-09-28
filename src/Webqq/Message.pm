@@ -222,12 +222,12 @@ sub parse_receive_msg{
         #更新客户端ptwebqq值
         elsif($json->{retcode} == 116){$client->{qq_param}{ptwebqq} = $json->{p};}
         #未重新登录
-        elsif($json->{retcode} ==100){
+        elsif($json->{retcode} ==100 or $json->{retcode} ==103){
             console_stderr "需要重新登录\n";
             $client->relogin();
         }
         #重新连接失败
-        elsif($json->{retcode} ==120 or $json->{retcode} ==121){
+        elsif($json->{retcode} ==120 or $json->{retcode} ==121 ){
             console_stderr "重新连接失败\n";
             $client->relogin();
         }

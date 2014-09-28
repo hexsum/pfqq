@@ -165,9 +165,9 @@ sub relogin{
     $self->logout();
 
     #停止心跳请求
-    undef $self->{timer};
+    undef $self->{timer_heartbeat};
     #重新设置一个心跳请求
-    $self->{timer} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
+    $self->{timer_heartbeat} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
     #清空cookie
     $self->{cookie_jar} = HTTP::Cookies->new(hide_cookie2=>1);
     #$self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
@@ -267,7 +267,7 @@ sub run {
     console "开始接收消息\n";
     $self->_recv_message();
     console "客户端运行中...\n";
-    $self->{timer} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
+    $self->{timer_heartbeat} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
     $self->{cv} = AE::cv;
     $self->{cv}->recv;
 };
