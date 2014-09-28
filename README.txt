@@ -25,6 +25,13 @@ client
     +->run()
 
 版本更新记录:
+2014-09-28 Webqq::Client v2.0
+1）支持获取临时消息联系人信息
+2）$msg消息结构采用Automated accessorgeneration技术，
+   每个hash的key都自动产生一个对应的的方法，
+   即，你可以使用$msg->{key}或者$msg->key任意一种方式获取你想要的数据
+   如感兴趣，可以参见cpan Class::Accessor模块
+
 2014-09-27 Webqq::Client v1.9
 1）修复获取好友信息列表时，如果设置了好友备注名称会导致程序抛出异常的bug
    感谢来自[perl技术 @阳]的反馈

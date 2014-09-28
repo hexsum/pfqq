@@ -62,8 +62,61 @@ sub _create_msg {
         $msg{service_type} = $p{service_type};
         $msg{group_sig} = $p{group_sig};
     }
-    return bless \%msg,__PACKAGE__;
+    my $msg_pkg = "\u$p{type}"; 
+    $msg_pkg=~s/_(.)/\u$1/g;
+    return $client->_mk_ro_accessors($msg,$msg_pkg);
      
+}
+
+sub _mk_ro_accessors {
+    my $client = shift;
+    my $msg =shift;    
+    my $msg_pkg = shift;
+    no strict 'refs';
+    for my $field (keys %$msg){
+        *{"Webqq::Message::$msg_pkg::$field"} = sub{
+            my $self = shift;
+            my $pkg = ref $self;
+            die "the value of \"$field\" in $pkg is read-only\n" if @_!=0;
+            return $self->{$field};
+        };
+    }
+    if($msg->{type} eq 'group_message'){
+        *{"Webqq::Message::${msg_pkg}::group_name"} = sub{
+            return $client->search_group($msg->{group_code})->{name} ;
+        };
+        *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
+            return $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{nick};
+        };
+        *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
+            return $client->get_qq_from_uin($msg->{send_uin});
+        };
+    }
+    elsif($msg->{type} eq 'sess_message'){
+        *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
+            return $client->search_stranger($msg->{from_uin})->{nick};    
+        };
+        *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
+            return $client->get_qq_from_uin($msg->{from_uin}); 
+        };
+    }
+    elsif($msg->{type} eq 'message'){
+        *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
+            return $client->search_friend($msg->{from_uin})->{nick}; 
+        };
+        *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
+            return $client->get_qq_from_uin($msg->{from_uin});
+        };
+        *{"Webqq::Message::${msg_pkg}::from_markname"} = sub{
+            return $client->search_friend($msg->{from_uin})->{markname};
+        };
+        *{"Webqq::Message::${msg_pkg}::from_categories"} = sub{
+            return $client->search_friend($msg->{from_uin})->{categories};
+        };
+    }
+          
+    $msg = bless $msg,"Webqq::Message::$msg_pkg";
+    return $msg;
 }
 
 sub parse_send_status_msg{
@@ -95,7 +148,8 @@ sub msg_put{
     $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
     $msg->{content}=~s/ $//;
     $msg->{content}=~s/\r|\n/\n/g;
-    
+    my $msg_pkg = "\u$msg->{type}"; $msg_pkg=~s/_(.)/\u$1/g;
+    $msg = $client->_mk_ro_accessors($msg,$msg_pkg) ;
     $client->{receive_message_queue}->put($msg);
 }
 

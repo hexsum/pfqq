@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v1.9;
+our $VERSION = v2.0;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -28,6 +28,7 @@ use Webqq::Client::Method::_get_group_sig;
 use Webqq::Client::Method::_get_group_list_info;
 use Webqq::Client::Method::_get_friends_list_info;
 use Webqq::Client::Method::_get_user_info;
+use Webqq::Client::Method::_get_stranger_info;
 use Webqq::Client::Method::_send_message;
 use Webqq::Client::Method::_send_group_message;
 use Webqq::Client::Method::_send_sess_message;
@@ -75,8 +76,9 @@ sub new {
             group       =>  [],
             discuss     =>  [],
         },
-        cache_for_uin_to_qq => Webqq::Client::Cache->new,
-        cache_for_group_sig => Webqq::Client::Cache->new,
+        cache_for_uin_to_qq     => Webqq::Client::Cache->new,
+        cache_for_group_sig     => Webqq::Client::Cache->new,
+        cache_for_stranger_info => Webqq::Client::Cache->new,
         on_receive_message  =>  undef,
         on_send_message     =>  undef,
         receive_message_queue    =>  Webqq::Message::Queue->new,
@@ -324,6 +326,11 @@ sub search_member_in_group{
     return {};
 }
 
+sub search_stranger{
+    my($self,$tuin) =@_;
+    $self->_get_stranger_info($tuin) || {};
+}
+
 #根据gcode查询对应的群信息,返回的是一个hash的引用
 #{
 #    face        #群头像
@@ -338,6 +345,7 @@ sub search_member_in_group{
 #    gid         #gid
 #    owner       #群拥有者
 #}
+
 sub search_group{
     my($self,$gcode) = @_;
     for(@{ $self->{qq_database}{group} }){
