@@ -25,6 +25,10 @@ client
     +->run()
 
 版本更新记录:
+2014-09-28 Webqq::Client v2.1
+1）增加定时更新群列表信息，群信息
+2）群信息查询结果进行缓存
+
 2014-09-28 Webqq::Client v2.0
 1）支持获取临时消息联系人信息
 2）$msg消息结构采用AAG(Automated Accessor Generation)技术，

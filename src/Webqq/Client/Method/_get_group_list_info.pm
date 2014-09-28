@@ -32,7 +32,7 @@ sub Webqq::Client::_get_group_list_info{
     if($response->is_success){
         print $response->content(),"\n" if $self->{debug};
         my $json = JSON->new->utf8->decode( $response->content() );
-        return if $json->{retcode} != 0;
+        return 0 if $json->{retcode} != 0;
         #存储或更新qq_database中的group信息
         $self->{qq_database}{group_list} =  $json->{result}{gnamelist};
         my %gmarklist;
@@ -43,6 +43,8 @@ sub Webqq::Client::_get_group_list_info{
             $_->{markname} = $gmarklist{$_->{gid}};
             $_->{name} = encode("utf8",$_->{name});
         }
+        return 1;
     }
+    else{return 0}
 }
 1;

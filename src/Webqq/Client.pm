@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v2.0;
+our $VERSION = v2.1;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -79,6 +79,7 @@ sub new {
         cache_for_uin_to_qq     => Webqq::Client::Cache->new,
         cache_for_group_sig     => Webqq::Client::Cache->new,
         cache_for_stranger_info => Webqq::Client::Cache->new,
+        cache_for_group         => Webqq::Client::Cache->new,
         on_receive_message  =>  undef,
         on_send_message     =>  undef,
         receive_message_queue    =>  Webqq::Message::Queue->new,
@@ -184,7 +185,6 @@ sub _login2;
 sub _get_user_info;
 sub _get_group_info;
 sub _get_group_list_info;
-sub _get_friends_info;
 sub _get_friends_list_info;
 sub _get_discuss_list_info;
 sub _send_message;
@@ -268,6 +268,14 @@ sub run {
     $self->_recv_message();
     console "客户端运行中...\n";
     $self->{timer_heartbeat} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
+    #$self->{timer_user_info} = AE::timer 0 , 60 , sub{ $self->_get_user_info()};
+    #$self->{timer_friends_info} = AE::timer 0 , 60 , sub{ $self->_get_friends_list_info()};
+    $self->{timer_group_info} = AE::timer 0 , 3600 , sub{
+        $self->_get_group_list_info()
+        for(@{ $self->{qq_database}{group_list} }){
+            $self->_get_group_info($_->{code});
+        }
+    };
     $self->{cv} = AE::cv;
     $self->{cv}->recv;
 };
@@ -316,6 +324,13 @@ sub search_friend {
 #}
 sub search_member_in_group{
     my ($self,$gcode,$member_uin) = @_;
+    my $cache_data =  $self->{cache_for_group}->retrieve($gcode);
+    if(defined $cache_data){
+        for my $m (@{$cache_data->{minfo}}){
+            return dclone($m) if $m->{uin} eq $member_uin;
+        }
+    }
+
     for my $g (@{$self->{qq_database}{group}}){
         if($g->{ginfo}{code} eq $gcode){
             for my $m(@{$g->{minfo} }){
@@ -348,6 +363,9 @@ sub search_stranger{
 
 sub search_group{
     my($self,$gcode) = @_;
+    my $cache_data =  $self->{cache_for_group}->retrieve($gcode);
+    return dclone($cache_data->{ginfo}) if defined $cache_data;
+    
     for(@{ $self->{qq_database}{group} }){
         return dclone($_->{ginfo}) if $_->{ginfo}{code} eq $gcode;
     }
