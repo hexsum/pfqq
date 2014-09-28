@@ -27,7 +27,7 @@ client
 版本更新记录:
 2014-09-28 Webqq::Client v2.0
 1）支持获取临时消息联系人信息
-2）$msg消息结构采用Automated accessorgeneration技术，
+2）$msg消息结构采用AAG(Automated Accessor Generation)技术，
    每个hash的key都自动产生一个对应的的方法，
    即，你可以使用$msg->{key}或者$msg->key任意一种方式获取你想要的数据
    如感兴趣，可以参见cpan Class::Accessor模块
