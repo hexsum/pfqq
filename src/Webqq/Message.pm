@@ -2,11 +2,12 @@ package Webqq::Message;
 use JSON;
 use Encode;
 use Webqq::Client::Util qw(console_stderr console);
+use Scalar::Util qw(blessed);
 sub reply_message{
     my $client = shift;
     my $msg = shift;
     my $content = shift;
-    if(ref $msg ne 'HASH'){
+    unless(blessed($msg)){
         console_stderr "输入的msg数据非法\n";
         return 0;
     }
@@ -14,7 +15,6 @@ sub reply_message{
         $client->send_message(
             $client->create_msg(to_uin=>$msg->{from_uin},content=>$content)
         );
-
     }
     elsif($msg->{type} eq 'group_message'){
         my $to_uin = $client->search_group($msg->{group_code})->{gid} || $msg->{from_uin};
@@ -64,7 +64,7 @@ sub _create_msg {
     }
     my $msg_pkg = "\u$p{type}"; 
     $msg_pkg=~s/_(.)/\u$1/g;
-    return $client->_mk_ro_accessors($msg,$msg_pkg);
+    return $client->_mk_ro_accessors(\%msg,$msg_pkg);
      
 }
 
