@@ -1,6 +1,5 @@
 use JSON;
 use Encode;
-use AE;
 sub Webqq::Client::_send_message{
     my($self,$msg) = @_;
     #将整个hash从UTF8还原为unicode
@@ -50,6 +49,6 @@ sub Webqq::Client::_send_message{
         @headers,
         $callback,
     );
-    #select undef,undef,undef,1.5;
+    select undef,undef,undef,1.5;
 }
 1;

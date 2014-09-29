@@ -1,5 +1,4 @@
 use JSON;
-use AE;
 sub Webqq::Client::_send_sess_message{
     my($self,$msg) = @_;
     $msg->{$_} = decode("utf8",$msg->{$_} ) for keys %$msg;
@@ -57,6 +56,6 @@ sub Webqq::Client::_send_sess_message{
         @headers,
         $callback,
     );
-    #select undef,undef,undef,1.5;
+    select undef,undef,undef,1.5;
 }
 1;
