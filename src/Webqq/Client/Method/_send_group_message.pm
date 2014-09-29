@@ -48,12 +48,12 @@ sub Webqq::Client::_send_group_message{
         print $uri->query(),"\n";
     }
 
-    select undef,undef,undef,1.5;
     $ua->post(
         $api_url,
         $post_content,
         @headers,
         $callback,
     );
+    select undef,undef,undef,1.5;
 }
 1;
