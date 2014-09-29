@@ -1,8 +1,5 @@
 use JSON;
-use Encode;
-use Webqq::Client::Util qw(console);
 sub Webqq::Client::_get_user_info{
-    console "获取个人信息...\n";    
     my $self = shift;
     my $api_url = 'http://s.web2.qq.com/api/get_friend_info2';
     my $ua = $self->{ua};
@@ -20,18 +17,9 @@ sub Webqq::Client::_get_user_info{
     if($response->is_success){
         print $response->content(),"\n" if $self->{debug};
         my $json = JSON->new->utf8->decode( $response->content() );    
-        return 0 if $json->{retcode} !=0;
-        for my $key (keys %{ $json->{result} }){
-            if($key eq 'birthday'){
-                $self->{qq_database}{user}{birthday} 
-                    = encode("utf8", join("-",@{ $json->{result}{birthday}}{qw(year month day)}  )  );
-            }
-            else{
-                $self->{qq_database}{user}{$key} = encode("utf8",$json->{result}{$key});
-            }
-        }
-        return 1;
+        return undef if $json->{retcode} !=0;
+        return $json->{result};
     }
-    else{return 0}
+    else{return undef}
 }
 1;

@@ -1,9 +1,6 @@
-use Webqq::Client::Util qw(hash console);
 use JSON;
-use Encode;
 sub Webqq::Client::_get_group_list_info{
     my $self  = shift;
-    console "获取群列表信息...\n";
     my $ua = $self->{ua};
     my $api_url = 'http://s.web2.qq.com/api/get_group_name_list_mask2';
     my @headers = (Referer => 'http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=3');
@@ -32,19 +29,9 @@ sub Webqq::Client::_get_group_list_info{
     if($response->is_success){
         print $response->content(),"\n" if $self->{debug};
         my $json = JSON->new->utf8->decode( $response->content() );
-        return 0 if $json->{retcode} != 0;
-        #存储或更新qq_database中的group信息
-        $self->{qq_database}{group_list} =  $json->{result}{gnamelist};
-        my %gmarklist;
-        for(@{ $json->{result}{gmarklist} }){
-            $gmarklist{$_->{uin}} = $_->{markname};
-        }
-        for(@{ $self->{qq_database}{group_list} }){
-            $_->{markname} = $gmarklist{$_->{gid}};
-            $_->{name} = encode("utf8",$_->{name});
-        }
-        return 1;
+        return undef if $json->{retcode} != 0;
+        return $json->{result};
     }
-    else{return 0}
+    else{return undef}
 }
 1;

@@ -1,4 +1,5 @@
 package Webqq::Client;
+use Encode;
 use Storable qw(dclone);
 use Exporter 'import';
 our @EXPORT = qw(app add);
@@ -26,7 +27,7 @@ use Webqq::Client::Method::_recv_message;
 use Webqq::Client::Method::_get_group_info;
 use Webqq::Client::Method::_get_group_sig;
 use Webqq::Client::Method::_get_group_list_info;
-use Webqq::Client::Method::_get_friends_list_info;
+use Webqq::Client::Method::_get_friends_info;
 use Webqq::Client::Method::_get_user_info;
 use Webqq::Client::Method::_get_stranger_info;
 use Webqq::Client::Method::_send_message;
@@ -148,16 +149,13 @@ sub login{
         return ;
     }
     #获取个人资料信息
-    $self->_get_user_info() && $self->welcome();
-    #获取群列表信息
-    $self->_get_group_list_info();
-    #获取好友信息
-    $self->_get_friends_list_info();
-    #获取群列表中每个群的成员信息
-    console "获取群成员信息...\n";
-    for(@{ $self->{qq_database}{group_list} }){
-        $self->_get_group_info($_->{code});
-    }
+    $self->update_user_info();  
+    #显示欢迎信息
+    $self->welcome();
+    #更新好友信息
+    $self->update_friends_info();
+    #更新群信息
+    $self->update_group_info();
     return 1;
 }
 sub relogin{
@@ -185,7 +183,7 @@ sub _login2;
 sub _get_user_info;
 sub _get_group_info;
 sub _get_group_list_info;
-sub _get_friends_list_info;
+sub _get_friends_info;
 sub _get_discuss_list_info;
 sub _send_message;
 sub _send_group_message;
@@ -267,14 +265,11 @@ sub run {
     console "开始接收消息\n";
     $self->_recv_message();
     console "客户端运行中...\n";
-    $self->{timer_heartbeat} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
-    #$self->{timer_user_info} = AE::timer 0 , 60 , sub{ $self->_get_user_info()};
-    #$self->{timer_friends_info} = AE::timer 0 , 60 , sub{ $self->_get_friends_list_info()};
-    $self->{timer_group_info} = AE::timer 0 , 3600 , sub{
-        $self->_get_group_list_info()
-        for(@{ $self->{qq_database}{group_list} }){
-            $self->_get_group_info($_->{code});
-        }
+    $self->{timer_heartbeat} = AE::timer 30 , 60 , sub{ $self->_get_msg_tip()};
+    #$self->{timer_user_info} = AE::timer 30 , 60 , sub{ $self->update_user_info()};
+    $self->{timer_friends_info} = AE::timer 1800 , 1800 , sub{ $self->update_friends_info()};
+    $self->{timer_group_info} = AE::timer 1800 , 1800 , sub{
+        $self->update_group_info();
     };
     $self->{cv} = AE::cv;
     $self->{cv}->recv;
@@ -324,9 +319,9 @@ sub search_friend {
 #}
 sub search_member_in_group{
     my ($self,$gcode,$member_uin) = @_;
-    my $cache_data =  $self->{cache_for_group}->retrieve($gcode);
-    if(defined $cache_data){
-        for my $m (@{$cache_data->{minfo}}){
+    my $group_info = $self->_get_group_info($gcode);
+    if(defined $group_info){
+        for my $m (@{$group_info->{minfo}}){
             return dclone($m) if $m->{uin} eq $member_uin;
         }
     }
@@ -363,8 +358,8 @@ sub search_stranger{
 
 sub search_group{
     my($self,$gcode) = @_;
-    my $cache_data =  $self->{cache_for_group}->retrieve($gcode);
-    return dclone($cache_data->{ginfo}) if defined $cache_data;
+    my $group_info = $self->_get_group_info($gcode);
+    return dclone($group_info->{ginfo}) if defined $group_info;
     
     for(@{ $self->{qq_database}{group} }){
         return dclone($_->{ginfo}) if $_->{ginfo}{code} eq $gcode;
@@ -378,5 +373,99 @@ sub search_group{
 #    } 
 #    return {};
 #}
+
+sub update_user_info{
+    my $self = shift;   
+    console "更新个人信息...\n";
+    my $user_info = $self->_get_user_info();
+    if(defined $user_info){
+        for my $key (keys %{ $user_info }){
+            if($key eq 'birthday'){
+                $self->{qq_database}{user}{birthday} = 
+                    encode("utf8", join("-",@{ $user_info->{birthday}}{qw(year month day)}  )  );
+            }
+            else{
+                $self->{qq_database}{user}{$key} = encode("utf8",$user_info->{$key});
+            }
+        }
+    }
+    else{console "更新个人信息失败\n";}
+}
+sub update_friends_info{
+    my $self=shift;
+    console "更新好友信息...\n";
+    my $friends_info = $self->_get_friends_info();
+    if(defined $friends_info){
+        my %categories ;
+        my %info;
+        my %marknames;
+        my %vipinfo;
+        for(@{ $friends_info->{categories}}){
+            $categories{ $_->{'index'} } = {'sort'=>$_->{'sort'},name=>encode("utf8",$_->{name}) };
+        }
+        $categories{0} = {sort=>0,name=>'我的好友'};
+        for(@{ $friends_info->{info}}){
+            $info{$_->{uin}} = {face=>$_->{face},flag=>$_->{flag},nick=>encode("utf8",$_->{nick}),};
+        }
+        for(@{ $friends_info->{marknames} }){
+            $marknames{$_->{uin}} = {markname=>encode("utf8",$_->{markname}),type=>$_->{type}};
+        }
+        for(@{ $friends_info->{vipinfo} }){
+            $vipinfo{$_->{u}} = {vip_level=>$_->{vip_level},is_vip=>$_->{is_vip}};
+        }
+
+        $self->{qq_database}{friends} = $friends_info->{friends};
+        for(@{ $self->{qq_database}{friends} }){
+            my $uin = $_->{uin};
+            $_->{categorie} = $categories{$_->{categories}}{name};
+            $_->{nick}  = $info{$uin}{nick};
+            $_->{face} = $info{$uin}{face};
+            $_->{markname} = $marknames{$uin}{markname};
+            $_->{is_vip} = $vipinfo{$uin}{is_vip};
+            $_->{vip_level} = $vipinfo{$uin}{vip_level};
+        }
+    }
+    else{console "更新好友信息失败\n";}
+    
+}
+sub update_group_info{
+    my $self = shift;
+    $self->update_group_list_info();
+    for(@{ $self->{qq_database}{group_list} }){
+        console "更新[ $_->{name} ]群信息...\n";
+        my $group_info = $self->_get_group_info($_->{code});
+        if(defined $group_info){
+            my $i=0;
+            for( @{$self->{qq_database}{group}} ){
+                if($_->{ginfo}{code} eq $group_info->{ginfo}{code} ){
+                    splice @{$self->{qq_database}{group}},$i,1,$group_info;
+                    last;
+                }
+            }
+            $i++;     
+        }
+        else{console "更新[ $_->{name} ]群信息失败\n";}
+            
+    }
+}
+sub update_group_list_info{
+    my $self = shift;
+    console "更新群列表信息...\n";
+    my $group_list_info = $self->_get_group_list_info();
+    if(defined $group_list_info){
+        $self->{qq_database}{group_list} =  $group_list_info->{gnamelist}; 
+        my %gmarklist;
+        for(@{ $group_list_info->{gmarklist} }){
+            $gmarklist{$_->{uin}} = $_->{markname};
+        }
+        for(@{ $self->{qq_database}{group_list} }){
+            $_->{markname} = $gmarklist{$_->{gid}};
+            $_->{name} = encode("utf8",$_->{name});
+        }
+    }
+    else{console "更新群列表信息失败\n";}    
+}
+
+
 
 1;
