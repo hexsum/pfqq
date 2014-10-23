@@ -1,11 +1,21 @@
 package Webqq::Client::App::Perlcode;
 use File::Temp qw/tempfile/;
+use File::Path qw/mkpath rmtree/;
 use IPC::Run qw(run timeout start pump finish harness);
 use POSIX qw(strftime);
 use Exporter 'import';
 @EXPORT = qw(Perlcode);
 
 my $PERL_COMMAND = '/usr/local/perfi/bin/perl';
+mkpath "/tmp/webqq/log/",{owner=>"nobody",group=>"nobody",mode=>0711};
+mkpath "/tmp/webqq/bin/",{owner=>"nobody",group=>"nobody",mode=>0711};
+mkpath "/tmp/webqq/src/",{owner=>"nobody",group=>"nobody",mode=>0711};
+chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/";
+chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/log";
+chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/bin";
+chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/src";
+chdir "/tmp/webqq/" or die $!;
+
 open LOG,">>/tmp/webqq/log/exec.log" or die $!;
 sub Perlcode{
     my ($msg,$client) = @_;
@@ -13,7 +23,7 @@ sub Perlcode{
         my $doc = '';
         my $code = $1;
         unless($code=~/^\s+$/s){
-            $code = q#$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chdir '/tmp/webqq/bin';chroot '/tmp/webqq/bin';setuid($u);setgid($g);%ENV=();}# .  $code;
+            $code = q#$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chdir '/tmp/webqq/bin';chroot '/tmp/webqq/bin' or die "chroot fail: $!";chdir "/";setuid($u);setgid($g);%ENV=();}# .  $code;
             my ($fh, $filename) = tempfile("webqq_perlcode_XXXXXXXX",SUFFIX =>".pl",DIR => "/tmp/webqq/src");
             print $code,"\n",$filename,"\n" if $client->{debug};
             print $fh $code;

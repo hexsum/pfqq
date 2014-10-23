@@ -8,7 +8,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v2.1;
+our $VERSION = v2.2;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -83,6 +83,7 @@ sub new {
         cache_for_group         => Webqq::Client::Cache->new,
         on_receive_message  =>  undef,
         on_send_message     =>  undef,
+        on_login            =>  undef,
         receive_message_queue    =>  Webqq::Message::Queue->new,
         send_message_queue       =>  Webqq::Message::Queue->new,
         debug               => $p{debug}, 
@@ -128,6 +129,11 @@ sub on_receive_message :lvalue{
     $self->{on_receive_message};
 }
 
+sub on_login :lvalue {
+    my $self = shift;
+    $self->{on_login};
+}
+
 sub login{
     my $self = shift;
     my %p = @_;
@@ -142,11 +148,15 @@ sub login{
         && $self->_login1()                
         && $self->_check_sig()             
         && $self->_login2();
+    
+    if(ref $self->{on_login} eq 'CODE'){
+        $self->{on_login}->($self->{login_state});
+    }
 
     #登录不成功，客户端退出运行
     if($self->{login_state} ne 'success'){
         console "登录失败\n";
-        return ;
+        return 0;
     }
     #获取个人资料信息
     $self->update_user_info();  
@@ -159,7 +169,8 @@ sub login{
     return 1;
 }
 sub relogin{
-    my $self = shift;
+    my $self = shift;   
+    console "正在重新登录...\n";
     $self->{login_state} = 'relogin';
     $self->logout();
 
@@ -172,7 +183,11 @@ sub relogin{
     #$self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
     #$self->{cache_for_group_sig} = Webqq::Client::Cache->new;
     $self->login(qq=>$self->{qq_param}{qq},pwd=>$self->{qq_param}{pwd});
-
+    if ($self->{login_state} eq 'success'){
+        console "重新登录成功...\n" ;
+    }
+    else{console "重新登录失败...\n";exit}
+     
 }
 sub _prepare_for_login;
 sub _check_verify_code;

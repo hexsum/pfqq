@@ -3,6 +3,10 @@ use Webqq::Client::Util qw(console);
 sub Webqq::Client::_get_img_verify_code{
     my $self = shift;
     return 1 if $self->{qq_param}{is_need_img_verifycode} == 0;
+    unless(-t STDIN){
+        console "STDIN未连接到tty，无法输入验证码，程序退出...\n";
+        exit;
+    }
     my $ua = $self->{ua};
     my $api_url = 'https://ssl.captcha.qq.com/getimage';
     my @headers = (Referer => 'https://ui.ptlogin2.qq.com/cgi-bin/login?daid=164&target=self&style=5&mibao_css=m_webqq&appid=1003903&enable_qlogin=0&no_verifyimg=1&s_url=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&f_url=loginerroralert&strong_login=1&login_state=10&t=20140612002');
