@@ -4,6 +4,7 @@
     Digest::MD5
     AnyEvent::UserAgent
     LWP::UserAgent
+    Mail::SendEasy
 
 客户端异步框架:
 client 
