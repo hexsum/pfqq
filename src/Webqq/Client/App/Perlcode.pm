@@ -14,7 +14,6 @@ chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/";
 chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/log";
 chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/bin";
 chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/src";
-chdir "/tmp/webqq/" or die $!;
 
 open LOG,">>/tmp/webqq/log/exec.log" or die $!;
 sub Perlcode{

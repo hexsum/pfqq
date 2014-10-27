@@ -8,7 +8,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v2.2;
+our $VERSION = v2.3;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -48,6 +48,7 @@ sub new {
             qq                      =>  undef,
             pwd                     =>  undef,    
             is_need_img_verifycode  =>  0,
+            img_verifycode_source  =>   'TTY',   #NONE|TTY|CALLBACK
             send_msg_id             =>  11111111+int(rand(99999999)),
             clientid                =>  11111111+int(rand(99999999)),
             psessionid              =>  'null',
@@ -84,6 +85,7 @@ sub new {
         on_receive_message  =>  undef,
         on_send_message     =>  undef,
         on_login            =>  undef,
+        on_input_img_verifycode => undef,
         receive_message_queue    =>  Webqq::Message::Queue->new,
         send_message_queue       =>  Webqq::Message::Queue->new,
         debug               => $p{debug}, 
@@ -134,6 +136,11 @@ sub on_login :lvalue {
     $self->{on_login};
 }
 
+sub on_input_img_verifycode :lvalue {
+    my $self = shift;
+    $self->{on_input_img_verifycode};
+}
+
 sub login{
     my $self = shift;
     my %p = @_;
@@ -149,14 +156,14 @@ sub login{
         && $self->_check_sig()             
         && $self->_login2();
     
-    if(ref $self->{on_login} eq 'CODE'){
-        $self->{on_login}->($self->{login_state});
-    }
 
     #登录不成功，客户端退出运行
     if($self->{login_state} ne 'success'){
-        console "登录失败\n";
-        return 0;
+        console "登录失败，客户端退出\n";
+        exit;
+    }
+    else{
+        console "登录成功\n";
     }
     #获取个人资料信息
     $self->update_user_info();  
@@ -166,13 +173,17 @@ sub login{
     $self->update_friends_info();
     #更新群信息
     $self->update_group_info();
+    #执行on_login回调
+    if(ref $self->{on_login} eq 'CODE'){
+        $self->{on_login}->($self);
+    }
     return 1;
 }
 sub relogin{
     my $self = shift;   
     console "正在重新登录...\n";
-    $self->{login_state} = 'relogin';
     $self->logout();
+    $self->{login_state} = 'relogin';
 
     #停止心跳请求
     undef $self->{timer_heartbeat};
@@ -183,11 +194,6 @@ sub relogin{
     #$self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
     #$self->{cache_for_group_sig} = Webqq::Client::Cache->new;
     $self->login(qq=>$self->{qq_param}{qq},pwd=>$self->{qq_param}{pwd});
-    if ($self->{login_state} eq 'success'){
-        console "重新登录成功...\n" ;
-    }
-    else{console "重新登录失败...\n";exit}
-     
 }
 sub _prepare_for_login;
 sub _check_verify_code;
@@ -258,7 +264,6 @@ sub welcome{
 sub logout;
 sub run {
     my $self = shift;
-    
     #设置从接收消息队列中接收到消息后对应的处理函数
     $self->{receive_message_queue}->get(sub{
         my $msg = shift;

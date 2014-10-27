@@ -2,10 +2,9 @@ use File::Temp qw/tempfile/;
 use Webqq::Client::Util qw(console);
 sub Webqq::Client::_get_img_verify_code{
     my $self = shift;
-    return 1 if $self->{qq_param}{is_need_img_verifycode} == 0;
-    unless(-t STDIN){
-        console "STDIN未连接到tty，无法输入验证码，程序退出...\n";
-        exit;
+    if ($self->{qq_param}{is_need_img_verifycode} == 0){
+        $self->{qq_param}{img_verifycode_source} = 'NONE';
+        return 1 ;
     }
     my $ua = $self->{ua};
     my $api_url = 'https://ssl.captcha.qq.com/getimage';
@@ -26,8 +25,23 @@ sub Webqq::Client::_get_img_verify_code{
         binmode $fh;
         print $fh $response->content();
         close $fh; 
-        console "请输入图片验证码 [ $filename ]: ";
-        chomp($self->{qq_param}{verifycode} = <STDIN>);
+        if(-t STDIN){
+            console "请输入图片验证码 [ $filename ]: ";
+            chomp($self->{qq_param}{verifycode} = <STDIN>);
+            $self->{qq_param}{img_verifycode_source} = 'TTY';
+        }
+        elsif(ref $self->{on_input_img_verifycode} eq 'CODE'){
+            my $code = $self->{on_input_img_verifycode}->($filename);
+            if(defined $code){
+                $self->{qq_param}{verifycode} = $code;
+                $self->{qq_param}{img_verifycode_source} = 'CALLBACK';
+            }
+            else{console "无法从回调函数中获取有效的验证码，程序退出\n";exit;}
+        }
+        else{
+            console "STDIN未连接到tty，无法输入验证码，程序退出...\n";
+            exit;
+        }
         $self->{qq_param}{verifysession} = $self->search_cookie("verifysession") if $self->{qq_param}{verifysession} eq '';
         return 1;
     }
