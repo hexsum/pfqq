@@ -46,6 +46,7 @@ sub Webqq::Client::_login1{
         my $content = $response->content();
         my %d = ();
         @d{qw( retcode unknown_1 api_check_sig unknown_2 status nickname )} = $content=~/'(.*?)'/g;
+        return 0 if $d{retcode} != 0;
         $self->{qq_param}{api_check_sig} = $d{api_check_sig};
         $self->{qq_param}{ptwebqq} = $self->search_cookie('ptwebqq');
         return 1;

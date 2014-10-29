@@ -8,7 +8,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v2.3;
+our $VERSION = v2.4;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -92,6 +92,7 @@ sub new {
         login_state         => "init",
         
     };
+    $self->{default_qq_param} =  $self->{qq_param};
     $self->{ua} = LWP::UserAgent->new(
                 cookie_jar  =>  $self->{cookie_jar},
                 agent       =>  $agent,
@@ -144,10 +145,12 @@ sub on_input_img_verifycode :lvalue {
 sub login{
     my $self = shift;
     my %p = @_;
+    @{$self->{default_qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
     @{$self->{qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
-    console "QQ账号: $self->{qq_param}{qq} 密码: $self->{qq_param}{pwd}\n";
+    console "QQ账号: $self->{default_qq_param}{qq} 密码: $self->{default_qq_param}{pwd}\n";
     #my $is_big_endian = unpack( 'xc', pack( 's', 1 ) ); 
-    $self->{qq_param}{pwd} = pack "H*",lc $self->{qq_param}{pwd} if $self->{login_state} eq 'init';
+    $self->{qq_param}{qq} = $self->{default_qq_param}{qq};
+    $self->{qq_param}{pwd} = pack "H*",lc $self->{default_qq_param}{pwd};
 
            $self->_prepare_for_login()    
         && $self->_check_verify_code()     
@@ -185,15 +188,17 @@ sub relogin{
     $self->logout();
     $self->{login_state} = 'relogin';
 
+    #清空cookie
+    $self->{cookie_jar} = HTTP::Cookies->new(hide_cookie2=>1);
+    #重新设置初始化参数
+    $self->{qq_param} = $self->{default_qq_param};
     #停止心跳请求
     undef $self->{timer_heartbeat};
     #重新设置一个心跳请求
     $self->{timer_heartbeat} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
-    #清空cookie
-    $self->{cookie_jar} = HTTP::Cookies->new(hide_cookie2=>1);
     #$self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
     #$self->{cache_for_group_sig} = Webqq::Client::Cache->new;
-    $self->login(qq=>$self->{qq_param}{qq},pwd=>$self->{qq_param}{pwd});
+    $self->login(qq=>$self->{default_qq_param}{qq},pwd=>$self->{default_qq_param}{pwd});
 }
 sub _prepare_for_login;
 sub _check_verify_code;
