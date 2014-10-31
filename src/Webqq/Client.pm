@@ -8,7 +8,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v2.4;
+our $VERSION = v2.5;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -92,7 +92,6 @@ sub new {
         login_state         => "init",
         
     };
-    $self->{default_qq_param} =  $self->{qq_param};
     $self->{ua} = LWP::UserAgent->new(
                 cookie_jar  =>  $self->{cookie_jar},
                 agent       =>  $agent,
@@ -118,6 +117,7 @@ sub new {
             return;
         });
     }
+    $self->{default_qq_param} =  dclone($self->{qq_param});
     #全局变量，方便其他包引用$self
     $Webqq::Client::_CLIENT = $self;
     return bless $self;
@@ -177,8 +177,8 @@ sub login{
     #更新群信息
     $self->update_group_info();
     #执行on_login回调
-    if(ref $self->{on_login} eq 'CODE'){
-        $self->{on_login}->($self);
+    if(ref $self->on_login eq 'CODE'){
+        $self->on_login->($self);
     }
     return 1;
 }
@@ -190,8 +190,10 @@ sub relogin{
 
     #清空cookie
     $self->{cookie_jar} = HTTP::Cookies->new(hide_cookie2=>1);
+    $self->{ua}->cookie_jar($self->{cookie_jar});
+    $self->{asyn_ua}->cookie_jar($self->{cookie_jar});
     #重新设置初始化参数
-    $self->{qq_param} = $self->{default_qq_param};
+    $self->{qq_param} = dclone($self->{default_qq_param});
     #停止心跳请求
     undef $self->{timer_heartbeat};
     #重新设置一个心跳请求
@@ -296,6 +298,7 @@ sub run {
     $self->{timer_group_info} = AE::timer 1800 , 1800 , sub{
         $self->update_group_info();
     };
+
     $self->{cv} = AE::cv;
     $self->{cv}->recv;
 };
