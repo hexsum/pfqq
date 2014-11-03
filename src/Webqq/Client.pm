@@ -8,7 +8,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v2.5;
+our $VERSION = v2.6;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -294,10 +294,10 @@ sub run {
     console "客户端运行中...\n";
     $self->{timer_heartbeat} = AE::timer 30 , 60 , sub{ $self->_get_msg_tip()};
     #$self->{timer_user_info} = AE::timer 30 , 60 , sub{ $self->update_user_info()};
-    $self->{timer_friends_info} = AE::timer 1800 , 1800 , sub{ $self->update_friends_info()};
-    $self->{timer_group_info} = AE::timer 1800 , 1800 , sub{
-        $self->update_group_info();
-    };
+    #$self->{timer_friends_info} = AE::timer 1800 , 1800 , sub{ $self->update_friends_info()};
+    #$self->{timer_group_info} = AE::timer 1800 , 1800 , sub{
+    #    $self->update_group_info();
+    #};
 
     $self->{cv} = AE::cv;
     $self->{cv}->recv;
