@@ -26,6 +26,10 @@ client
     +->run()
 
 版本更新记录:
+2014-11-03 Webqq::Client v2.7
+1）新增Webqq::Client::Cron模块，支持定点执行回调
+2）新增Webqq::Client::App::Msgstat应用，统计群内成员发送消息数量
+
 2014-11-03 Webqq::Client v2.6
 1）支持从本地socket接收发送消息指令
 2）支持从QQ消息接收发送消息指令

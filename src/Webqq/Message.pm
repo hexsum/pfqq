@@ -74,7 +74,7 @@ sub _mk_ro_accessors {
     my $msg_pkg = shift;
     no strict 'refs';
     for my $field (keys %$msg){
-        *{"Webqq::Message::$msg_pkg::$field"} = sub{
+        *{"Webqq::Message::${msg_pkg}::$field"} = sub{
             my $self = shift;
             my $pkg = ref $self;
             die "the value of \"$field\" in $pkg is read-only\n" if @_!=0;

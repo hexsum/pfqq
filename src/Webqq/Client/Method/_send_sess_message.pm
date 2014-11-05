@@ -56,6 +56,5 @@ sub Webqq::Client::_send_sess_message{
         @headers,
         $callback,
     );
-    select undef,undef,undef,1.5;
 }
 1;

@@ -3,12 +3,12 @@ use Encode;
 use Storable qw(dclone);
 use Exporter 'import';
 our @EXPORT = qw(app add);
-use base qw(Webqq::Message);
+use base qw(Webqq::Message Webqq::Client::Cron);
 use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v2.6;
+our $VERSION = v2.7;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -90,6 +90,7 @@ sub new {
         send_message_queue       =>  Webqq::Message::Queue->new,
         debug               => $p{debug}, 
         login_state         => "init",
+        watchers            => {},
         
     };
     $self->{ua} = LWP::UserAgent->new(
@@ -283,9 +284,13 @@ sub run {
     #设置从发送消息队列中提取到消息后对应的处理函数
     $self->{send_message_queue}->get(sub{
         my $msg = shift;
-        $self->_send_message($msg)  if $msg->{type} eq 'message';
-        $self->_send_group_message($msg)  if $msg->{type} eq 'group_message';
-        $self->_send_sess_message($msg)  if $msg->{type} eq 'sess_message';
+        my $rand_watcher_id = rand();
+        $self->{watchers}{$rand_watcher_id} = AE::timer 1.5,0,sub{
+            delete $self->{watchers}{$rand_watcher_id};
+            $self->_send_message($msg)  if $msg->{type} eq 'message';
+            $self->_send_group_message($msg)  if $msg->{type} eq 'group_message';
+            $self->_send_sess_message($msg)  if $msg->{type} eq 'sess_message';
+        };
     });
 
 

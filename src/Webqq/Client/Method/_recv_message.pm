@@ -9,7 +9,11 @@ sub Webqq::Client::_recv_message{
         #分析接收到的消息，并把分析后的消息放到接收消息队列中
         $self->parse_receive_msg($response->content());
         #重新开始接收消息
-        $self->_recv_message();
+        my $rand_watcher_id = rand();
+        $self->{watchers}{$rand_watcher_id} = AE::timer 2,0,sub{
+            delete $self->{watchers}{$rand_watcher_id};
+            $self->_recv_message();
+        };
     };
 
     my %r = (
@@ -18,15 +22,23 @@ sub Webqq::Client::_recv_message{
         key         =>  0,
         ids         =>  [],
     );
+    my $post_content = [
+        r           =>  JSON->new->encode(\%r),
+        clientid    =>  $self->{qq_param}{clientid},
+        psessionid  =>  $self->{qq_param}{psessionid}
+    ];
+    if($self->{debug}){
+        require URI;
+        my $uri = URI->new('http:');
+        $uri->query_form($post_content);
+        print $api_url,"\n";
+        print $uri->query(),"\n";
+    }
 
     my @headers = (Referer=>"http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3",);
     $ua->post(
-        $api_url,
-        [
-            r           =>  JSON->new->encode(\%r),
-            clientid    =>  $self->{qq_param}{clientid},
-            psessionid  =>  $self->{qq_param}{psessionid}
-        ],
+        $api_url,   
+        $post_content,
         @headers,
         $callback
     );
