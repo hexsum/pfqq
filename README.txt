@@ -29,6 +29,7 @@ client
 版本更新记录:
 2014-11-07 Webqq::Client v2.9
 1）修复收到下线通知消息时客户端处理错误，感谢[perl技术 @路人丙]的测试反馈
+2）增加Webqq::Client::App::ShowMsg应用，可以方便打印收到的消息
 
 2014-11-07 Webqq::Client v2.8
 1）Webqq::Client::App::Perlcode支持自动查找本机perldoc路径
