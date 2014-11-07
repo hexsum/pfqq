@@ -22,7 +22,7 @@ sub Webqq::Client::_get_msg_tip{
     print $api_url.'?'.join("&",@query_string_pairs),"\n" if $self->{debug};
     $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers,sub{
         my $response  = shift;
-        console "心跳检测\n"
+        console "心跳检测\n" if $self->{debug};
     });
 }
 1;

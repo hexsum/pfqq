@@ -1,12 +1,17 @@
 package Webqq::Client::App::Perlcode;
 use File::Temp qw/tempfile/;
+use Webqq::Client::Util qw(console_stderr);
 use File::Path qw/mkpath rmtree/;
 use IPC::Run qw(run timeout start pump finish harness);
 use POSIX qw(strftime);
 use Exporter 'import';
 @EXPORT = qw(Perlcode);
 
-my $PERL_COMMAND = '/usr/local/perfi/bin/perl';
+if($^O !~ /linux/){
+    console_stderr "Webqq::Client::App::Perlcode只能运行在linux系统上\n";
+    exit;
+}
+chomp(my $PERL_COMMAND = `/bin/env which perl`);
 mkpath "/tmp/webqq/log/",{owner=>"nobody",group=>"nobody",mode=>0711};
 mkpath "/tmp/webqq/bin/",{owner=>"nobody",group=>"nobody",mode=>0711};
 mkpath "/tmp/webqq/src/",{owner=>"nobody",group=>"nobody",mode=>0711};
@@ -17,7 +22,8 @@ chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/src";
 
 open LOG,">>/tmp/webqq/log/exec.log" or die $!;
 sub Perlcode{
-    my ($msg,$client) = @_;
+    my ($msg,$client,$perl_path) = @_;
+    $PERL_COMMAND = $perl_path if defined $perl_path;
     if($msg->{content} =~/^(?::code|:c|perlcode|__CODE__)(?:\n|[\t ]+)(.*?)(?:\n^|[\t ]+)(?::end|:e|__END__|end)$/ms){
         my $doc = '';
         my $code = $1;

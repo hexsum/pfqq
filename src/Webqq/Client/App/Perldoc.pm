@@ -1,11 +1,18 @@
 package Webqq::Client::App::Perldoc;
 use Exporter 'import';
+use Webqq::Client::Util qw(console_stderr);
 @EXPORT = qw(Perldoc);
-my $PERLDOC_COMMAND = '/usr/local/perfi/bin/perldoc';
+if($^O !~ /linux/){
+    console_stderr "Webqq::Client::App::Perldoc只能运行在linux系统上\n";
+    exit;
+}
+chomp(my $PERLDOC_COMMAND = `/bin/env which perldoc`);
 
 sub Perldoc{
     my $msg = shift;
     my $client = shift; 
+    my $perldoc_path = shift;
+    $PERLDOC_COMMAND = $perldoc_path if defined $perldoc_path;
     if($msg->{content} =~/^perldoc -(v|f) ([^ &;]+)$/){
         my ($p,$v) = ($1,$2);
         my $doc = '';

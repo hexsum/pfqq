@@ -26,6 +26,11 @@ client
     +->run()
 
 版本更新记录:
+2014-11-07 Webqq::Client v2.7
+1）Webqq::Client::App::Perlcode支持自动查找本机perldoc路径
+2）Webqq::Client::App::Perldoc支持自动查找本机perl路径
+3）Webqq::Client::App::Perldoc/Webqq::Client::App::Perlcode运行在非linux系统报错退出
+
 2014-11-03 Webqq::Client v2.7
 1）新增Webqq::Client::Cron模块，支持定时执行回调
 2）新增Webqq::Client::App::Msgstat应用，统计群内成员发送消息数量
