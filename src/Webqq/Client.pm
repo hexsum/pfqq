@@ -1,5 +1,6 @@
 package Webqq::Client;
 use Encode;
+use LWP::Protocol::https;
 use Storable qw(dclone);
 use Exporter 'import';
 our @EXPORT = qw(app add);
