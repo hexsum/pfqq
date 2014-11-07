@@ -2,8 +2,6 @@ package Webqq::Client;
 use Encode;
 use LWP::Protocol::https;
 use Storable qw(dclone);
-use Exporter 'import';
-our @EXPORT = qw(app add);
 use base qw(Webqq::Message Webqq::Client::Cron);
 use Webqq::Client::Cache;
 use Webqq::Message::Queue;
