@@ -206,7 +206,9 @@ sub parse_receive_msg{
                 #收到强制下线消息
                 elsif($m->{poll_type} eq 'kick_message'){
                     if($m->{value}{show_reason} ==1){
-                        console "$m->{value}{reason}\n" ;
+                        my $reason = encode("utf8",$m->{value}{reason});
+                        console "$reason\n" ;
+                        exit;
                     }
                     else {console "您已被迫下线\n" }
                     exit;                    
