@@ -5,6 +5,7 @@
     AnyEvent::UserAgent
     LWP::UserAgent
     LWP::Protocol::https
+    IPC::Run
 
 客户端异步框架:
 client 
