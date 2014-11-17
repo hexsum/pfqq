@@ -12,7 +12,12 @@ sub format_msg{
     my $msg_header  = shift;
     my $msg_content = shift;
     my @msg_content = split /\n/,$msg_content;
-    my @msg_header = ($msg_header,(' ' x length($msg_header)) x $#msg_content  );
+    $msg_header = decode("utf8",$msg_header);
+    my $chinese_count=()=$msg_header=~/\p{Han}/g    ;
+    my $total_count = length($msg_header);
+    $msg_header=encode("utf8",$msg_header);
+
+    my @msg_header = ($msg_header,(' ' x ($total_count-$chinese_count+$chinese_count*2)) x $#msg_content  );
     while(@msg_content){
         my $lh = shift @msg_header; 
         my $lc = shift @msg_content;

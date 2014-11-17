@@ -3,6 +3,7 @@
 2014-11-17 Webqq::Client v3.0
 1）Webqq::Client::App::ShowMsg支持打印发送和接收消息
 2）文档结构调整，增加了一些MakeFile和POD支持(未完善)
+3）修复format_msg()打印结果不对齐的bug
 
 2014-11-07 Webqq::Client v2.9
 1）修复收到下线通知消息时客户端处理错误，感谢[perl技术 @路人丙]的测试反馈
