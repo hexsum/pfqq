@@ -4,6 +4,7 @@ use POSIX qw(strftime);
 use Webqq::Client;
 use Webqq::Client::Util qw(console);
 use Digest::MD5 qw(md5_hex);
+use Encode;
 
 my $qq = 12345678;
 my $pwd = md5_hex('your password');

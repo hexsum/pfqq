@@ -3,6 +3,7 @@ use Webqq::Client::Util qw(console);
 use POSIX qw(strftime);
 use Exporter 'import';
 our @EXPORT = qw(ShowMsg);
+use Encode;
 
 sub ShowMsg{
     my $msg = shift;
