@@ -1,32 +1,9 @@
-使用perl语言编写的QQ机器人(采用webqq协议)
-核心依赖模块:
-    JSON
-    Digest::MD5
-    AnyEvent::UserAgent
-    LWP::UserAgent
-    LWP::Protocol::https
-    IPC::Run
-
-客户端异步框架:
-client 
- | 
- ->login()
-    |
-    |->timer(60s)->_get_msg_tip()#heartbeat 
-    |        +-------------------------<------------------------------+
-    |        |                                                        |
-    |->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
-    |
-    |->send_message() -[put]--+                       +-[get]-> _send_message() ---+
-    |                           \                   /                              +
-    |->send_sess_message()-[put]-Webqq::Message::Queue-[get]->_send_sess_message()-+               
-    |                              /              \                                +
-    |->send_group_message()-[put]-+                +-[get]->_send_group_message()--+
-    |                                                                              +
-    |                          on_send_message() ---<---- msg->{cb} -------<-------+
-    +->run()
-
 版本更新记录:
+
+2014-11-17 Webqq::Client v3.0
+1）Webqq::Client::App::ShowMsg支持打印发送和接收消息
+2）文档结构调整，增加了一些MakeFile和POD支持(未完善)
+
 2014-11-07 Webqq::Client v2.9
 1）修复收到下线通知消息时客户端处理错误，感谢[perl技术 @路人丙]的测试反馈
 2）增加Webqq::Client::App::ShowMsg应用，可以方便打印收到的消息

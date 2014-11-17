@@ -26,12 +26,13 @@ sub ShowMsg{
         #    $msg->from_qq
         #    $msg->from_nick
         #    $msg->group_name
+
         my $group_name = $msg->group_name;
         my $msg_sender_nick = $msg->from_nick;
         #my $msg_sender_qq  = $msg->from_qq;
         format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
-            .   "\@$msg_sender_nick(群:$group_name) 说: ",
+            .   "\@$msg_sender_nick(在群:$group_name) 说: ",
                 $msg->{content}
         );         
     }
@@ -41,11 +42,13 @@ sub ShowMsg{
     #   $msg->from_markname
     #   $msg->from_categories
     elsif($msg->{type} eq 'message'){
-        my $msg_sender_qq = $msg->from_qq;
+        #my $msg_sender_qq = $msg->from_qq;
         my $msg_sender_nick = $msg->from_nick; 
+        #my $msg_receiever_qq = $msg->to_qq;
+        my $msg_receiever_nick = $msg->to_nick;
         format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
-            .   "\@$msg_sender_nick(QQ:$msg_sender_qq) 说: ",
+            .   "\@$msg_sender_nick(对好友:\@$msg_receiever_nick) 说: ",
             $msg->{content} 
         );
     }
@@ -54,11 +57,12 @@ sub ShowMsg{
     #   $msg->from_qq
     #   $msg->from_nick
     elsif($msg->{type} eq 'sess_message'){
-        my $msg_sender_qq = $msg->from_qq;
+        #my $msg_sender_qq = $msg->from_qq;
         my $msg_sender_nick = $msg->from_nick;
+        my $msg_receiever_nick = $msg->to_nick;
         format_msg(
             strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
-            .   "\@$msg_sender_nick(临时消息 QQ:$msg_sender_qq) 说: ",
+            .   "\@$msg_sender_nick(对陌生人:\@$msg_receiever_nick) 说: ",
             $msg->{content}
         );
     }

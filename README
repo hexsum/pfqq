@@ -1,0 +1,53 @@
+Webqq-Client
+========================
+使用Perl语言编写的QQ机器人
+
+客户端异步框架
+
+client 
+ | 
+ ->login()
+    |
+    |->timer(60s)->_get_msg_tip()#heartbeat 
+    |        +-------------------------<------------------------------+
+    |        |                                                        |
+    |->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
+    |
+    |->send_message() -[put]--+                       +-[get]-> _send_message() ---+
+    |                           \                   /                              +
+    |->send_sess_message()-[put]-Webqq::Message::Queue-[get]->_send_sess_message()-+               
+    |                              /              \                                +
+    |->send_group_message()-[put]-+                +-[get]->_send_group_message()--+
+    |                                                                              +
+    |                          on_send_message() ---<---- msg->{cb} -------<-------+
+    +->run()
+
+安装步骤
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+核心依赖模块
+
+  JSON
+  Digest::MD5
+  AnyEvent::UserAgent
+  LWP::UserAgent
+  LWP::Protocol::https
+  IPC::Run
+
+版本更新记录
+
+  请参见 Changes 文件
+
+COPYRIGHT 和 LICENCE
+
+Copyright (C) 2014 by sjdy521
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.8 or,
+at your option, any later version of Perl 5 you may have available.
+
+

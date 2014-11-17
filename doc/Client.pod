@@ -1,0 +1,175 @@
+=pod
+
+=encoding utf8
+
+=head1 NAME
+
+  Webqq::Client - A webqq robot in Perl Language
+
+=head1 SYNOPSIS
+
+    use Webqq::Client;
+    use Digest::MD5 qw(md5_hex);
+    my $qq = 12345678;
+    my $pwd = md5_hex('your password');
+    my $client = Webqq::Client->new(debug=>0);
+    $client->login( qq=> $qq, pwd => $pwd);
+    $client->on_send_message = sub{
+        my $msg = shift;
+        #do something you want with the msg receieved;
+        #you can use Data::Dumper to print the structure of $msg, for example:
+        #print Dumper $msg;
+    };
+    $client->run();
+
+
+=head1 PUBLIC CLASS METHOD
+
+=over
+
+=item new()
+
+    return a client object 
+    set debug=>1 to output debug info
+    my $client = Webqq::Client->new(debug=>1);
+
+=item on_send_message() :lvalue 
+
+    this is a lvalue subroutine, you must assign a code reference to this subroutine as a callback
+    for example:
+        $client->on_send_message() = sub{
+            my ($msg,$is_success,$status) = @_;
+            ...
+        };
+    or 
+        $client->{on_send_message} = sub{
+            my ($msg,$is_success,$status) = @_;
+            ...
+    };
+    your callback will be called after the client finish sending a message
+    this callbak is usually used to determine whether a mssage is sent sucessfully
+    three parameters are passed to your callback:
+        $msg:           the original msg 
+        $is_success:    the send status, true means success,false means fail
+        $status:        the send status, the value is "发送成功" or "发送失败"; 
+    
+
+=item on_receive_message() :lvalue
+    
+    this is a lvalue subroutine, you must assign a code reference to this subroutine as a callback
+    your callback will be called after the client reveieves a successful msg 
+    $client->on_receive_message() = sub{
+        my $msg = shift;
+    };
+    
+    the msg reveieved is passed to your callback so you can handle that msg at will
+
+=item on_login() :lvalue
+
+    this is a lvalue subroutine, you must assign a code reference to this subroutine as a callback
+    your callback will be called after the client successully login in.
+
+=item on_input_img_verifycode() :lvalue
+
+    this is a lvalue subroutine, you must assign a code reference to this subroutine as a callback
+    when a verfycode of img is need for login and the client is connected to a tty, then
+    the client  asks for a verfycode from STDIN
+
+=item login()
+
+=item relogin()
+
+=item get_qq_from_uin()
+
+=item send_message()
+
+=item send_sess_message()
+
+=item send_group_message()
+
+=item reply_message()
+
+=item create_sess_msg()
+
+=item create_group_msg()
+
+=item create_msg()
+
+=item welcome()
+
+=item logout()
+
+=item run()
+
+=item search_cookie()
+
+=item search_friend()
+
+=item search_member_in_group()
+
+=item search_stranger()
+
+=item search_group()
+
+=item update_user_info()
+
+=item update_friends_info()
+
+=item update_group_info()
+
+=item update_group_list_info()
+
+=back
+
+=head1 PRIVATE CLASS METHOD
+
+=over
+
+=item _prepare_for_login()
+
+=item _check_verify_code()
+
+=item _get_img_verify_code()
+
+=item _check_sig()
+
+=item _login1()
+
+=item _login2()
+
+=item _get_user_info()
+
+=item _get_group_info()
+
+=item _get_group_list_info()
+
+=item _get_friends_info()
+
+=item _get_discuss_list_info()
+
+=item _send_message()
+
+=item _send_group_message()
+
+=item _get_msg_tip()
+
+=back
+
+=head1 SEE ALSO
+
+https://github.com/sjdy521/Webqq-Client
+
+=head1 AUTHOR
+
+Perfi, E<lt>sjdy521@163.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2014 by Perfi
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.8 or,
+at your option, any later version of Perl 5 you may have available.
+
+
+=cut

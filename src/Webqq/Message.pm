@@ -19,7 +19,11 @@ sub reply_message{
     elsif($msg->{type} eq 'group_message'){
         my $to_uin = $client->search_group($msg->{group_code})->{gid} || $msg->{from_uin};
         $client->send_group_message(
-            $client->create_group_msg( to_uin=>$to_uin,content=>$content  )  
+            $client->create_group_msg( 
+                to_uin=>$to_uin,    
+                content=>$content,
+                group_code=>$msg->{group_code}  
+            )  
         ); 
     }
     elsif($msg->{type} eq 'sess_message'){
@@ -56,12 +60,18 @@ sub _create_msg {
         from_uin    => $p{from_uin} || $client->{qq_param}{from_uin},
         to_uin      => $p{to_uin},
         content     => $p{content},
+        msg_class   => "send",
+        msg_time    => time,
         cb          => $p{cb},
     );
     if($p{type} eq 'sess_message'){
         $msg{service_type} = $p{service_type};
         $msg{group_sig} = $p{group_sig};
     }
+    elsif($p{type} eq 'group_message'){
+        $msg{group_code} = $p{group_code};
+        $msg{send_uin} = $msg{from_uin};
+    }   
     my $msg_pkg = "\u$p{type}"; 
     $msg_pkg=~s/_(.)/\u$1/g;
     return $client->_mk_ro_accessors(\%msg,$msg_pkg);
@@ -85,34 +95,108 @@ sub _mk_ro_accessors {
         *{"Webqq::Message::${msg_pkg}::group_name"} = sub{
             return $client->search_group($msg->{group_code})->{name} ;
         };
-        *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
-            return $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{nick};
+        *{"Webqq::Message::${msg_pkg}::from_gname"} = sub{
+            return $client->search_group($msg->{group_code})->{name} ;
         };
-        *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
-            return $client->get_qq_from_uin($msg->{send_uin});
+        
+        *{"Webqq::Message::${msg_pkg}::to_gname"}   = sub{
+            return $client->search_group($msg->{group_code})->{name} ;
         };
+        if($msg->{msg_class} eq 'send'){
+            *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
+                return "我";
+            };
+            *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
+                return $client->{qq_param}{qq};
+            };
+        }
+        elsif($msg->{msg_class} eq 'recv'){
+            *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
+                return $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{nick};
+            };
+            *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
+                return $client->get_qq_from_uin($msg->{send_uin});
+            };
+
+        }
     }
     elsif($msg->{type} eq 'sess_message'){
-        *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
-            return $client->search_stranger($msg->{from_uin})->{nick};    
-        };
-        *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
-            return $client->get_qq_from_uin($msg->{from_uin}); 
-        };
+        if($msg->{msg_class} eq 'send'){
+            *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
+                return "我";
+            };
+            *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
+                return $client->{qq_param}{qq};
+            };
+            *{"Webqq::Message::${msg_pkg}::to_nick"} = sub{
+                return $client->search_stranger($msg->{to_uin})->{nick};
+            };   
+            *{"Webqq::Message::${msg_pkg}::to_qq"} = sub{
+                return $client->get_qq_from_uin($msg->{to_uin});
+            };
+        }
+        elsif($msg->{msg_class} eq 'recv'){
+            *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
+                return $client->search_stranger($msg->{from_uin})->{nick};    
+            };
+            *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
+                return $client->get_qq_from_uin($msg->{from_uin}); 
+            };
+
+            *{"Webqq::Message::${msg_pkg}::to_nick"} = sub{
+                return "我";
+            };
+            *{"Webqq::Message::${msg_pkg}::to_qq"} = sub{
+                return $client->{qq_param}{qq};
+            };
+        }
     }
     elsif($msg->{type} eq 'message'){
-        *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
-            return $client->search_friend($msg->{from_uin})->{nick}; 
-        };
-        *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
-            return $client->get_qq_from_uin($msg->{from_uin});
-        };
-        *{"Webqq::Message::${msg_pkg}::from_markname"} = sub{
-            return $client->search_friend($msg->{from_uin})->{markname};
-        };
-        *{"Webqq::Message::${msg_pkg}::from_categories"} = sub{
-            return $client->search_friend($msg->{from_uin})->{categories};
-        };
+        if($msg->{msg_class} eq 'send'){
+            *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
+                return "我";
+            };
+            *{"Webqq::Message::${msg_pkg}::from_qq"} = sub {
+                return $client->{qq_param}{qq};
+            };
+
+            *{"Webqq::Message::${msg_pkg}::to_nick"} = sub{
+                return $client->search_friend($msg->{to_uin})->{nick};
+            };
+
+            *{"Webqq::Message::${msg_pkg}::to_qq"} = sub{
+                return $client->get_qq_from_uin($msg->{to_uin});
+            };
+
+            *{"Webqq::Message::${msg_pkg}::to_markname"} = sub{ 
+                return $client->search_friend($msg->{to_uin})->{markname};
+            };
+
+            *{"Webqq::Message::${msg_pkg}::to_categories"} = sub{
+                return $client->search_friend($msg->{to_uin})->{categories};
+            };
+        }
+        elsif($msg->{msg_class} eq 'recv'){
+            *{"Webqq::Message::${msg_pkg}::from_nick"} = sub{
+                return $client->search_friend($msg->{from_uin})->{nick}; 
+            };
+            *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
+                return $client->get_qq_from_uin($msg->{from_uin});
+            };
+            *{"Webqq::Message::${msg_pkg}::from_markname"} = sub{
+                return $client->search_friend($msg->{from_uin})->{markname};
+            };
+            *{"Webqq::Message::${msg_pkg}::from_categories"} = sub{
+                return $client->search_friend($msg->{from_uin})->{categories};
+            };
+
+            *{"Webqq::Message::${msg_pkg}::to_nick"} = sub{
+                return "我";
+            };
+            *{"Webqq::Message::${msg_pkg}::to_qq"} = sub{
+                return $client->{qq_param}{qq};
+            };
+        }
     }
           
     $msg = bless $msg,"Webqq::Message::$msg_pkg";
@@ -174,6 +258,7 @@ sub parse_receive_msg{
                         content     =>  $m->{value}{content}[1],
                         service_type=>  $m->{value}{service_type},
                         id          =>  $m->{value}{id},
+                        msg_class   =>  "recv",
                     };
                     $client->msg_put($msg);
                 }
@@ -186,6 +271,7 @@ sub parse_receive_msg{
                         to_uin      =>  $m->{value}{to_uin},
                         msg_time    =>  $m->{value}{'time'},
                         content     =>  $m->{value}{content}[1],
+                        msg_class   =>  "recv",
                     };
                     $client->msg_put($msg);
                 }   
@@ -200,6 +286,7 @@ sub parse_receive_msg{
                         content     =>  $m->{value}{content}[1],
                         send_uin    =>  $m->{value}{send_uin},
                         group_code  =>  $m->{value}{group_code}, 
+                        msg_class   =>  "recv",
                     };
                     $client->msg_put($msg);
                 }
