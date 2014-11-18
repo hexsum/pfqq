@@ -284,6 +284,10 @@ sub run {
     $self->{send_message_queue}->get(sub{
         my $msg = shift;
         my $rand_watcher_id = rand();
+        #my $now = AE::now;
+        #$self->{send_last_schedule_time} = $now  unless defined $self->{send_last_schedule_time};
+        #$self->{send_last_schedule_time} += 1.5;
+        #my $delay = $self->{last_send_schedule_time} - $now;
         $self->{watchers}{$rand_watcher_id} = AE::timer 1.5,0,sub{
             delete $self->{watchers}{$rand_watcher_id};
             $self->_send_message($msg)  if $msg->{type} eq 'message';

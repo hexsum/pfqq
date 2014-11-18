@@ -10,6 +10,7 @@ chomp(my $PERLDOC_COMMAND = `/bin/env which perldoc`);
 
 sub Perldoc{
     my $msg = shift;
+    return if time - $msg->{msg_time} > 10;
     my $client = shift; 
     my $perldoc_path = shift;
     $PERLDOC_COMMAND = $perldoc_path if defined $perldoc_path;

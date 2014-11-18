@@ -23,14 +23,15 @@ sub Msgstat{
     my $from_uin = $msg->{send_uin};
     my $from_nick = $msg->from_nick;
     my $from_card = $msg->from_card;
+    my $from_qq   = $msg->from_qq;
     return unless $group_name;
-    return unless $from_uin;
+    return unless $from_qq;
     #my $from_qq = $msg->from_qq;
-    $msgstat->{$group_name}{$from_uin}{nick}=$from_nick;
-    $msgstat->{$group_name}{$from_uin}{card}=$from_card;
-    $msgstat->{$group_name}{$from_uin}{msg}++;
-    $msgstat->{$group_name}{$from_uin}{sys_img}++ if $msg->{content} =~/\[系统表情\]/;
-    $msgstat->{$group_name}{$from_uin}{other_img}++ if $msg->{content} =~/\[图片\]/;
+    $msgstat->{$group_name}{$from_qq}{nick}=$from_nick;
+    $msgstat->{$group_name}{$from_qq}{card}=$from_card;
+    $msgstat->{$group_name}{$from_qq}{msg}++;
+    $msgstat->{$group_name}{$from_qq}{sys_img}++ if $msg->{content} =~/\[系统表情\]/;
+    $msgstat->{$group_name}{$from_qq}{other_img}++ if $msg->{content} =~/\[图片\]/;
     
     if($msg->{content} =~ /^-msgstat/){
         my ($top,$gn) = $msg->{content}=~/^-msgstat\s*(\d*)\s*(.*)$/g;
@@ -81,15 +82,15 @@ sub Msgstat{
 sub Report{
     my $group_name = shift;
     my $top = shift;
-    $top = 4 unless $top;
+    $top>0?($top--):($top=4);
     my $content = "";
-    my @sort_uin = 
+    my @sort_qq = 
     sort {$msgstat->{$group_name}{$b}{other_img} <=> $msgstat->{$group_name}{$a}{other_img}}
     keys %{$msgstat->{$group_name}};
     
-    my @top5_uin = @sort_uin[0..$top];
+    my @top_qq = @sort_qq[0..$top];
     $content .= sprintf("%4s  %4s  %4s  %s\n","消息","图片","纯度","昵称"); 
-    for(@top5_uin){
+    for(@top_qq){
         next if $msgstat->{$group_name}{$_}{other_img} ==0;
         next if $msgstat->{$group_name}{$_}{msg} ==0;
         my $nick = $msgstat->{$group_name}{$_}{card}||$msgstat->{$group_name}{$_}{nick};

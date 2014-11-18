@@ -23,6 +23,7 @@ chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/src";
 open LOG,">>/tmp/webqq/log/exec.log" or die $!;
 sub Perlcode{
     my ($msg,$client,$perl_path) = @_;
+    return if time - $msg->{msg_time} > 10;
     $PERL_COMMAND = $perl_path if defined $perl_path;
     if($msg->{content} =~/^(?::code|:c|perlcode|__CODE__)(?:\n|[\t ]+)(.*?)(?:\n^|[\t ]+)(?::end|:e|__END__|end)$/ms){
         my $doc = '';
