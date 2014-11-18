@@ -28,6 +28,7 @@ sub Perlcode{
         my $doc = '';
         my $code = $1;
         $code=~s/CORE:://g;
+        $code=~s/CORE::GLOBAL:://g;
         unless($code=~/^\s+$/s){
             $code = q#BEGIN{*CORE::GLOBAL::fork=sub{};}$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chdir '/tmp/webqq/bin';chroot '/tmp/webqq/bin' or die "chroot fail: $!";chdir "/";setuid($u);setgid($g);%ENV=();}# .  $code;
             my ($fh, $filename) = tempfile("webqq_perlcode_XXXXXXXX",SUFFIX =>".pl",DIR => "/tmp/webqq/src");
