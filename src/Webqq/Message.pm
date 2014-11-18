@@ -117,6 +117,9 @@ sub _mk_ro_accessors {
             *{"Webqq::Message::${msg_pkg}::from_qq"} = sub{
                 return $client->get_qq_from_uin($msg->{send_uin});
             };
+            *{"Webqq::Message::${msg_pkg}::from_card"} = sub{
+                return $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{card};
+            };
 
         }
     }

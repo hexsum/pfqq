@@ -6,6 +6,7 @@
 3）修复发送消息打印报错bug
 4）修复Webqq::Client::App::Msgstat统计bug
 5）完善Webqq::Client::App::Msgstat::Report()的输出格式
+6）完善Webqq::Client::App::Msgstat::Report()群名片显示问题
 
 2014-11-17 Webqq::Client v3.0
 1）Webqq::Client::App::ShowMsg支持打印发送和接收消息

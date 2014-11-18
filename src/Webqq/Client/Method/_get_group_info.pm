@@ -22,7 +22,12 @@ sub Webqq::Client::_get_group_info {
         return undef if ($json->{retcode}!=0 and $json->{retcode}!=1);
         $json->{result}{ginfo}{name} = encode("utf8",$json->{result}{ginfo}{name});
         delete $json->{result}{ginfo}{members};
+        my %cards;
+        for  (@{ $json->{result}{cards} }){
+            $cards{$_->{muin}} = $_->{card};
+        }
         for my $m(@{ $json->{result}{minfo} }){
+            $m->{card} = $cards{$m->{uin}} if exists $cards{$m->{uin}} ; 
             for(keys %$m){
                 $m->{$_} = encode("utf8",$m->{$_});
             }
