@@ -7,6 +7,7 @@
 4）修复Webqq::Client::App::Msgstat统计bug
 5）完善Webqq::Client::App::Msgstat::Report()的输出格式
 6）完善Webqq::Client::App::Msgstat::Report()群名片显示问题
+7）增强-msgstat指令，支持-msgstat 数字 群名称调用形式
 
 2014-11-17 Webqq::Client v3.0
 1）Webqq::Client::App::ShowMsg支持打印发送和接收消息
