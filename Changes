@@ -4,6 +4,7 @@
 1）新增Webqq::Client::App::Msgstat统计群消息发言排行
 2）修复图片、表情和文字混合的消息无法正常处理的bug
 3）修复发送消息打印报错bug
+4）修复Webqq::Client::App::Msgstat统计bug
 
 2014-11-17 Webqq::Client v3.0
 1）Webqq::Client::App::ShowMsg支持打印发送和接收消息
