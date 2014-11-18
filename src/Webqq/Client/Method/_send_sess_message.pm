@@ -1,6 +1,9 @@
 use JSON;
+use Encode;
+use Storable qw(dclone);
 sub Webqq::Client::_send_sess_message{
     my($self,$msg) = @_;
+    my $msg_origin = dclone($msg);
     $msg->{$_} = decode("utf8",$msg->{$_} ) for keys %$msg;
     my $ua = $self->{asyn_ua};
     my $send_message_callback = $msg->{cb};
@@ -11,7 +14,7 @@ sub Webqq::Client::_send_sess_message{
         my $status = $self->parse_send_status_msg( $response->content() );
         if(ref $send_message_callback eq 'CODE' and defined $status){
             $send_message_callback->(
-                $msg,                   #msg
+                $msg_origin,                   #msg
                 $status->{is_success},  #is_success
                 $status->{status}       #status
             );

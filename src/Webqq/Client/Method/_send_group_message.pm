@@ -1,8 +1,10 @@
 use JSON;
 use Encode;
+use Storable qw(dclone);
 sub Webqq::Client::_send_group_message{
     my($self,$msg) = @_;
     #将整个hash从UTF8还原回uincode编码
+    my $msg_origin = dclone($msg);
     $msg->{$_} = decode("utf8",$msg->{$_} ) for keys %$msg;
     my $ua = $self->{asyn_ua};
 
@@ -14,7 +16,7 @@ sub Webqq::Client::_send_group_message{
         my $status = $self->parse_send_status_msg( $response->content() );
         if(ref $send_message_callback eq 'CODE' and defined $status){
             $send_message_callback->(
-                $msg,
+                $msg_origin,
                 $status->{is_success},
                 $status->{status},
             );

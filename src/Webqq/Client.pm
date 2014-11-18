@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v3.0;
+our $VERSION = v3.1;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -498,6 +498,18 @@ sub update_group_list_info{
     else{console "更新群列表信息失败\n";}    
 }
 
+sub get_group_code_from_gid {
+    my $self = shift;
+    my $gid = shift;
+    my $group_code = undef;
+    for my $g (@{ $self->{qq_database}{group_list} }){
+        if($g->{gid} eq $gid){
+            $group_code = $g->{code};
+            last;
+        }
+    }
+    return $group_code;
+}
 
 
 1;

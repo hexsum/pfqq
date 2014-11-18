@@ -223,14 +223,25 @@ sub parse_send_status_msg{
 sub msg_put{   
     my $client = shift;
     my $msg = shift;
-    if(ref $msg->{content} eq 'ARRAY'){
-        if($msg->{content}[0] eq 'cface'){$msg->{content} = decode("utf8","[图片]")}
-        elsif($msg->{content}[0] eq 'face'){$msg->{content} = decode("utf8","[系统表情]")}
-        else{$msg->{content} = decode("utf8","未识别内容")} 
+    my $msg_content;
+    shift @{ $msg->{content} };
+    for my $c (@{ $msg->{content} }){
+        if(ref $c eq 'ARRAY'){
+            if($c->[0] eq 'cface'){$c=decode("utf8","[图片]");}
+            elsif($c->[0] eq 'face'){$c=decode("utf8","[系统表情]");}
+            else{$c = decode("utf8","[未识别内容]");}
+        }
+        elsif($c eq " "){
+            next;
+        }
+        else{
+            $c=~s/ $//;   
+        }
+        $msg_content .= $c;
     }
+    $msg->{content} = $msg_content;
     #将整个hash从unicode转为UTF8编码
     $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
-    $msg->{content}=~s/ $//;
     $msg->{content}=~s/\r|\n/\n/g;
     my $msg_pkg = "\u$msg->{type}"; $msg_pkg=~s/_(.)/\u$1/g;
     $msg = $client->_mk_ro_accessors($msg,$msg_pkg) ;
@@ -255,7 +266,7 @@ sub parse_receive_msg{
                         from_uin    =>  $m->{value}{from_uin},
                         to_uin      =>  $m->{value}{to_uin},
                         msg_time    =>  $m->{value}{'time'},
-                        content     =>  $m->{value}{content}[1],
+                        content     =>  $m->{value}{content},
                         service_type=>  $m->{value}{service_type},
                         id          =>  $m->{value}{id},
                         msg_class   =>  "recv",
@@ -270,7 +281,7 @@ sub parse_receive_msg{
                         from_uin    =>  $m->{value}{from_uin},
                         to_uin      =>  $m->{value}{to_uin},
                         msg_time    =>  $m->{value}{'time'},
-                        content     =>  $m->{value}{content}[1],
+                        content     =>  $m->{value}{content},
                         msg_class   =>  "recv",
                     };
                     $client->msg_put($msg);
@@ -283,7 +294,7 @@ sub parse_receive_msg{
                         from_uin    =>  $m->{value}{from_uin},
                         to_uin      =>  $m->{value}{to_uin},
                         msg_time    =>  $m->{value}{'time'},
-                        content     =>  $m->{value}{content}[1],
+                        content     =>  $m->{value}{content},
                         send_uin    =>  $m->{value}{send_uin},
                         group_code  =>  $m->{value}{group_code}, 
                         msg_class   =>  "recv",
