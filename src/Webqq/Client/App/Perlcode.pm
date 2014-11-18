@@ -27,8 +27,9 @@ sub Perlcode{
     if($msg->{content} =~/^(?::code|:c|perlcode|__CODE__)(?:\n|[\t ]+)(.*?)(?:\n^|[\t ]+)(?::end|:e|__END__|end)$/ms){
         my $doc = '';
         my $code = $1;
+        $code=~s/CORE:://g;
         unless($code=~/^\s+$/s){
-            $code = q#$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chdir '/tmp/webqq/bin';chroot '/tmp/webqq/bin' or die "chroot fail: $!";chdir "/";setuid($u);setgid($g);%ENV=();}# .  $code;
+            $code = q#BEGIN{*CORE::GLOBAL::fork=sub{};}$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chdir '/tmp/webqq/bin';chroot '/tmp/webqq/bin' or die "chroot fail: $!";chdir "/";setuid($u);setgid($g);%ENV=();}# .  $code;
             my ($fh, $filename) = tempfile("webqq_perlcode_XXXXXXXX",SUFFIX =>".pl",DIR => "/tmp/webqq/src");
             print $code,"\n",$filename,"\n" if $client->{debug};
             print $fh $code;

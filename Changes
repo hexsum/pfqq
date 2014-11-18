@@ -1,4 +1,6 @@
 版本更新记录:
+2014-11-17 Webqq::Client v3.2
+1）一定程度上屏蔽perlcode无限fork攻击，感谢[PERL学习交流 @Achilles]指导
 
 2014-11-17 Webqq::Client v3.1
 1）新增Webqq::Client::App::Msgstat统计群消息发言排行
