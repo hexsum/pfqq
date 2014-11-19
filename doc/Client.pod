@@ -11,15 +11,29 @@
     use Webqq::Client;
     use Digest::MD5 qw(md5_hex);
     my $qq = 12345678;
+
+    #你的qq密码请使用md5加密后再传递给Webqq::Client
+    #我可不想被怀疑有盗号行为
     my $pwd = md5_hex('your password');
+    
+    #通过new来初始化一个客户端对象
+    #debug=>1来打印debug信息方便调试
     my $client = Webqq::Client->new(debug=>0);
+
+    #通过login进行登录
     $client->login( qq=> $qq, pwd => $pwd);
-    $client->on_send_message = sub{
+
+    #登录成功后设置客户端的接收消息回调函数
+    $client->on_receive_message = sub{
+        #当收到消息后，传递给回调函数的唯一参数是原始消息的一个hash引用
         my $msg = shift;
-        #do something you want with the msg receieved;
-        #you can use Data::Dumper to print the structure of $msg, for example:
+        ...;
+        #你可以对收到的消息进行任意的处理
+        #你也可以使用Data::Dumper这样的模块来查看消息的结构，比如
+        #use Data::Dumper;
         #print Dumper $msg;
     };
+    #客户端进入事件循环,正式开始运行
     $client->run();
 
 
@@ -41,7 +55,7 @@
             my ($msg,$is_success,$status) = @_;
             ...
         };
-    or 
+    or use hash form
         $client->{on_send_message} = sub{
             my ($msg,$is_success,$status) = @_;
             ...

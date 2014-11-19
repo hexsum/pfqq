@@ -89,15 +89,15 @@ sub Report{
     keys %{$msgstat->{$group_name}};
     
     my @top_qq = @sort_qq[0..$top];
-    $content .= sprintf("%4s  %4s  %4s  %s\n","消息","图片","纯度","昵称"); 
+    $content .= sprintf("%4s  %4s  %4s  %s\n","消息","图片","水度","昵称"); 
     for(@top_qq){
-        next if $msgstat->{$group_name}{$_}{other_img} ==0;
+        #next if $msgstat->{$group_name}{$_}{other_img} ==0;
         next if $msgstat->{$group_name}{$_}{msg} ==0;
         my $nick = $msgstat->{$group_name}{$_}{card}||$msgstat->{$group_name}{$_}{nick};
         $content .= sprintf("%4s  %4s  %4s  %s\n",
-            $msgstat->{$group_name}{$_}{msg},
-            $msgstat->{$group_name}{$_}{other_img},
-            sprintf("%.1f",($msgstat->{$group_name}{$_}{msg}-$msgstat->{$group_name}{$_}{other_img})*100/$msgstat->{$group_name}{$_}{msg}),
+            $msgstat->{$group_name}{$_}{msg}+0,
+            $msgstat->{$group_name}{$_}{other_img}+0,
+            sprintf("%.1f",($msgstat->{$group_name}{$_}{other_img})*100/$msgstat->{$group_name}{$_}{msg}),
             $nick,  
         );
     } 
