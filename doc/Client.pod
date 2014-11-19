@@ -36,6 +36,61 @@
     #客户端进入事件循环,正式开始运行
     $client->run();
 
+=head1 CLIENT DATA STRUCTURE
+
+    客户端登录成功后，会马上更新个人信息、好友信息、群信息
+    这些相关的信息通过多重hash引用的形式存储在如下形式中：
+    $client->{qq_database}{
+        user        => {}, #个人信息存储在 %{ $client->{qq_database}{user} }中
+        friends     => [], #好友信息存储在 @{ $client->{qq_database}{friends} }中
+        group_list  => [], #群列表信息（不含群成员）存储在@{$client->{qq_database}{group_list}}中
+        group       => [], #群信息（包含群成员）存储在 @{ $client->{qq_database}{group} } 中
+        discuss     => []  #讨论组信息，暂未实现，仅保留
+    }
+
+=over
+
+=item %{ $client->{qq_database}{user} }
+    
+    hash包含的key及相关说明,注意有些key的值并不是直接的结果，通常是一些索引编号等需要做额外的转换
+    比如生肖的值是数字0，1，2，3，很容易猜测和12生肖依次对应，这部分可以自行研究
+        face：          作用未知
+        birthday：      生日
+        phone：         电话
+        occupation：    职业
+        allow：         权限
+        college：       大学
+        uin：           本次登录唯一标识，发送消息时需要用到
+        blood：         血型
+        constel：       星座
+        homepage：      主页
+        stat：          状态
+        country：       国家
+        city：          城市
+        personal：      个性签名
+        nick：          昵称
+        shengxiao：     生肖
+        email：         邮箱
+        token：         作用未知 
+        client_type：   客户端类型
+        province：      省份
+        gender：        性别
+        mobile：        手机
+    
+    例如想获取昵称，可以通过$client->{qq_database}{user}{nick}来获取
+
+=item @{ $client->{qq_database}{friends} }
+
+    
+=item @{  $client->{qq_database}{group_list} }
+
+=item @{  $client->{qq_database}{group} }
+
+=back
+
+    每个接收和发送的消息均存储在一个单独的hash引用中
+    
+
 
 =head1 PUBLIC CLASS METHOD
 
@@ -43,13 +98,14 @@
 
 =item new()
 
-    return a client object 
-    set debug=>1 to output debug info
+    返回一个客户端对象 
+    设置debug=>1来打印调试信息
     my $client = Webqq::Client->new(debug=>1);
 
 =item on_send_message() :lvalue 
 
-    this is a lvalue subroutine, you must assign a code reference to this subroutine as a callback
+    设置客户端发送消息完成后的回调函数，常用于在回调函数中记录发送消息内容或者判断发送消息状态
+    this is a lvalue subroutine, you must assign a code reference to this subroutine
     for example:
         $client->on_send_message() = sub{
             my ($msg,$is_success,$status) = @_;
@@ -70,7 +126,10 @@
 
 =item on_receive_message() :lvalue
     
-    this is a lvalue subroutine, you must assign a code reference to this subroutine as a callback
+    设置客户端接收消息回调函数，客户端接收到消息后会调用设置的回调函数，讲接收到的消息
+    通过hash引用的形式传递给回调函数，你可以在此函数中对接收到的消息进行处理
+    比如打印接收到的消息，对接收到的消息进行应答等
+    this is a lvalue subroutine, you must assign a code reference to this subroutine
     your callback will be called after the client reveieves a successful msg 
     $client->on_receive_message() = sub{
         my $msg = shift;
@@ -79,21 +138,58 @@
     the msg reveieved is passed to your callback so you can handle that msg at will
 
 =item on_login() :lvalue
-
-    this is a lvalue subroutine, you must assign a code reference to this subroutine as a callback
+    
+    设置客户端登录成功后的回调函数，客户端在登录成功后会调用该回调函数
+    this is a lvalue subroutine, you must assign a code reference to this subroutine
     your callback will be called after the client successully login in.
+    $client->on_login() = sub{...;};
 
 =item on_input_img_verifycode() :lvalue
 
-    this is a lvalue subroutine, you must assign a code reference to this subroutine as a callback
-    when a verfycode of img is need for login and the client is connected to a tty, then
-    the client  asks for a verfycode from STDIN
+    正常情况下，如果你是直接在终端运行webqq，需要输入验证码时
+    客户端会将验证码图片下载到本地，使用<STDIN>要求你在终端输入，并提示你验证码图片保存路径
+    如果你的客户端是在后台运行，脱离终端，此时无法再通过<STDIN>输入验证码
+    如果设置了该回调函数，且客户端未连接到终端
+    则客户端会尝试调用on_input_img_verifycode来获取验证码
+    你可以在该回调函数中将验证码图片通过邮件发送到手机端
+    手机端通过特殊的链接将验证码最终提交回webqq
+    $client->img_verifycode_file() = sub{
+        #$img_verifycode_file是本地验证码图片路径
+        #$smtp是一个hash引用，用于设置发送邮箱相关的设置，支持的key有：
+        #{
+        #    smtp    =>
+        #    user    =>
+        #    pass    =>
+        #    from
+        #    from_title
+        #    subject
+        #    to
+        #}
+        #实际上，采用的是Mail::SendEasy进行邮件发送，参数可以参考cpan Mail::SendEasy
+        my ($img_verifycode_file,$smtp) = @_;
+    };
 
 =item login()
 
+    客户端登录，登录成功后才能够正常收发消息，登录失败该函数会die，登录成功返回true
+    $client->login(qq=>xxxx, pwd=> xxxx); #pwd是经过md5加密后的
+
 =item relogin()
 
+    客户端长期运行一段时间，会收到kick的消息要求强制下线
+    默认情况下客户端会自动调用relogin()
+    尝试重新登录，你也可以根据需要主动进行relogin
+    注意relogin过程中可能会需要重新输入验证码
+    $client->relogin()
+
 =item get_qq_from_uin()
+    
+    webqq中每个qq用户在每一次客户端登录后使用的是一个唯一的uin（一串数字）进行身份标识
+    同一个用户在多次登录中uin可能不一样，但qq号码是永远不变的
+    通常情况下发送、接收消息使用uin即可
+    当你需要获取原始的qq号时，可以使用该函数
+    my $qq = $client->get_qq_from_uin($uin);
+    $uin通常是包含在接收到的消息或者客户端自己的数据库中，可以参考客户端数据结构介绍部分
 
 =item send_message()
 
