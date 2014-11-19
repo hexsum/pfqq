@@ -15,36 +15,27 @@ my $msgstat;
 my $once = 1;
 $msgstat=(-e "/tmp/webqq/data/msgstat")?retrieve("/tmp/webqq/data/msgstat"):{};
 sub Msgstat{
-    my ($msg,$client,$time,$filter_group) = @_; 
+    my ($msg,$client,$time,$group_filter) = @_; 
     $time = "17:30" unless defined $time;
     return if $msg->{type} ne 'group_message';
     my $group_code = $msg->group_code;
     my $group_name = $msg->group_name;
-    my $from_uin = $msg->{send_uin};
     my $from_nick = $msg->from_nick;
     my $from_card = $msg->from_card;
     my $from_qq   = $msg->from_qq;
+    
     return unless $group_name;
     return unless $from_qq;
-    #my $from_qq = $msg->from_qq;
+
     $msgstat->{$group_name}{$from_qq}{nick}=$from_nick;
     $msgstat->{$group_name}{$from_qq}{card}=$from_card;
     $msgstat->{$group_name}{$from_qq}{msg}++;
     $msgstat->{$group_name}{$from_qq}{sys_img}++ if $msg->{content} =~/\[系统表情\]/;
     $msgstat->{$group_name}{$from_qq}{other_img}++ if $msg->{content} =~/\[图片\]/;
     
-    if($msg->{content} =~ /^-msgstat/){
-        my ($top,$gn) = $msg->{content}=~/^-msgstat\s*(\d*)\s*(.*)$/g;
-        $group_name = $gn if $gn;
-        my $content = Report($group_name,$top);
-        my $to_uin = $client->search_group($msg->{group_code})->{gid} || $msg->{from_uin};
-        $client->send_group_message(
-            $client->create_group_msg(
-                to_uin=>$to_uin,
-                content=>$content,
-                group_code=>$msg->{group_code},
-            )
-        ) if $content;
+    if($msg->{content} =~ /^-msgstat$/){
+        my $content = Report($msgstat,$group_name);
+        $client->reply_message($msg,$content) if $content;
     }
 
     if($once){
@@ -55,18 +46,18 @@ sub Msgstat{
         #my $group_name = "PERL学习交流";
         $client->add_job("群发言排行榜",$time,sub{
             for(@{$client->{qq_database}{group_list}}){
-                if(defined $filter_group){
-                    next if $_->{name} ne $filter_group;
+                if(defined $group_filter){
+                    next if $_->{name} ne $group_filter;
                 }
                 my $gid = $_->{gid} ;  
-                my $content = Report($_->{name});
-                $content =  "群发言排行榜:\n" . $content;
-                if(defined $gid and $content){
+                my $content = Report($msgstat,$_->{name});
+                $content =  "群发言排行榜:\n" . $content if $content;
+                if($gid and $content){
                     $client->send_group_message(
                         $client->create_group_msg( 
                             to_uin=>$gid,
                             content=>$content,
-                            group_code=>$client->get_group_code_from_gid($gid)
+                            group_code=>$_->{code}
                         )
                     );
                 }
@@ -81,9 +72,10 @@ sub Msgstat{
 }
 
 sub Report{
+    my $msgstat = shift;
     my $group_name = shift;
     my $top = shift;
-    $top>0?($top--):($top=4);
+    $top>0?($top--):($top=10);
     my $content = "";
     my @sort_qq = 
     sort {$msgstat->{$group_name}{$b}{other_img} <=> $msgstat->{$group_name}{$a}{other_img}}

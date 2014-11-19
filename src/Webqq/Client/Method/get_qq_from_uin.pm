@@ -20,7 +20,7 @@ sub Webqq::Client::get_qq_from_uin{
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string);
     my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);
     if($response->is_success){
-        print $response->content() if $self->{debug};
+        print $response->content(),"\n" if $self->{debug};
         my $json = JSON->new->utf8->decode( $response->content() );
         if($json->{retcode} !=0){
             console "从指定uin: $uin 查询QQ号码失败\n";

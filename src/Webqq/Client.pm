@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v3.3;
+our $VERSION = v3.4;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -271,6 +271,7 @@ sub welcome{
 sub logout;
 sub run {
     my $self = shift;
+    $self->_load_extra_accessor();
     #设置从接收消息队列中接收到消息后对应的处理函数
     $self->{receive_message_queue}->get(sub{
         my $msg = shift;

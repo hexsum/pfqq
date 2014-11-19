@@ -1,4 +1,9 @@
 版本更新记录:
+
+2014-11-19 Webqq::Client v3.4
+1）修复Webqq::Message::_mk_ro_accessors严重bug，此bug会导致客户端获取到的消息信息错乱
+   新增Webqq::Message::_load_extra_accessor方法，客户端会在run()开始时执行
+
 2014-11-19 Webqq::Client v3.3
 1）修复-msgstat错误
 2）增加大量文档说明,参加doc/Client.pod
