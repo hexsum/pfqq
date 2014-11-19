@@ -11,7 +11,6 @@ WriteMakefile(
         "AnyEvent::UserAgent"   => 0,
         "LWP::UserAgent"        => 0,
         "LWP::Protocol::https"  => 0,
-        "IPC::Run"              => 0,
     }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'src/Webqq/Client.pm', # retrieve abstract from module

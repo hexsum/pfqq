@@ -36,7 +36,6 @@ client
   AnyEvent::UserAgent
   LWP::UserAgent
   LWP::Protocol::https
-  IPC::Run
 
 版本更新记录
 
