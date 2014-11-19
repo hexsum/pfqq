@@ -1,4 +1,8 @@
 版本更新记录:
+2014-11-19 Webqq::Client v3.3
+1）修复-msgstat错误
+2）增加大量文档说明,参加doc/Client.pod
+
 2014-11-17 Webqq::Client v3.2
 1）一定程度上屏蔽perlcode无限fork攻击，感谢[PERL学习交流 @Achilles/kl]指导
 2）Webqq::Client::App::Perlcode/Webqq::Client::App::Perldoc不再执行超过一定时效的消息指令

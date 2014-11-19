@@ -69,7 +69,7 @@ sub _create_msg {
         $msg{group_sig} = $p{group_sig};
     }
     elsif($p{type} eq 'group_message'){
-        $msg{group_code} = $p{group_code};
+        $msg{group_code} = $p{group_code}||$client->get_group_code_from_gid($p{to_uin});
         $msg{send_uin} = $msg{from_uin};
     }   
     my $msg_pkg = "\u$p{type}"; 

@@ -36,14 +36,15 @@ sub Msgstat{
     if($msg->{content} =~ /^-msgstat/){
         my ($top,$gn) = $msg->{content}=~/^-msgstat\s*(\d*)\s*(.*)$/g;
         $group_name = $gn if $gn;
+        my $content = Report($group_name,$top);
         my $to_uin = $client->search_group($msg->{group_code})->{gid} || $msg->{from_uin};
         $client->send_group_message(
             $client->create_group_msg(
                 to_uin=>$to_uin,
-                content=>Report($group_name,$top),
+                content=>$content,
                 group_code=>$msg->{group_code},
             )
-        );
+        ) if $content;
     }
 
     if($once){
@@ -89,7 +90,6 @@ sub Report{
     keys %{$msgstat->{$group_name}};
     
     my @top_qq = @sort_qq[0..$top];
-    $content .= sprintf("%4s  %4s  %4s  %s\n","消息","图片","水度","昵称"); 
     for(@top_qq){
         #next if $msgstat->{$group_name}{$_}{other_img} ==0;
         next if $msgstat->{$group_name}{$_}{msg} ==0;
@@ -101,6 +101,7 @@ sub Report{
             $nick,  
         );
     } 
+    $content = sprintf("%4s  %4s  %4s  %s\n","消息","图片","水度","昵称") . $content if $content;
     return $content;
 }
 
