@@ -33,7 +33,7 @@ sub Msgstat{
     $msgstat->{$group_name}{$from_qq}{sys_img}++ if $msg->{content} =~/\[系统表情\]/;
     $msgstat->{$group_name}{$from_qq}{other_img}++ if $msg->{content} =~/\[图片\]/;
     
-    if($msg->{content} =~ /^-msgstat$/){
+    if($msg->{content} =~ /^-msgstat$/ && $from_qq == 308165330){
         my $content = Report($msgstat,$group_name);
         $client->reply_message($msg,$content) if $content;
     }
@@ -78,7 +78,8 @@ sub Report{
     $top>0?($top--):($top=10);
     my $content = "";
     my @sort_qq = 
-    sort {$msgstat->{$group_name}{$b}{other_img} <=> $msgstat->{$group_name}{$a}{other_img}}
+    sort {$msgstat->{$group_name}{$b}{other_img}<=>$msgstat->{$group_name}{$a}{other_img} or $msgstat->{$group_name}{$b}{other_img}/$msgstat->{$group_name}{$b}{msg} <=> $msgstat->{$group_name}{$a}{other_img}/$msgstat->{$group_name}{$a}{msg}}
+    grep {$msgstat->{$group_name}{$_}{msg}!=0}
     keys %{$msgstat->{$group_name}};
     
     my @top_qq = @sort_qq[0..$top];
