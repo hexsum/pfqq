@@ -36,6 +36,31 @@
     #客户端进入事件循环,正式开始运行
     $client->run();
 
+=head1 CLIENT ASYNCHRONOUS FRAMEWORK
+
+    client 
+    | 
+    ->login()
+        |
+        |->timer(60s)->_get_msg_tip()#heartbeat 
+        |        +-------------------------<------------------------------+
+        |        |                                                        |
+        |->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
+        |
+        |->send_message() -[put]--+                       +-[get]-> _send_message() ---+
+        |                           \                   /                              +
+        |->send_sess_message()-[put]-Webqq::Message::Queue-[get]->_send_sess_message()-+               
+        |                              /              \                                +
+        |->send_group_message()-[put]-+                +-[get]->_send_group_message()--+
+        |                                                                              +
+        |                          on_send_message() ---<---- msg->{cb} -------<-------+
+        +->run()
+
+    请注意：
+    由于采用了单线程异步框架
+    你不用该在任何回调函数中产生阻塞或者长时间sleep
+    这会导致整个进程被阻塞，无法正常响应处理其他回调
+
 =head1 CLIENT DATA STRUCTURE
 
     客户端登录成功后，会马上更新个人信息、好友信息、群信息
@@ -315,7 +340,7 @@
 =item 接收到的群临时消息结构
 
     $msg = {
-        type         =  "group+message"
+        type         =  "group_message"
         msg_id       #系统自动维护
         from_uin     #消息来源群的uin，可以使用此uin进行群消息回复
         to_uin       #消息接收者的uin，也就是自己的uin
