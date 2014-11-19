@@ -316,7 +316,7 @@
 =item 接收到的群消息结构
 
     $msg = {
-        type         =  "group+message"
+        type         =  "group_message"
         msg_id       #系统自动维护
         from_uin     #消息来源群的uin，可以使用此uin进行群消息回复
         to_uin       #消息接收者的uin，也就是自己的uin
