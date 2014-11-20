@@ -10,7 +10,7 @@ sub Webqq::Client::_recv_message{
         $self->parse_receive_msg($response->content());
         #重新开始接收消息
         my $rand_watcher_id = rand();
-        $self->{watchers}{$rand_watcher_id} = AE::timer 2,0,sub{
+        $self->{watchers}{$rand_watcher_id} = AE::timer 4,0,sub{
             delete $self->{watchers}{$rand_watcher_id};
             $self->_recv_message();
         };

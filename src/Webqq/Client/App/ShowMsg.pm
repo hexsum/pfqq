@@ -30,10 +30,12 @@ sub ShowMsg{
 
         my $group_name = $msg->group_name;
         my $msg_sender_nick = $msg->from_nick;
+        my $msg_sender_card = $msg->from_card if $msg->{msg_class} eq 'recv';
+        my $msg_sender = $msg_sender_card || $msg_sender_nick;
         #my $msg_sender_qq  = $msg->from_qq;
         format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
-            .   "\@$msg_sender_nick(在群:$group_name) 说: ",
+            .   "\@$msg_sender(在群:$group_name) 说: ",
                 $msg->{content}
         );         
     }
@@ -43,10 +45,13 @@ sub ShowMsg{
     #   $msg->from_markname
     #   $msg->from_categories
     elsif($msg->{type} eq 'message'){
-        #my $msg_sender_qq = $msg->from_qq;
         my $msg_sender_nick = $msg->from_nick; 
-        #my $msg_receiever_qq = $msg->to_qq;
+        my $msg_sender_markname = $msg->from_markname if $msg->{msg_class} eq 'recv'; 
+        my $msg_sender = $msg_sender_markname || $msg_sender_nick;
         my $msg_receiever_nick = $msg->to_nick;
+        my $msg_receiever_markname = $msg->to_markname if $msg->{msg_class} eq 'send';
+        my $msg_receiever = $msg_receiever_markname || $msg_receiever_nick;
+        
         format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
             .   "\@$msg_sender_nick(对好友:\@$msg_receiever_nick) 说: ",

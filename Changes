@@ -1,5 +1,10 @@
 版本更新记录:
 
+2014-11-20 Webqq::Client v3.5
+1）demo/console_message.pl中的fromat_msg使用Webqq::Client::App::ShowMsg替换
+2）Webqq::Client::App::ShowMsg进一步完善
+3）延长拉去消息时间间隔
+
 2014-11-19 Webqq::Client v3.4
 1）修复Webqq::Message::_mk_ro_accessors严重bug，此bug会导致客户端获取到的消息信息错乱
    新增Webqq::Message::_load_extra_accessor方法，客户端会在run()开始时执行

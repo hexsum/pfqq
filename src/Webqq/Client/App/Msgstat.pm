@@ -33,7 +33,7 @@ sub Msgstat{
     $msgstat->{$group_name}{$from_qq}{sys_img}++ if $msg->{content} =~/\[系统表情\]/;
     $msgstat->{$group_name}{$from_qq}{other_img}++ if $msg->{content} =~/\[图片\]/;
     
-    if($msg->{content} =~ /^-msgstat$/ && $from_qq == 308165330){
+    if($msg->{content} =~ /^-msgstat$/ and $from_qq == 308165330){
         my $content = Report($msgstat,$group_name);
         $client->reply_message($msg,$content) if $content;
     }
