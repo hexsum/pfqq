@@ -1,5 +1,9 @@
 版本更新记录:
 
+2014-11-20 Webqq::Client v3.6
+1）修复客户端接收到临时消息后停止接收消息的bug
+2）修复临时消息查找陌生人信息无法缓存问题
+
 2014-11-20 Webqq::Client v3.5
 1）demo/console_message.pl中的fromat_msg使用Webqq::Client::App::ShowMsg替换
 2）Webqq::Client::App::ShowMsg进一步完善

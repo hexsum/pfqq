@@ -124,6 +124,13 @@ sub _load_extra_accessor {
         my $msg = shift;
         return $client->get_qq_from_uin($msg->{from_uin}); 
     };
+    *Webqq::Message::SessMessage::Recv::to_nick = sub{
+        return "我";
+    };
+    *Webqq::Message::SessMessage::Recv::to_qq = sub {
+        return $client->{qq_param}{qq};
+    };
+
     *Webqq::Message::SessMessage::Send::from_nick = sub{
         return "我";
     };

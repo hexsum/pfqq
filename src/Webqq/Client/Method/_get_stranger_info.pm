@@ -5,6 +5,7 @@ sub Webqq::Client::_get_stranger_info {
     my $tuin = shift;
     my $ua = $self->{ua};
     my $cache_data = $self->{cache_for_stranger_info}->retrieve($tuin);
+    return $cache_data if defined $cache_data;
     my $api_url = 'http://s.web2.qq.com/api/get_stranger_info2';
     my @headers = (
         Referer => 'http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=3',
