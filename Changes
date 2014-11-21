@@ -1,5 +1,8 @@
 版本更新记录:
 
+2014-11-21 Webqq::Client v3.9
+1）新增Webqq::Client::App::SmartReply模块，智能回复消息
+
 2014-11-21 Webqq::Client v3.8
 1）修复客户端数据库存储bug
 2）新增Webqq::Client::App::ClientStore模块，便于将客户端数据库存储到文件

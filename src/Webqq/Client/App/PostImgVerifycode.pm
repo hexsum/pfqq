@@ -97,7 +97,7 @@ HTML
                 "Content-Type: text/html;charset=utf-8\r\n" .
                 "Content-Length: $len\r\n" . 
                 "\r\n" . 
-                $data
+                $data;
             return $code if defined $code and length($code)==4;
         }
         else{
