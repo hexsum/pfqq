@@ -7,4 +7,4 @@
 
 doc/Client.pod
 demo/echo.pl
-demo/console_message.t
+demo/console_message.pl
