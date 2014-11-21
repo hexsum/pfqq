@@ -82,15 +82,22 @@ HTML
             print $c
                 "HTTP/1.1 200 OK\r\n" .
                 "Date: " . time2str() . "\r\n" .
-                "Content-Type: text/html\r\n" .
+                "Content-Type: text/html;charset=utf-8\r\n" .
                 "Content-Length: $len\r\n" ;
             print $c "\r\n";
             print $c $html;
         }   
         elsif($uri =~ /\/img_code\?code=(.{4})/){
             my $code = $1;
-            my $body = "验证码已提交" ;
+            my $data = "验证码已提交" ;
             my $len = length($body);
+            print $c 
+                "HTTP/1.1 200 OK\r\n" .
+                "Date: " . time2str() . "\r\n" .
+                "Content-Type: text/html;charset=utf-8\r\n" .
+                "Content-Length: $len\r\n" . 
+                "\r\n" . 
+                $data
             return $code if defined $code and length($code)==4;
         }
         else{

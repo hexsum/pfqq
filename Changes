@@ -3,6 +3,7 @@
 2014-11-21 Webqq::Client v3.8
 1）修复客户端数据库存储bug
 2）新增Webqq::Client::App::ClientStore模块，便于将客户端数据库存储到文件
+3）修复Webqq::Client::App::PostImgVerfcode提交验证码后没有给出任何提示的bug
 
 2014-11-21 Webqq::Client v3.7
 1）增加系统表情文字显示支持，系统表情会以类似[微笑]的形式打印
