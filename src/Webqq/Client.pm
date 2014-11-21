@@ -472,14 +472,19 @@ sub update_group_info{
         console "更新[ $_->{name} ]群信息...\n";
         my $group_info = $self->_get_group_info($_->{code});
         if(defined $group_info){
-            my $i=0;
-            for( @{$self->{qq_database}{group}} ){
-                if($_->{ginfo}{code} eq $group_info->{ginfo}{code} ){
-                    splice @{$self->{qq_database}{group}},$i,1,$group_info;
-                    last;
+            if( @{$self->{qq_database}{group}} ){
+                my $i=0;
+                for( @{$self->{qq_database}{group}} ){
+                    if($_->{ginfo}{code} eq $group_info->{ginfo}{code} ){
+                        splice @{$self->{qq_database}{group}},$i,1,$group_info;
+                        last;
+                    }
                 }
+                $i++;     
             }
-            $i++;     
+            else{
+                push @{ $self->{qq_database}{group} }, $group_info;
+            }
         }
         else{console "更新[ $_->{name} ]群信息失败\n";}
             
