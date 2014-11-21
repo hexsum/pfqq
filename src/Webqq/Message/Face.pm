@@ -1,0 +1,58 @@
+package Webqq::Message::Face;
+use Exporter 'import';
+@EXPORT=qw(face_to_txt);
+my %FACE_MAP = qw(
+    0   惊讶
+    1   撇嘴
+    2   色
+    3   发呆
+    4   得意
+    5   流泪
+    6   害羞
+    7   闭嘴
+    8   睡
+    9   大哭
+    10  尴尬
+    11  发怒
+    12  调皮
+    13  呲牙
+    14  微笑
+    46  强  
+    50  难过
+    51  酷  
+    53  抓狂
+    54  吐  
+    55  惊恐
+    56  流汗
+    57  憨笑
+    58  大兵
+    59  
+    73  偷笑
+    74  可爱
+    75  白眼
+    76  傲慢
+    77  饥饿
+    78  困
+    79  奋斗
+    80  咒骂
+    81  疑问
+    82  嘘
+    83  晕
+    84  折磨
+    85  衰
+    96  冷汗
+    118 抱拳
+    
+);
+sub face_to_txt{
+    my $face = shift;
+    if(ref $face eq 'ARRAY'){
+        return "[未知表情]" if $face->[0] ne "face";
+        return "[系统表情]" unless exists $FACE_MAP{$face->[1]};
+        return "[" . $FACE_MAP{$face->[1]} . "]"; 
+    }
+    else{
+        return $face;
+    }
+}
+1;

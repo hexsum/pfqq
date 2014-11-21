@@ -1,4 +1,5 @@
 package Webqq::Message;
+use Webqq::Message::Face;
 use JSON;
 use Encode;
 use Webqq::Client::Util qw(console_stderr console);
@@ -241,7 +242,7 @@ sub msg_put{
     for my $c (@{ $msg->{content} }){
         if(ref $c eq 'ARRAY'){
             if($c->[0] eq 'cface'){$c=decode("utf8","[图片]");}
-            elsif($c->[0] eq 'face'){$c=decode("utf8","[系统表情]");}
+            elsif($c->[0] eq 'face'){$c=decode("utf8",face_to_txt($c));}
             else{$c = decode("utf8","[未识别内容]");}
         }
         elsif($c eq " "){
