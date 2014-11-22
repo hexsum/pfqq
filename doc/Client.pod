@@ -437,6 +437,31 @@
         my ($img_verifycode_file,$smtp) = @_;
     };
 
+=item on_new_friend() :lvalue 
+    
+    设置新增好友时的回调
+    $client->on_new_friend = sub{
+        my $friend = shift;
+        #$friend结构和$client->{qq_database}{user}一致
+    };
+
+=item on_new_group() :lvalue
+
+    设置新增群时的回调
+    $client->on_new_group = sub{
+        my $group = shift;
+        #$group结构和@{$client->{qq_database}{group}}中的元素一致
+    };
+
+=item on_new_group_member() :lvalue
+
+    设置已有群中有新成员加入的回调
+    $client->on_new_group_member = sub{
+        my($group,$member)  =@_;
+        #$group和@{$client->{qq_database}{group}}中元素的->{ginfo}一致
+        #member和@{$client->{qq_database}{group}}中元素的->{minfo}元素一致
+    };
+
 =item login(qq=>$qq,pwd=>$pwd)
 
     客户端登录，登录成功后才能够正常收发消息，登录失败该函数会die，登录成功返回true
@@ -659,7 +684,9 @@
 
 =item _get_group_list_info()
 
-=item _get_friends_info()
+=item _get_friend_info()
+
+=item _get_user_friends()
 
 =item _get_discuss_list_info()
 
