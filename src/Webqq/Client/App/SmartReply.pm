@@ -8,10 +8,10 @@ my $API = 'http://www.tuling123.com/openapi/api';
 sub SmartReply{
     my $msg = shift;
     my $client = shift;
-    return unless $msg->{content} =~/^\@小灰/;
+    return unless $msg->{content} =~/\@小灰/;
     my $input = $msg->{content};
     my $userid = $msg->from_qq;
-    $input=~s/^\@小灰//;
+    $input=~s/\@小灰//;
     my @query_string = (
         "key"       =>  "4c53b48522ac4efdfe5dfb4f6149ae51",
         "userid"    =>  $userid,

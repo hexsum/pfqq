@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v3.9;
+our $VERSION = v4.0;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -26,8 +26,9 @@ use Webqq::Client::Method::_recv_message;
 use Webqq::Client::Method::_get_group_info;
 use Webqq::Client::Method::_get_group_sig;
 use Webqq::Client::Method::_get_group_list_info;
-use Webqq::Client::Method::_get_friends_info;
+use Webqq::Client::Method::_get_user_friends;
 use Webqq::Client::Method::_get_user_info;
+use Webqq::Client::Method::_get_friend_info;
 use Webqq::Client::Method::_get_stranger_info;
 use Webqq::Client::Method::_send_message;
 use Webqq::Client::Method::_send_group_message;
@@ -84,6 +85,9 @@ sub new {
         on_receive_message  =>  undef,
         on_send_message     =>  undef,
         on_login            =>  undef,
+        on_new_friend       =>  undef,
+        on_new_group        =>  undef,
+        on_new_group_member =>  undef,
         on_input_img_verifycode => undef,
         receive_message_queue    =>  Webqq::Message::Queue->new,
         send_message_queue       =>  Webqq::Message::Queue->new,
@@ -135,6 +139,21 @@ sub on_receive_message :lvalue{
 sub on_login :lvalue {
     my $self = shift;
     $self->{on_login};
+}
+
+sub on_new_friend :lvalue {
+    my $self = shift;
+    $self->{on_new_friend};
+}
+
+sub on_new_group :lvalue {
+    my $self = shift;
+    $self->{on_new_group};
+}
+
+sub on_new_group_member :lvalue {
+    my $self = shift;
+    $self->{on_new_group_member};
 }
 
 sub on_input_img_verifycode :lvalue {
@@ -209,9 +228,10 @@ sub _check_sig;
 sub _login1;
 sub _login2;
 sub _get_user_info;
+sub _get_friend_info;
 sub _get_group_info;
 sub _get_group_list_info;
-sub _get_friends_info;
+sub _get_user_friends;
 sub _get_discuss_list_info;
 sub _send_message;
 sub _send_group_message;
@@ -341,6 +361,15 @@ sub search_friend {
     for my $f( @{ $self->{qq_database}{friends} }){
         return dclone($f) if $f->{uin} eq $uin;
     } 
+    #新增好友
+    my $friend = $self->_get_friend_info($uin);
+    if(defined $friend){
+        push @{ $self->{qq_database}{friends} },$friend;
+        if(ref $self->{on_new_friend} eq 'CODE'){
+            $self->{on_new_friend}->($friend);
+        }
+        return $friend;
+    }
     return {};
 }
 
@@ -356,20 +385,60 @@ sub search_friend {
 #}
 sub search_member_in_group{
     my ($self,$gcode,$member_uin) = @_;
-    my $group_info = $self->_get_group_info($gcode);
-    if(defined $group_info){
-        for my $m (@{$group_info->{minfo}}){
-            return dclone($m) if $m->{uin} eq $member_uin;
-        }
-    }
-
-    for my $g (@{$self->{qq_database}{group}}){
-        if($g->{ginfo}{code} eq $gcode){
-            for my $m(@{$g->{minfo} }){
+    #在现有的群中查找
+    for my $g (@{$self->{qq_database}{group}}){ 
+        #如果群是存在的
+        if($g->{ginfo}{code} eq $gcode){    
+            #在群中查找指定的成员
+            for my $m(@{$g->{minfo} }){ 
+                #查到成员信息并返回
                 return dclone($m) if $m->{uin} eq $member_uin; 
+            }
+            #查不到成员信息，说明是新增的成员，重新更新一次群信息
+            my $group_info = $self->_get_group_info($g->{ginfo}{code});
+            #群信息更新成功
+            if(defined $group_info){
+                #再次查找新增的成员
+                for my $m (@{$group_info->{minfo}}){    
+                    #找到新增的成员信息了
+                    if($m->{uin} eq $member_uin){   
+                        #更新到现有的群中并返回
+                        push @{$g->{minfo} },$m;
+                        if(ref $self->{on_new_group_member} eq 'CODE'){
+                            $self->{on_new_group_member}->($g,$m);
+                        }
+                        return dclone($m);
+                    }    
+                }
+                #仍然找不到信息，只好直接返回空了
+                return {};
+            }
+            #群信息更新失败
+            else{
+                return {};
             }
         }
     }
+    #遍历完整个群也没有匹配的群，说明群有新增了，需要更新群信息
+    my $group_info = $self->_get_group_info($gcode);
+    if(defined $group_info){
+        for my $m (@{$group_info->{minfo}}){
+            if($m->{uin} eq $member_uin){
+                #更新群列表信息
+                #全局更新的话，担心webqq不支持（只允许启动的时候查询一次群列表），所以暂时指定更新的群
+                #$self->update_group_list_info();
+                $self->update_group_list_info({
+                    name    =>  $group_info->{ginfo}{name},
+                    gid     =>  $group_info->{ginfo}{gid},
+                    code    =>  $group_info->{ginfo}{code},
+                });
+                #更新群信息
+                $self->update_group_info($group_info);
+                return dclone($m);
+            }
+        }
+    }
+
     return {};
 }
 
@@ -395,13 +464,25 @@ sub search_stranger{
 
 sub search_group{
     my($self,$gcode) = @_;
-    my $group_info = $self->_get_group_info($gcode);
-    return dclone($group_info->{ginfo}) if defined $group_info;
-    
     for(@{ $self->{qq_database}{group} }){
         return dclone($_->{ginfo}) if $_->{ginfo}{code} eq $gcode;
     }
-    return {};
+    my $group_info = $self->_get_group_info($gcode);
+    if(defined $group_info){
+        $self->update_group_list_info({
+            name    =>  $group_info->{ginfo}{name},
+            gid     =>  $group_info->{ginfo}{gid},
+            code    =>  $group_info->{ginfo}{code},
+        });
+        $self->update_group_info($group_info);
+        if(ref $self->{on_new_group} eq 'CODE'){
+            $self->{on_new_group}->($group_info);
+        }
+        return dclone($group_info->{ginfo});
+    }
+    else{ 
+        return {};
+    }
 }
 #sub search_group{
 #    my($self,$gcode) = @_;
@@ -430,8 +511,18 @@ sub update_user_info{
 }
 sub update_friends_info{
     my $self=shift;
+    my $friend = shift;
+    if(defined $friend){
+        for(@{ $self->{qq_database}{friends} }){
+            if($_->{uin} eq $friend->{uin}){
+                return;
+            }
+        }
+        push @{ $self->{qq_database}{friends} },$friend;
+        return;
+    }
     console "更新好友信息...\n";
-    my $friends_info = $self->_get_friends_info();
+    my $friends_info = $self->_get_user_friends();
     if(defined $friends_info){
         my %categories ;
         my %info;
@@ -467,6 +558,16 @@ sub update_friends_info{
 }
 sub update_group_info{
     my $self = shift;
+    my $group = shift;
+    if(defined $group){
+        for( @{$self->{qq_database}{group}} ){
+            if($_->{ginfo}{code} eq $group->{ginfo}{code} ){
+                return;
+            }
+        } 
+        push @{$self->{qq_database}{group}},$group;
+        return;
+    }
     $self->update_group_list_info();
     for(@{ $self->{qq_database}{group_list} }){
         console "更新[ $_->{name} ]群信息...\n";
@@ -492,6 +593,16 @@ sub update_group_info{
 }
 sub update_group_list_info{
     my $self = shift;
+    my $group = shift;
+    if(defined $group ){
+        for(@{ $self->{qq_database}{group_list} }){
+            if($_->{code} eq $group->{code}){
+                return;        
+            }
+        }
+        push @{ $self->{qq_database}{group_list} }, $group;
+        return;
+    }
     console "更新群列表信息...\n";
     my $group_list_info = $self->_get_group_list_info();
     if(defined $group_list_info){

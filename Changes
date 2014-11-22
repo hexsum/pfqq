@@ -1,5 +1,9 @@
 版本更新记录:
 
+2014-11-23 Webqq::Client v4.0
+1）客户端支持探测新成员或新好友，并自动更新客户端数据库
+2）新增on_new_group() on_new_group_member on_new_friend() 回调
+
 2014-11-21 Webqq::Client v3.9
 1）新增Webqq::Client::App::SmartReply模块，智能回复消息
 

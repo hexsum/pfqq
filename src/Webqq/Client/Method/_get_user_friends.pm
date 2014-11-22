@@ -1,6 +1,6 @@
 use JSON;
 use Webqq::Client::Util qw(hash);
-sub Webqq::Client::_get_friends_info{
+sub Webqq::Client::_get_user_friends{
     my $self = shift;
     my $api_url = 'http://s.web2.qq.com/api/get_user_friends2';
     my $ua = $self->{ua};
