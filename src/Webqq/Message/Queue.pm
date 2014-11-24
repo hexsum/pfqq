@@ -4,6 +4,7 @@ sub new{
     my $self = {
         queue               =>  [],
         callback_for_get    =>  undef,        
+        callback_for_get_bak   =>  undef,
     };
     return bless $self,$class;
 }
@@ -20,6 +21,7 @@ sub get{
     my $cb = shift;
     die "Webqq::Message::Queue->get()仅接受一个函数引用\n" unless ref $cb eq 'CODE';
     $self->{callback_for_get} = $cb;
+    $self->{callback_for_get_bak} = $cb;
 }
 sub _notify_to_get{
     my $self = shift;
