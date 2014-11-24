@@ -1,6 +1,7 @@
 package Webqq::Client::App::Perldoc;
 use Exporter 'import';
-use Webqq::Client::Util qw(console_stderr);
+use JSON;
+use Webqq::Client::Util qw(console_stderr truncate);
 @EXPORT = qw(Perldoc);
 if($^O !~ /linux/){
     console_stderr "Webqq::Client::App::Perldoc只能运行在linux系统上\n";
@@ -14,10 +15,11 @@ sub Perldoc{
     my $client = shift; 
     my $perldoc_path = shift;
     $PERLDOC_COMMAND = $perldoc_path if defined $perldoc_path;
-    if($msg->{content} =~/^perldoc -(v|f) ([^ &;]+)$/){
+    if($msg->{content} =~/perldoc\s+-(v|f)\s+([^ ]+)/){
         my ($p,$v) = ($1,$2);
+        $v=~s/"/\\"/;
         my $doc = '';
-        open PERLDOC,"$PERLDOC_COMMAND -Tt -$p '$v' 2>&1|" or $doc = '@灰灰 run perldoc fail';
+        open PERLDOC,qq{$PERLDOC_COMMAND -Tt -$p "$v" 2>&1|} or $doc = '@灰灰 run perldoc fail';
         while(<PERLDOC>){
             last if $.>10;
             $doc .= $_;
@@ -38,6 +40,45 @@ sub Perldoc{
 
         $client->reply_message($msg,$doc) if $doc;
     }  
+
+    elsif($msg->{content} =~ /perldoc\s+(\w+)/ or $msg->{content} =~ /((\w+::)+\w+)/){
+        my $module = $1;
+        my $metacpan_api = 'http://api.metacpan.org/v0/module/';
+        my $cache = $client->{cache_for_metacpan}->retrieve($module);                
+        if($cache){
+            $client->reply_message($msg,$cache) ;
+            return;
+        }
+        my @headers = ();
+        $client->{asyn_ua}->get($metacpan_api . $module,@headers,sub{   
+            my $response = shift;
+            my $doc;
+            my $json;
+            if($client->{debug}){
+                print $metacpan_api,"\n";
+                #print $response->content;
+            }
+            eval{ $json = JSON->new->utf8->decode($response->content);};
+            unless($@){ 
+                return if $json->{code} == 404;
+                my $moudule_name = $module;
+                my $author  =   $json->{author};
+                my $version =   $json->{version};
+                #my $date    =   $json->{date};
+                my $abstract=   $json->{abstract};
+                my $podlink     = 'https://metacpan.org/pod/' . $module;
+                $doc = 
+                    "模块名称: $moudule_name\n" . 
+                    "当前版本: $version\n" . 
+                    "作者      : $author\n" . 
+                    "简述      : $abstract\n" . 
+                    "文档链接: $podlink\n"
+                ;
+                $client->reply_message($msg,$doc) if $doc;
+            }
+        }); 
+                
+    }
 }
 
 1;

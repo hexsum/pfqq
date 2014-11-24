@@ -2,7 +2,7 @@ package Webqq::Client::Util;
 use Exporter 'import';
 use Encode;
 use Encode::Locale;
-our @EXPORT_OK = qw(console console_stderr hash) ;
+our @EXPORT_OK = qw(console console_stderr hash truncate) ;
 sub console{
     my $bytes = join "",@_;
     print encode("locale",decode("utf8",$bytes));
@@ -41,5 +41,23 @@ sub hash {
         $i .= $a[  $E[$c]     & 15  ];  
     }
     return $i;
+}
+
+sub truncate {
+    my $out_and_err = shift;
+    my %p = @_;
+    my $max_bytes = $p{max_bytes} || 200;
+    my $max_lines = $p{max_lines} || 10;
+    my $is_truncated = 0;
+    if(length($out_and_err)>$max_bytes){
+        $out_and_err = substr($out_and_err,0,$max_bytes);
+        $is_truncated = 1;
+    }
+    my @l =split /\n/,$out_and_err,$max_lines+1;
+    if(@l>$max_lines){
+        $out_and_err = join "\n",@l[0..$max_lines-1];
+        $is_truncated = 1;
+    }
+    return $out_and_err. ($is_truncated?"\n(已截断)":"");
 }
 1;

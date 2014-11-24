@@ -1,5 +1,10 @@
 版本更新记录:
 
+2014-11-24 Webqq::Client v4.1
+1）支持perldoc 模块名查询cpan模块信息
+2）支持自动识别聊天记录中的模块名 查询相关信息
+3）识别perldoc指令不再要求精确匹配/^perldoc/ 
+
 2014-11-23 Webqq::Client v4.0
 1）客户端支持探测新成员或新好友，并自动更新客户端数据库
 2）新增on_new_group() on_new_group_member on_new_friend() 回调

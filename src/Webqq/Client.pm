@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = v4.0;
+our $VERSION = v4.1;
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -82,6 +82,7 @@ sub new {
         cache_for_group_sig     => Webqq::Client::Cache->new,
         cache_for_stranger_info => Webqq::Client::Cache->new,
         cache_for_group         => Webqq::Client::Cache->new,
+        cache_for_metacpan      => Webqq::Client::Cache->new,
         on_receive_message  =>  undef,
         on_send_message     =>  undef,
         on_login            =>  undef,
