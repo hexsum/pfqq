@@ -13,6 +13,8 @@ WriteMakefile(
         "LWP::Protocol::https"  => 0,
     }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'src/Webqq/Client.pm', # retrieve abstract from module
-       AUTHOR         => 'sjdy521 <sjdy521@163.com>') : ()),
+      (
+       #ABSTRACT_FROM  => 'src/Webqq/Client.pm', # retrieve abstract from module
+       ABSTRACT       => 'A webqq robot in Perl Language',
+       AUTHOR         => 'Perfi <sjdy521@163.com>') : ()),
 );

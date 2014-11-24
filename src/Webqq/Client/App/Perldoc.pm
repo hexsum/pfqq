@@ -62,7 +62,7 @@ sub Perldoc{
             unless($@){ 
                 if($json->{code} == 404){
                     $doc = 
-                        "模块名称: $moudule ($json->{message})" ;
+                        "模块名称: $module ($json->{message})" ;
                 }
                 else{
                     my $author  =   $json->{author};
@@ -71,7 +71,7 @@ sub Perldoc{
                     my $abstract=   $json->{abstract};
                     my $podlink     = 'https://metacpan.org/pod/' . $module;
                     $doc = 
-                        "模块名称: $moudule\n" . 
+                        "模块名称: $module\n" . 
                         "当前版本: $version\n" . 
                         "作者      : $author\n" . 
                         "简述      : $abstract\n" . 
