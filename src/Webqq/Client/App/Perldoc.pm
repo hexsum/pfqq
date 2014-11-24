@@ -41,11 +41,11 @@ sub Perldoc{
         $client->reply_message($msg,$doc) if $doc;
     }  
 
-    elsif($msg->{content} =~ /perldoc\s+(\w+)/ or $msg->{content} =~ /((\w+::)+\w+)/){
+    elsif($msg->{content} =~ /perldoc\s+((\w+::)*\w+)/ or $msg->{content} =~ /((\w+::)+\w+)/){
         my $module = $1;
         my $metacpan_api = 'http://api.metacpan.org/v0/module/';
         my $cache = $client->{cache_for_metacpan}->retrieve($module);                
-        if($cache){
+        if(defined $cache){
             $client->reply_message($msg,$cache) ;
             return;
         }
@@ -55,25 +55,30 @@ sub Perldoc{
             my $doc;
             my $json;
             if($client->{debug}){
-                print $metacpan_api,"\n";
+                print "GET " . $metacpan_api . $module,"\n";
                 #print $response->content;
             }
             eval{ $json = JSON->new->utf8->decode($response->content);};
             unless($@){ 
-                return if $json->{code} == 404;
-                my $moudule_name = $module;
-                my $author  =   $json->{author};
-                my $version =   $json->{version};
-                #my $date    =   $json->{date};
-                my $abstract=   $json->{abstract};
-                my $podlink     = 'https://metacpan.org/pod/' . $module;
-                $doc = 
-                    "模块名称: $moudule_name\n" . 
-                    "当前版本: $version\n" . 
-                    "作者      : $author\n" . 
-                    "简述      : $abstract\n" . 
-                    "文档链接: $podlink\n"
-                ;
+                if($json->{code} == 404){
+                    $doc = 
+                        "模块名称: $moudule ($json->{message})" ;
+                }
+                else{
+                    my $author  =   $json->{author};
+                    my $version =   $json->{version};
+                    #my $date    =   $json->{date};
+                    my $abstract=   $json->{abstract};
+                    my $podlink     = 'https://metacpan.org/pod/' . $module;
+                    $doc = 
+                        "模块名称: $moudule\n" . 
+                        "当前版本: $version\n" . 
+                        "作者      : $author\n" . 
+                        "简述      : $abstract\n" . 
+                        "文档链接: $podlink\n"
+                    ;
+                }
+                $client->{cache_for_metacpan}->store($module,$doc,604800);
                 $client->reply_message($msg,$doc) if $doc;
             }
         }); 
