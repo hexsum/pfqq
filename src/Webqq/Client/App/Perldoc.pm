@@ -9,6 +9,8 @@ if($^O !~ /linux/){
 }
 chomp(my $PERLDOC_COMMAND = `/bin/env which perldoc`);
 
+my %last_module_time ;
+
 sub Perldoc{
     my $msg = shift;
     return if time - $msg->{msg_time} > 10;
@@ -43,10 +45,12 @@ sub Perldoc{
 
     elsif($msg->{content} =~ /perldoc\s+((\w+::)*\w+)/ or $msg->{content} =~ /((\w+::)+\w+)/){
         my $module = $1;
+        return if time - $last_module_time{$module} < 300;
         my $metacpan_api = 'http://api.metacpan.org/v0/module/';
         my $cache = $client->{cache_for_metacpan}->retrieve($module);                
         if(defined $cache){
-            $client->reply_message($msg,$cache) ;
+            $client->reply_message($msg,$cache->{doc});
+            $last_module_time{$module} = time;
             return;
         }
         my @headers = ();
@@ -54,6 +58,7 @@ sub Perldoc{
             my $response = shift;
             my $doc;
             my $json;
+            my $code;
             if($client->{debug}){
                 print "GET " . $metacpan_api . $module,"\n";
                 #print $response->content;
@@ -63,8 +68,10 @@ sub Perldoc{
                 if($json->{code} == 404){
                     $doc = 
                         "模块名称: $module ($json->{message})" ;
+                    $code = 404;
                 }
                 else{
+                    $code = 200;
                     my $author  =   $json->{author};
                     my $version =   $json->{version};
                     #my $date    =   $json->{date};
@@ -78,8 +85,9 @@ sub Perldoc{
                         "文档链接: $podlink\n"
                     ;
                 }
-                $client->{cache_for_metacpan}->store($module,$doc,604800);
+                $client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
                 $client->reply_message($msg,$doc) if $doc;
+                $last_module_time{$module} = time;
             }
         }); 
                 

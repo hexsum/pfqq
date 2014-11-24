@@ -5,6 +5,7 @@
 2）版本号形式从 v4.2 改为 "4.2";
 3）新增Webqq::Client::App::SendMsgControl
    可以通过"-shutdown","-reactive"指令来关闭和开启消息发生功能
+4）模块信息查询功能5分钟内只提醒一次
 
 2014-11-24 Webqq::Client v4.1
 1）支持perldoc 模块名查询cpan模块信息
