@@ -43,7 +43,6 @@ README
 The-Answer-Of-My-Son
 Makefile.PL
 doc/Client.pod
-demo/nohup.out
 demo/console_message.pl
 demo/echo.pl
 demo/perldoc.pl
