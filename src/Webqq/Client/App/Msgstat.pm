@@ -39,7 +39,7 @@ sub Msgstat{
     }
 
     if($once){
-        $client->{watchers}{rand()} = AE::timer 60,60,sub{
+        $client->{watchers}{rand()} = AE::timer 60,300,sub{
             console "消息统计数据存盘\n";
             store($msgstat,"/tmp/webqq/data/msgstat");
         };

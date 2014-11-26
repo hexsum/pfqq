@@ -36,6 +36,7 @@ src/Webqq/Client/Method/_prepare_for_login.pm
 src/Webqq/Client/Method/_get_group_list_info.pm
 src/Webqq/Client/Method/_get_user_friends.pm
 src/Webqq/Client/Method/_get_friend_info.pm
+src/Webqq/Client/Method/_get_vfwebqq.pm
 src/Webqq/Client/Method/_send_message.pm
 src/Webqq/Client/Method/_check_verify_code.pm
 Changes
