@@ -699,6 +699,8 @@
 
 =item _get_msg_tip()
 
+=item _get_vfwebqq()
+
 =back
 
 =head1 OTHER MODULE
@@ -739,6 +741,10 @@
         ShowMsg($msg,$client);
     };
     $client->run();
+
+=item Webqq::Client::App::SendMsgControl
+
+=item Webqq::Client::App::SmartReply
 
 =item Webqq::Client::App::Perlcode
 
