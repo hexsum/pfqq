@@ -1,5 +1,9 @@
 版本更新记录:
 
+2014-11-26 Webqq::Client v4.4
+1）为配合Perl的MakeFile，src文件夹重命名为lib
+2）完善make test测试脚本
+
 2014-11-26 Webqq::Client v4.3
 1）整合webqq和smartqq，现在可以通过$client->new(type=>...);进行选择
    type=>"smartqq"或者type=>"webqq"

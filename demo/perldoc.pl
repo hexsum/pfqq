@@ -1,4 +1,4 @@
-use lib '../src/';
+use lib '../lib/';
 use Webqq::Client;
 use Webqq::Message;
 use Webqq::Client::Util qw(console);

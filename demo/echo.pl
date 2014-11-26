@@ -1,6 +1,6 @@
 #一个简单的echo-reply的qq机器人
 #你发送什么信息给它，它就回复相同的内容给你
-use lib '../src/';
+use lib '../lib/';
 use Webqq::Client;
 use Webqq::Message;
 use Webqq::Client::Util qw(console);
