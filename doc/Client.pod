@@ -718,10 +718,12 @@
 
 =item Webqq::Client::Util
 
-    此模块导出三个函数
+    此模块导出4个函数
     console("UTF-8的内容")         #打印内容到STDOUT，会自动检测终端编码,以防止乱码
     console_stderr("UTF-8的内容")  #打印内容到STDERR，会自动检测终端编码，以防止乱码
     hash()                         #webqq密码生成函数，无视
+    
+    truncate($msg_content,max_bytes=>200,max_lines=>3) #截断消息，防止消息太长
 
 =item Webqq::Client::Cron
 
