@@ -554,6 +554,7 @@ sub update_friends_info{
     if(defined $friend){
         for(@{ $self->{qq_database}{friends} }){
             if($_->{uin} eq $friend->{uin}){
+                $_ = $friend;
                 return;
             }
         }
