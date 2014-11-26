@@ -1,6 +1,7 @@
 use Webqq::Client::Util qw(console);
 sub Webqq::Client::logout { 
     my $self = shift;
+    return 1 if $self->{type} ne 'webqq';
     console "正在注销...\n";
     my $ua = $self->{ua};
     my $api_url = 'http://d.web2.qq.com/channel/logout2';

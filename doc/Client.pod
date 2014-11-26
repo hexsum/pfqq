@@ -364,10 +364,13 @@
 
 =over
 
-=item new([debug=>0|1])
+=item new()
 
     返回一个客户端对象 
-    设置debug=>1来打印调试信息
+    支持的参数
+    debug=>0|1 ,设置debug=>1来打印调试信息
+    type=>"webqq"|"smartqq",设置type来切换使用webqq或者smartqq，默认使用smartqq
+    webqq是腾讯的老版本，smartqq是最新版本
     my $client = Webqq::Client->new(debug=>1);
 
 =item on_send_message() :lvalue 

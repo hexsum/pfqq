@@ -123,7 +123,8 @@ sub _load_extra_accessor {
     };
     *Webqq::Message::SessMessage::Recv::from_qq = sub {
         my $msg = shift;
-        return $client->get_qq_from_uin($msg->{from_uin}); 
+        #return $client->get_qq_from_uin($msg->{from_uin}); 
+        return $msg->{ruin};
     };
     *Webqq::Message::SessMessage::Recv::to_nick = sub{
         return "我";
@@ -282,6 +283,7 @@ sub parse_receive_msg{
                         msg_time    =>  $m->{value}{'time'},
                         content     =>  $m->{value}{content},
                         service_type=>  $m->{value}{service_type},
+                        ruin        =>  $m->{value}{ruin},
                         id          =>  $m->{value}{id},
                         msg_class   =>  "recv",
                     };

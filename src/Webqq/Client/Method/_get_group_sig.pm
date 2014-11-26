@@ -14,10 +14,11 @@ sub Webqq::Client::_get_group_sig {
         psessionid      =>  $self->{qq_param}{psessionid},
         t               =>  time,
     ); 
-    my @headers = (
-        Referer=>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3',
-        'Content-Type'=>'utf-8',
-    );
+    my @headers = $self->{type} eq 'webqq'? (Referer=>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3')
+                :                           (Referer=>'http://d.web2.qq.com/proxy.html?v=20130916001&callback=1&id=2')
+                ;
+
+    
     my @query_string_pairs;
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string);
     my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);

@@ -22,7 +22,9 @@ sub Webqq::Client::_send_message{
         }
     };
     my $api_url = 'http://d.web2.qq.com/channel/send_buddy_msg2';
-    my @headers = (Referer=>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3');
+    my @headers = $self->{type} eq 'webqq'? (Referer=>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3')
+                :                           (Referer=>'http://d.web2.qq.com/proxy.html?v=20130916001&callback=1&id=2')
+                ;
     my $content = [$msg->{content},"",[]];
     my %s = (
         to      => $msg->{to_uin},
@@ -33,11 +35,18 @@ sub Webqq::Client::_send_message{
         psessionid  => $self->{qq_param}{psessionid},
     );
     
+    if($self->{type} eq 'smartqq'){
+        $s{face} = "591";
+    }
     my $post_content = [
         r           =>  decode("utf8",JSON->new->encode(\%s)),
-        clientid    =>  $self->{qq_param}{clientid},
-        psessionid  =>  $self->{qq_param}{psessionid}
     ];
+    if($self->{type} eq 'webqq'){
+        push @$post_content,(
+            clientid    =>  $self->{qq_param}{clientid},
+            psessionid  =>  $self->{qq_param}{psessionid}
+        );
+    }
     if($self->{debug}){
         require URI;
         my $uri = URI->new('http:');

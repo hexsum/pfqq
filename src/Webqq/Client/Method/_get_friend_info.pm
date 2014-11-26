@@ -4,14 +4,26 @@ sub Webqq::Client::_get_friend_info{
     my $uin = shift;
     my $api_url = 'http://s.web2.qq.com/api/get_friend_info2';
     my $ua = $self->{ua};
-    my @headers  = (Referer=>'http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=3');
+    my @headers  = $self->{type} eq 'webqq'?    (Referer=>'http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=3')
+                 :                              (Referer=>'http://s.web2.qq.com/proxy.html?v=20130916001&callback=1&id=1')
+                 ;
     my @query_string = (
         tuin            =>  $uin,
-        verifysession   =>  undef,
-        code            =>  undef,
         vfwebqq         =>  $self->{qq_param}{vfwebqq},
+        clientid        =>  $self->{qq_param}{clientid},
+        psessionid      =>  $self->{qq_param}{psessionid},
         t               =>  time,
     ); 
+
+    if($self->{type} eq 'webqq'){
+        @query_string = (
+            tuin            =>  $uin,
+            verifysession   =>  undef,
+            code            =>  undef,
+            vfwebqq         =>  $self->{qq_param}{vfwebqq},
+            t               =>  time,
+        );
+    }
     my @query_string_pairs;
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string);
     my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);

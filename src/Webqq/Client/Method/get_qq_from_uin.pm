@@ -7,15 +7,27 @@ sub Webqq::Client::get_qq_from_uin{
     return $cache_data if defined $cache_data;
     my $ua = $self->{ua};
     my $api_url = 'http://s.web2.qq.com/api/get_friend_uin2';
-    my @headers  = (Referer=>'http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=3');
+    my @headers = $self->{type} eq 'webqq'?    (Referer=>'http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=3')
+                :                              (Referer=>'http://s.web2.qq.com/proxy.html?v=20130916001&callback=1&id=1')
+                ;
     my @query_string = (
         tuin            =>  $uin,
-        verifysession   =>  undef,
         type            =>  1,
-        code            =>  undef,
         vfwebqq         =>  $self->{qq_param}{vfwebqq},
         t               =>  time,
     );     
+    
+    if($self->{type} eq 'webqq'){
+        @query_string=(
+            tuin            =>  $uin,
+            verifysession   =>  undef,
+            type            =>  1,
+            code            =>  undef,
+            vfwebqq         =>  $self->{qq_param}{vfwebqq},
+            t               =>  time,
+        )
+    }
+
     my @query_string_pairs;
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string);
     my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);

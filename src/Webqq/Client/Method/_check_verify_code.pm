@@ -4,14 +4,20 @@ sub Webqq::Client::_check_verify_code{
     my $self = shift;
     my $ua = $self->{ua};
     my $api_url = 'https://ssl.ptlogin2.qq.com/check';
-    my @headers = (Referer=>'https://ui.ptlogin2.qq.com/cgi-bin/login?daid=164&target=self&style=5&mibao_css=m_webqq&appid=1003903&enable_qlogin=0&no_verifyimg=1&s_url=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&f_url=loginerroralert&strong_login=1&login_state=10&t=20140612002');
+    my @headers = $self->{type} eq 'webqq'? (Referer=>'https://ui.ptlogin2.qq.com/cgi-bin/login?daid=164&target=self&style=5&mibao_css=m_webqq&appid=1003903&enable_qlogin=0&no_verifyimg=1&s_url=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&f_url=loginerroralert&strong_login=1&login_state=10&t=20140612002')
+                :                           (Referer=>'https://ui.ptlogin2.qq.com/cgi-bin/login?daid=164&target=self&style=16&mibao_css=m_webqq&appid=501004106&enable_qlogin=0&no_verifyimg=1&s_url=http%3A%2F%2Fw.qq.com%2Fproxy.html&f_url=loginerroralert&strong_login=1&login_state=10&t=20131024001')
+                ;
+
+    my $query_string_ul = $self->{type} eq 'webqq'? 'http%3A%2F%2Fweb2.qq.com%2Floginproxy.html'
+                        :                           'http%3A%2F%2Fw.qq.com%2Fproxy.html'
+                        ;
     my @query_string = (
         uin         =>  $self->{qq_param}{qq},
         appid       =>  $self->{qq_param}{g_appid},
         js_ver      =>  $self->{qq_param}{g_pt_version},
         js_type     =>  0,
         login_sig   =>  $self->{qq_param}{g_login_sig},
-        u1          =>  'http%3A%2F%2Fweb2.qq.com%2Floginproxy.html',
+        u1          =>  $query_string_ul,
         r           =>  rand(),
     ); 
     

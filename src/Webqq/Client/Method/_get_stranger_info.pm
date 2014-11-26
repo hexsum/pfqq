@@ -3,6 +3,7 @@ use Encode;
 sub Webqq::Client::_get_stranger_info {
     my $self = shift;
     my $tuin = shift;
+    return undef if $self->{type} ne 'webqq';
     my $ua = $self->{ua};
     my $cache_data = $self->{cache_for_stranger_info}->retrieve($tuin);
     return $cache_data if defined $cache_data;
@@ -25,7 +26,7 @@ sub Webqq::Client::_get_stranger_info {
     my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);
 
     if($response->is_success){
-        print $response->content() if $self->{debug};
+        print $response->content(),"\n" if $self->{debug};
         my $json = JSON->new->utf8->decode($response->content()); 
         return undef if $json->{retcode}!=0;
         $json->{result}{nick} = encode("utf8",$json->{result}{nick});

@@ -1,16 +1,13 @@
 use JSON;
 use Encode;
-use Webqq::Client::Util qw(console);
-sub Webqq::Client::_get_user_info{
-    console "获取个人信息...\n";    
+sub Webqq::Client::get_single_long_nick{
     my $self = shift;
-    my $api_url = 'http://s.web2.qq.com/api/get_friend_info2';
+    return if $self->{type} ne 'smartqq';
+    my $api_url = 'http://s.web2.qq.com/api/get_single_long_nick2';
     my $ua = $self->{ua};
-    my @headers  = (Referer=>'http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=3');
+    my @headers  = (Referer=>'http://s.web2.qq.com/proxy.html?v=20130916001&callback=1&id=1');
     my @query_string = (
         tuin            =>  $self->{qq_param}{qq},
-        verifysession   =>  undef,
-        code            =>  undef,
         vfwebqq         =>  $self->{qq_param}{vfwebqq},
         t               =>  time,
     ); 
@@ -20,18 +17,9 @@ sub Webqq::Client::_get_user_info{
     if($response->is_success){
         print $response->content() if $self->{debug};
         my $json = JSON->new->utf8->decode( $response->content() );    
-        return 0 if $json->{retcode} !=0;
-        for my $key (keys %{ $json->{result} }){
-            if($key eq 'birthday'){
-                $self->{qq_database}{user}{birthday} 
-                    = encode("utf8", join("-",@{ $json->{result}{birthday}}{qw(year month day)}  )  );
-            }
-            else{
-                $self->{qq_database}{user}{$key} = encode("utf8",$json->{result}{$key});
-            }
-        }
-        return 1;
+        return undef if $json->{retcode} !=0;
+        #{"retcode":0,"result":[{"uin":308165330,"lnick":""}]}
     }
-    else{return 0}
+    else{return undef}
 }
 1;

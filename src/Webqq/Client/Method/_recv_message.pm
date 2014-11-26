@@ -10,7 +10,7 @@ sub Webqq::Client::_recv_message{
         $self->parse_receive_msg($response->content());
         #重新开始接收消息
         my $rand_watcher_id = rand();
-        $self->{watchers}{$rand_watcher_id} = AE::timer 4,0,sub{
+        $self->{watchers}{$rand_watcher_id} = AE::timer 2,0,sub{
             delete $self->{watchers}{$rand_watcher_id};
             $self->_recv_message();
         };
@@ -19,14 +19,21 @@ sub Webqq::Client::_recv_message{
     my %r = (
         clientid    =>  $self->{qq_param}{clientid},
         psessionid  =>  $self->{qq_param}{psessionid},
-        key         =>  0,
-        ids         =>  [],
+        key         =>  undef,
     );
+    if($self->{type} eq 'webqq'){
+        $r{key} = 0;
+        $r{ids} = [];
+    }
     my $post_content = [
         r           =>  JSON->new->encode(\%r),
-        clientid    =>  $self->{qq_param}{clientid},
-        psessionid  =>  $self->{qq_param}{psessionid}
     ];
+    if($self->{type} eq 'webqq'){
+        push @$post_content,(
+            clientid    =>  $self->{qq_param}{clientid},
+            psessionid  =>  $self->{qq_param}{psessionid}
+        );
+    }
     if($self->{debug}){
         require URI;
         my $uri = URI->new('http:');
@@ -35,7 +42,9 @@ sub Webqq::Client::_recv_message{
         print $uri->query(),"\n";
     }
 
-    my @headers = (Referer=>"http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3",);
+    my @headers = $self->{type} eq 'webqq'? (Referer=>"http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3")
+                :                           (Referer=>"http://d.web2.qq.com/proxy.html?v=20130916001&callback=1&id=2")
+                ;
     $ua->post(
         $api_url,   
         $post_content,

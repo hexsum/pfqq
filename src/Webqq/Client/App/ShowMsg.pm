@@ -63,7 +63,6 @@ sub ShowMsg{
     #   $msg->from_qq
     #   $msg->from_nick
     elsif($msg->{type} eq 'sess_message'){
-        #my $msg_sender_qq = $msg->from_qq;
         my $msg_sender_nick = $msg->from_nick;
         my $msg_receiever_nick = $msg->to_nick;
         format_msg(

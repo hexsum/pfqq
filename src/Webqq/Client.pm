@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "4.2";
+our $VERSION = "4.3";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -32,6 +32,7 @@ use Webqq::Client::Method::_get_friend_info;
 use Webqq::Client::Method::_get_stranger_info;
 use Webqq::Client::Method::_send_message;
 use Webqq::Client::Method::_send_group_message;
+use Webqq::Client::Method::_get_vfwebqq;
 use Webqq::Client::Method::_send_sess_message;
 use Webqq::Client::Method::logout;
 use Webqq::Client::Method::get_qq_from_uin;
@@ -95,6 +96,7 @@ sub new {
         debug               => $p{debug}, 
         login_state         => "init",
         watchers            => {},
+        type                => $p{type} || 'smartqq',#webqq or smartqq
         
     };
     $self->{ua} = LWP::UserAgent->new(
@@ -177,6 +179,7 @@ sub login{
         && $self->_get_img_verify_code()   
         && $self->_login1()                
         && $self->_check_sig()             
+        && $self->_get_vfwebqq()
         && $self->_login2();
     
 
@@ -197,8 +200,8 @@ sub login{
     #更新群信息
     $self->update_group_info();
     #执行on_login回调
-    if(ref $self->on_login eq 'CODE'){
-        $self->on_login->($self);
+    if(ref $self->{on_login} eq 'CODE'){
+        $self->{on_login}->($self);
     }
     return 1;
 }
@@ -222,6 +225,7 @@ sub relogin{
     #$self->{cache_for_group_sig} = Webqq::Client::Cache->new;
     $self->login(qq=>$self->{default_qq_param}{qq},pwd=>$self->{default_qq_param}{pwd});
 }
+sub _get_vfwebqq;
 sub _prepare_for_login;
 sub _check_verify_code;
 sub _get_img_verify_code;
@@ -322,7 +326,7 @@ sub run {
     console "开始接收消息\n";
     $self->_recv_message();
     console "客户端运行中...\n";
-    $self->{timer_heartbeat} = AE::timer 30 , 60 , sub{ $self->_get_msg_tip()};
+    #$self->{timer_heartbeat} = AE::timer 30 , 60 , sub{ $self->_get_msg_tip()};
     #$self->{timer_user_info} = AE::timer 30 , 60 , sub{ $self->update_user_info()};
     #$self->{timer_friends_info} = AE::timer 1800 , 1800 , sub{ $self->update_friends_info()};
     #$self->{timer_group_info} = AE::timer 1800 , 1800 , sub{
@@ -391,51 +395,78 @@ sub search_member_in_group{
         #如果群是存在的
         if($g->{ginfo}{code} eq $gcode){    
             #在群中查找指定的成员
-            for my $m(@{$g->{minfo} }){ 
-                #查到成员信息并返回
-                return dclone($m) if $m->{uin} eq $member_uin; 
-            }
-            #查不到成员信息，说明是新增的成员，重新更新一次群信息
-            my $group_info = $self->_get_group_info($g->{ginfo}{code});
-            #群信息更新成功
-            if(defined $group_info){
-                #再次查找新增的成员
-                for my $m (@{$group_info->{minfo}}){    
-                    #找到新增的成员信息了
-                    if($m->{uin} eq $member_uin){   
-                        #更新到现有的群中并返回
-                        push @{$g->{minfo} },$m;
-                        if(ref $self->{on_new_group_member} eq 'CODE'){
-                            $self->{on_new_group_member}->($g,$m);
-                        }
-                        return dclone($m);
-                    }    
+            #如果群数据库中包含群成员数据
+            if(exists $g->{minfo} and ref $g->{minfo} eq 'ARRAY'){
+                for my $m(@{$g->{minfo} }){ 
+                    #查到成员信息并返回
+                    return dclone($m) if $m->{uin} eq $member_uin; 
                 }
-                #仍然找不到信息，只好直接返回空了
-                return {};
+                #查不到成员信息，说明可能是新增的成员，重新更新一次群信息
+                my $group_info = $self->_get_group_info($g->{ginfo}{code});
+                #群成员信息更新成功
+                if(defined $group_info and ref $group_info->{minfo} eq 'ARRAY'){
+                    #再次查找新增的成员
+                    for my $m (@{$group_info->{minfo}}){    
+                        #找到新增的成员信息了
+                        if($m->{uin} eq $member_uin){   
+                            #更新到现有的群中并返回
+                            push @{$g->{minfo} },$m;
+                            if(ref $self->{on_new_group_member} eq 'CODE'){
+                                $self->{on_new_group_member}->($g,$m);
+                            }
+                            return dclone($m);
+                        }    
+                    }
+                    #仍然找不到信息，只好直接返回空了
+                    return {};
+                }
+                #群成员信息更新失败
+                else{
+                    return {};
+                }
             }
-            #群信息更新失败
+            #群数据中只有ginfo，没有minfo
             else{
-                return {};
+                #尝试重新更新一下群信息，希望可以拿到minfo
+                my $group_info = $self->_get_group_info($g->{ginfo}{code});         
+                if(defined $group_info and ref $group_info->{minfo} eq 'ARRAY'){
+                    #终于拿到minfo了 赶紧存起来 以备下次使用
+                    $self->update_group_info($group_info);
+                    #在minfo里找群成员
+                    for my $m (@{$group_info->{minfo}}){
+                        if($m->{uin} eq $member_uin){
+                            #找到了赶紧返回
+                            return dclone($m);
+                        }
+                    } 
+                    #靠 还是没找到
+                    return {};
+                }
+                #很可惜，还是拿不到minfo
+                else{
+                    return {};
+                }
             }
         }
     }
     #遍历完整个群也没有匹配的群，说明群有新增了，需要更新群信息
     my $group_info = $self->_get_group_info($gcode);
     if(defined $group_info){
-        for my $m (@{$group_info->{minfo}}){
-            if($m->{uin} eq $member_uin){
-                #更新群列表信息
-                #全局更新的话，担心webqq不支持（只允许启动的时候查询一次群列表），所以暂时指定更新的群
-                #$self->update_group_list_info();
-                $self->update_group_list_info({
-                    name    =>  $group_info->{ginfo}{name},
-                    gid     =>  $group_info->{ginfo}{gid},
-                    code    =>  $group_info->{ginfo}{code},
-                });
-                #更新群信息
-                $self->update_group_info($group_info);
-                return dclone($m);
+        #更新群列表信息
+        #全局更新的话，担心webqq不支持（只允许启动的时候查询一次群列表）
+        #$self->update_group_list_info();
+        #更新群信息
+        $self->update_group_info($group_info);
+        $self->update_group_list_info({
+            name    =>  $group_info->{ginfo}{name},
+            gid     =>  $group_info->{ginfo}{gid},
+            code    =>  $group_info->{ginfo}{code},
+        });
+        if(ref $group_info->{minfo} eq 'ARRAY'){
+            for my $m (@{$group_info->{minfo}}){
+                if($m->{uin} eq $member_uin){
+                    return dclone($m);
+                }
             }
         }
     }
@@ -444,7 +475,14 @@ sub search_member_in_group{
 }
 
 sub search_stranger{
-    my($self,$tuin) =@_;
+    my($self,$tuin) = @_;
+    for my $g ( @{$self->{qq_database}{group}} ){
+        for my $m (@{ $g->{minfo}  }){
+            if($m->{uin} eq $tuin){
+                return dclone($m) ;
+            }
+        }
+    } 
     $self->_get_stranger_info($tuin) || {};
 }
 
@@ -563,6 +601,7 @@ sub update_group_info{
     if(defined $group){
         for( @{$self->{qq_database}{group}} ){
             if($_->{ginfo}{code} eq $group->{ginfo}{code} ){
+                $_ = $group;
                 return;
             }
         } 
@@ -570,25 +609,27 @@ sub update_group_info{
         return;
     }
     $self->update_group_list_info();
-    for(@{ $self->{qq_database}{group_list} }){
-        console "更新[ $_->{name} ]群信息...\n";
-        my $group_info = $self->_get_group_info($_->{code});
+    for my $gl (@{ $self->{qq_database}{group_list} }){
+        console "更新[ $gl->{name} ]群信息...\n";
+        my $group_info = $self->_get_group_info($gl->{code});
         if(defined $group_info){
-            if( @{$self->{qq_database}{group}} ){
-                my $i=0;
+            if(ref $group_info->{minfo} ne 'ARRAY'){
+                console "更新[ $gl->{name} ]成功，但暂时没有获取到群成员信息...\n";
+            }
+            if( @{$self->{qq_database}{group}} > 0 ){
                 for( @{$self->{qq_database}{group}} ){
                     if($_->{ginfo}{code} eq $group_info->{ginfo}{code} ){
-                        splice @{$self->{qq_database}{group}},$i,1,$group_info;
+                        $_ = $group_info;
                         last;
                     }
                 }
-                $i++;     
+                push @{ $self->{qq_database}{group} }, $group_info;
             }
             else{
                 push @{ $self->{qq_database}{group} }, $group_info;
             }
         }
-        else{console "更新[ $_->{name} ]群信息失败\n";}
+        else{console "更新[ $gl->{name} ]群信息失败\n";}
             
     }
 }
@@ -598,6 +639,7 @@ sub update_group_list_info{
     if(defined $group ){
         for(@{ $self->{qq_database}{group_list} }){
             if($_->{code} eq $group->{code}){
+                $_ = $group;
                 return;        
             }
         }
@@ -632,7 +674,6 @@ sub get_group_code_from_gid {
     }
     return $group_code;
 }
-
 
 1;
 __END__
