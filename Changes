@@ -4,6 +4,7 @@
 1）整合webqq和smartqq，现在可以通过$client->new(type=>...);进行选择
    type=>"smartqq"或者type=>"webqq"
 2）目前api接口获取群信息时会出现无法获取到群成员情况，代码进行了适配处理
+3）修复了Webqq::Client::App::Perldoc中关于模块查询信息bug
 
 2014-11-24 Webqq::Client v4.2
 1）修复Makefile错误，感谢[perl技术 @kk]

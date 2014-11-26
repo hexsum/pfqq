@@ -45,12 +45,12 @@ sub Perldoc{
 
     elsif($msg->{content} =~ /perldoc\s+((\w+::)*\w+)/ or $msg->{content} =~ /((\w+::)+\w+)/){
         my $module = $1;
-        return if time - $last_module_time{$module} < 300;
+        return if time - $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} < 300;
         my $metacpan_api = 'http://api.metacpan.org/v0/module/';
         my $cache = $client->{cache_for_metacpan}->retrieve($module);                
         if(defined $cache){
             $client->reply_message($msg,$cache->{doc});
-            $last_module_time{$module} = time;
+            $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
             return;
         }
         my @headers = ();
@@ -87,7 +87,7 @@ sub Perldoc{
                 }
                 $client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
                 $client->reply_message($msg,$doc) if $doc;
-                $last_module_time{$module} = time;
+                $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
             }
         }); 
                 
