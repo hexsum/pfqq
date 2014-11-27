@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "4.4";
+our $VERSION = "4.5";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -375,7 +375,16 @@ sub search_friend {
         }
         return $friend;
     }
-    return {};
+    #新增陌生人(你是对方好友，但对方还不是你好友)
+    else{
+        my $tmp_friend = {
+            uin =>  $uin,
+            categories  => "陌生人",
+            nick        => "昵称未知",
+        };
+        push @{ $self->{qq_database}{friends} },$tmp_friend;
+        return $tmp_friend;
+    }
 }
 
 #根据群的gcode和群成员的uin进行查询，返回群成员相关信息

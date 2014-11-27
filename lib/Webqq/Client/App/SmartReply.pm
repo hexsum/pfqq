@@ -12,6 +12,7 @@ sub SmartReply{
     return unless $msg->{content} =~/\@小灰 /;
     my $input = $msg->{content};
     my $userid = $msg->from_qq;
+    my $msg_type = $msg->{type};
     my $from_nick;
     if($msg->{type} eq 'group_message'){
         $from_nick = $msg->from_card || $msg->from_nick;
@@ -43,7 +44,7 @@ sub SmartReply{
             $reply = encode("utf8","$data->{text}\n$data->{url}");
         }
         $reply  = "\@$from_nick " . $reply  if rand(100)>20;
-        $reply = truncate($reply,max_bytes=>300,max_lines=>5);
+        $reply = truncate($reply,max_bytes=>300,max_lines=>5) if $msg_type eq 'group_message';
         $client->reply_message($msg,$reply) if $reply;
     });
      
