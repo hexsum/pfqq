@@ -5,6 +5,7 @@
 2）只有在群消息时才进行截断
 3）系统开启关闭消息时也通过回复消息进行状态反馈
 4）修复模块查询信息细节
+5）Webqq::Client::App::Perldoc指令进行优化
 
 2014-11-26 Webqq::Client v4.4
 1）为配合Perl的MakeFile，src文件夹重命名为lib

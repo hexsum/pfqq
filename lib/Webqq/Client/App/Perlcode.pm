@@ -25,7 +25,7 @@ sub Perlcode{
     my ($msg,$client,$perl_path) = @_;
     return if time - $msg->{msg_time} > 10;
     $PERL_COMMAND = $perl_path if defined $perl_path;
-    if($msg->{content} =~/^(?::code|:c|perlcode|__CODE__)(?:\n|[\t ]+)(.*?)(?:\n^|[\t ]+)(?::end|:e|__END__|end)$/ms){
+    if($msg->{content} =~/^(?::c|>>>)(.*?)(?::e|[\x80-\xff]|$)/s){
         my $doc = '';
         my $code = $1;
         $code=~s/CORE:://g;
