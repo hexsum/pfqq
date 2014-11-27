@@ -45,7 +45,8 @@ sub Perldoc{
 
     elsif($msg->{content} =~ /perldoc\s+((\w+::)*\w+)/ or $msg->{content} =~ /((\w+::)+\w+)/){
         my $module = $1;
-        return if time - $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} < 300;
+        my $is_perldoc = $msg->{content}=~/perldoc/;
+        return if !$is_perldoc  and  time - $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} < 300;
         my $metacpan_api = 'http://api.metacpan.org/v0/module/';
         my $cache = $client->{cache_for_metacpan}->retrieve($module);                
         if(defined $cache){
