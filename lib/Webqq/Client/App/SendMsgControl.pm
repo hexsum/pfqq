@@ -7,9 +7,9 @@ sub SendMsgControl{
     if($msg->{content}=~/^-shutdown$/){
         my $from_qq = $msg->from_qq;
         return unless $from_qq == 308165330;
+        $client->reply_message($msg,"系统已关闭消息发送功能");
         $client->{send_message_queue}->{callback_for_get} = sub{return;};
         console("系统已关闭消息发送功能\n") if $client->{debug};
-        $client->reply_message($msg,"系统已关闭消息发送功能");
     }
     elsif($msg->{content}=~/^-reactive$/){
         my $from_qq = $msg->from_qq;
