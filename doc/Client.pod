@@ -291,6 +291,7 @@
         $msg->group_name()  #获取发送消息群名称
         $msg->to_markname() #若是好友消息，获取接收该消息的好友备注名称
         $msg->to_categories() #若是好友消息，获取接收该消息的好友分组名次
+        $msg->from_city() #获取发送者所在城市
         
     
 =item 接收到的好友消息结构
@@ -736,11 +737,11 @@
     use Webqq::Client::App::ShowMsg; #已经导入了一个ShowMsg()函数，可以直接调用
     $client->on_receive_message = sub{
         my $msg = shift;
-        ShowMsg($msg,$client);
+        ShowMsg($msg);
     };
     $client->on_send_message =sub {
         my $msg = shift;
-        ShowMsg($msg,$client);
+        ShowMsg($msg);
     };
     $client->run();
 

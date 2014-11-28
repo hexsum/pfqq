@@ -102,6 +102,11 @@ sub _load_extra_accessor {
         my $msg = shift;
         return $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{card};
     };
+    *Webqq::Message::GroupMessage::Recv::from_city = sub{
+        my $msg = shift;
+        return $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{city};
+    };
+
     *Webqq::Message::GroupMessage::Send::group_name = sub{
         my $msg = shift;
         return $client->search_group($msg->{group_code})->{name} ;

@@ -14,8 +14,10 @@ sub SmartReply{
     my $userid = $msg->from_qq;
     my $msg_type = $msg->{type};
     my $from_nick;
+    my $from_city;
     if($msg->{type} eq 'group_message'){
         $from_nick = $msg->from_card || $msg->from_nick;
+        $from_city = $msg->from_city;
     }
     else{
         $from_nick = $msg->from_nick;
@@ -26,6 +28,7 @@ sub SmartReply{
         "userid"    =>  $userid,
         "info"      =>  $input,
     );
+    push @query_string,(loc=>$from_city."市") if $from_city;
     my @query_string_pairs;
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string);
     $client->{asyn_ua}->get($API . "?" . join("&",@query_string_pairs),(),sub{
