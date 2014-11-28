@@ -309,6 +309,9 @@ sub run {
     #设置从发送消息队列中提取到消息后对应的处理函数
     $self->{send_message_queue}->get(sub{
         my $msg = shift;
+        #消息的ttl值减少到0则丢弃消息
+        return if $msg->{ttl}==0;
+        $msg->{ttl}--;
         my $rand_watcher_id = rand();
         #my $now = AE::now;
         #$self->{send_last_schedule_time} = $now  unless defined $self->{send_last_schedule_time};

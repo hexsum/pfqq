@@ -64,6 +64,7 @@ sub _create_msg {
         msg_class   => "send",
         msg_time    => time,
         cb          => $p{cb},
+        ttl         => 5,
     );
     if($p{type} eq 'sess_message'){
         $msg{service_type} = $p{service_type};
@@ -283,6 +284,7 @@ sub parse_receive_msg{
                         ruin        =>  $m->{value}{ruin},
                         id          =>  $m->{value}{id},
                         msg_class   =>  "recv",
+                        ttl         =>  5,
                     };
                     $client->msg_put($msg);
                 }
@@ -296,6 +298,7 @@ sub parse_receive_msg{
                         msg_time    =>  $m->{value}{'time'},
                         content     =>  $m->{value}{content},
                         msg_class   =>  "recv",
+                        ttl         =>  5,
                     };
                     $client->msg_put($msg);
                 }   
@@ -311,6 +314,7 @@ sub parse_receive_msg{
                         send_uin    =>  $m->{value}{send_uin},
                         group_code  =>  $m->{value}{group_code}, 
                         msg_class   =>  "recv",
+                        ttl         =>  5,
                     };
                     $client->msg_put($msg);
                 }
