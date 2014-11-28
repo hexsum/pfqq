@@ -47,29 +47,33 @@ sub Perldoc{
         my $module = $1;
         my $is_perldoc = $msg->{content}=~/perldoc/;
         return if !$is_perldoc  and  time - $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} < 300;
-        my $metacpan_api = 'http://api.metacpan.org/v0/module/';
+        my $metacpan_module_api = 'http://api.metacpan.org/v0/module/';
+        my $metacpan_pod_api = 'http://api.metacpan.org/v0/pod/';
+
         my $cache = $client->{cache_for_metacpan}->retrieve($module);                
         if(defined $cache){
             $client->reply_message($msg,$cache->{doc});
             $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
             return;
         }
-        my @headers = ();
-        $client->{asyn_ua}->get($metacpan_api . $module,@headers,sub{   
+        $client->{asyn_ua}->get($metacpan_module_api . $module,(),sub{   
             my $response = shift;
             my $doc;
             my $json;
             my $code;
             if($client->{debug}){
-                print "GET " . $metacpan_api . $module,"\n";
+                print "GET " . $metacpan_module_api . $module,"\n";
                 #print $response->content;
             }
             eval{ $json = JSON->new->utf8->decode($response->content);};
             unless($@){ 
                 if($json->{code} == 404){
-                    $doc = 
-                        "模块名称: $module ($json->{message})" ;
+                    $doc = "模块名称: $module ($json->{message})" ;
                     $code = 404;
+
+                    $client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
+                    $client->reply_message($msg,$doc) if $doc;
+                    $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
                 }
                 else{
                     $code = 200;
@@ -85,10 +89,20 @@ sub Perldoc{
                         "简述      : $abstract\n" . 
                         "文档链接: $podlink\n"
                     ;
+                    print print "GET " . $metacpan_pod_api . $module,"\n" if $client->{debug};
+                    $client->{asyn_ua}->get($metacpan_pod_api . $module,(Accept=>"text/plain"),sub{
+                        my $res = shift;
+                        my ($SYNOPSIS) = $res->content()=~/^SYNOPSIS$(.*?)^[A-Za-z]+$/ms;
+                        if($SYNOPSIS){
+                            $doc .= "用法概要: $SYNOPSIS\n" ;
+                            $doc=~s/\n+$//;
+                            $doc  = truncate($doc,max_bytes=>1000,max_lines=>30);                        
+                        }
+                        $client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
+                        $client->reply_message($msg,$doc) if $doc;
+                        $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
+                    });
                 }
-                $client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
-                $client->reply_message($msg,$doc) if $doc;
-                $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
             }
         }); 
                 

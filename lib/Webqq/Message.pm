@@ -224,14 +224,11 @@ sub parse_send_status_msg{
     my $json     = undef;
     eval{$json = JSON->new->decode($json_txt)};
     console_stderr "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@;
-    if($json){
-        #发送消息成功
-        if($json->{retcode}==0){
-            return {is_success=>1,status=>"发送成功"}; 
-        }
-        else{
-            return {is_success=>0,status=>"发送失败"};
-        }
+    if(ref $json eq 'HASH' and $json->{retcode}==0){
+        return {is_success=>1,status=>"发送成功"}; 
+    }
+    else{
+        return {is_success=>0,status=>"发送失败"};
     }
 }
 #消息的后期处理
