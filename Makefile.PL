@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
     NAME              => 'Webqq::Client',
-    VERSION_FROM      => 'src/Webqq/Client.pm', # finds $VERSION
+    VERSION_FROM      => 'lib/Webqq/Client.pm', # finds $VERSION
     PREREQ_PM         => {
         "JSON"                  => 0,
         "Digest::MD5"           => 0,
