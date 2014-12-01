@@ -1,6 +1,7 @@
 package Webqq::Client::App::SmartReply;
 use Exporter 'import';
 use JSON;
+use AE;
 use Encode;
 use POSIX qw(strftime);
 use Webqq::Client::Util qw(truncate);
@@ -15,6 +16,7 @@ my @limit_reply = (
     "说这么多话不累么，请休息几分钟",
 );
 #my $API = 'http://www.xiaodoubi.com/bot/api.php?chat=';
+my $once = 1;
 sub SmartReply{
     my $msg = shift;
     my $client = shift;
@@ -31,10 +33,7 @@ sub SmartReply{
         $from_nick = $msg->from_nick;
     }
     
-    my $time = time;
-    my $cur_time = strftime("%H:%M",localtime($time));
-    my $old_time = strftime("%H:%M",localtime($time-120));
-    delete $limit{$old_time};
+    my $cur_time = strftime("%H:%M",localtime(time));
     $limit{$cur_time}{$userid}++;
     if($limit{$cur_time}{$userid} > 3){
         $client->reply_message($msg,"\@$from_nick " . $limit_reply[int rand($#limit_reply+1)]);
@@ -70,6 +69,12 @@ sub SmartReply{
         $reply = truncate($reply,max_bytes=>300,max_lines=>5) if $msg_type eq 'group_message';
         $client->reply_message($msg,$reply) if $reply;
     });
-     
+ 
+    if($once){
+        $client->{watchers}{rand()} = AE::timer 60,60,sub{
+            delete $limit{strftime("%H:%M",localtime(time-120))};
+        };
+        $once = 0;
+    }       
 }
 1;
