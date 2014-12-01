@@ -2,15 +2,23 @@ package Webqq::Client::App::SmartReply;
 use Exporter 'import';
 use JSON;
 use Encode;
+use POSIX qw(strftime);
 use Webqq::Client::Util qw(truncate);
 @EXPORT=qw(SmartReply);
 my $API = 'http://www.tuling123.com/openapi/api';
+my %limit;
+my @limit_reply = (
+    "好累，让我休息下",
+    "能让我休息会不",
+    "对不起，请不要这么频繁的提问题",
+    "对不起，您的提问次数太多",
+    "说这么多话不累么，请休息几分钟",
+);
 #my $API = 'http://www.xiaodoubi.com/bot/api.php?chat=';
 sub SmartReply{
     my $msg = shift;
     my $client = shift;
     return unless $msg->{content} =~/\@小灰 /;
-    my $input = $msg->{content};
     my $userid = $msg->from_qq;
     my $msg_type = $msg->{type};
     my $from_nick;
@@ -22,6 +30,18 @@ sub SmartReply{
     else{
         $from_nick = $msg->from_nick;
     }
+    
+    my $time = time;
+    my $cur_time = strftime("%H:%M",localtime($time));
+    my $old_time = strftime("%H:%M",localtime($time-120));
+    delete $limit{$old_time};
+    $limit{$cur_time}{$userid}++;
+    if($limit{$cur_time}{$userid} > 3){
+        $client->reply_message($msg,"\@$from_nick " . $limit_reply[int rand($#limit_reply+1)]);
+        return;
+    }
+
+    my $input = $msg->{content};
     $input=~s/\@[^ ]+ |\[[^\[\]]+\]\x01|\[[^\[\]]+\]//g;
     my @query_string = (
         "key"       =>  "4c53b48522ac4efdfe5dfb4f6149ae51",
