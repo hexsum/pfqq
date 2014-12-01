@@ -4,7 +4,7 @@ use JSON;
 use AE;
 use Encode;
 use POSIX qw(strftime);
-use Webqq::Client::Util qw(truncate);
+use Webqq::Client::Util qw(truncate console);
 @EXPORT=qw(SmartReply);
 my $API = 'http://www.tuling123.com/openapi/api';
 my %limit;
@@ -14,6 +14,7 @@ my @limit_reply = (
     "对不起，请不要这么频繁的提问题",
     "对不起，您的提问次数太多",
     "说这么多话不累么，请休息几分钟",
+    "能不能小窗\@我啊，别吵着大家",
 );
 #my $API = 'http://www.xiaodoubi.com/bot/api.php?chat=';
 my $once = 1;
@@ -34,8 +35,8 @@ sub SmartReply{
     }
     
     my $cur_time = strftime("%H:%M",localtime(time));
-    $limit{$cur_time}{$userid}++;
-    if($limit{$cur_time}{$userid} > 3){
+    $limit{$cur_time}{$userid}++ if $msg->{type} eq 'group_message';
+    if($limit{$cur_time}{$userid} > 3 and $msg->{type} eq 'group_message'){
         $client->reply_message($msg,"\@$from_nick " . $limit_reply[int rand($#limit_reply+1)]);
         return;
     }
@@ -72,7 +73,9 @@ sub SmartReply{
  
     if($once){
         $client->{watchers}{rand()} = AE::timer 60,60,sub{
-            delete $limit{strftime("%H:%M",localtime(time-120))};
+            my $key = strftime("%H:%M",localtime(time-120));
+            #console "删除\%limit的key: $key\n" if $client->{debug};
+            delete $limit{$key};
         };
         $once = 0;
     }       
