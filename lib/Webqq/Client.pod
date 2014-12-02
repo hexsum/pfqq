@@ -1,0 +1,784 @@
+=pod
+
+=encoding utf8
+
+=head1 NAME
+
+  Webqq::Client - A webqq robot in Perl Language
+
+=head1 SYNOPSIS
+
+    use Webqq::Client;
+    use Digest::MD5 qw(md5_hex);
+    my $qq = 12345678;
+
+    #你的qq密码请使用md5加密后再传递给Webqq::Client
+    #我可不想被怀疑有盗号行为
+    my $pwd = md5_hex('your password');
+    
+    #通过new来初始化一个客户端对象
+    #debug=>1来打印debug信息方便调试
+    my $client = Webqq::Client->new(debug=>0);
+
+    #通过login进行登录
+    $client->login( qq=> $qq, pwd => $pwd);
+
+    #登录成功后设置客户端的接收消息回调函数
+    $client->on_receive_message = sub{
+        #当收到消息后，传递给回调函数的唯一参数是原始消息的一个hash引用
+        my $msg = shift;
+        ...;
+        #你可以对收到的消息进行任意的处理
+        #你也可以使用Data::Dumper这样的模块来查看消息的结构，比如
+        #use Data::Dumper;
+        #print Dumper $msg;
+    };
+    #客户端进入事件循环,正式开始运行
+    $client->run();
+
+=head1 CLIENT ASYNCHRONOUS FRAMEWORK
+
+    client 
+    | 
+    ->login()
+        |
+        |->timer(60s)->_get_msg_tip()#heartbeat 
+        |        +-------------------------<------------------------------+
+        |        |                                                        |
+        |->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
+        |
+        |->send_message() -[put]--+                       +-[get]-> _send_message() ---+
+        |                           \                   /                              +
+        |->send_sess_message()-[put]-Webqq::Message::Queue-[get]->_send_sess_message()-+               
+        |                              /              \                                +
+        |->send_group_message()-[put]-+                +-[get]->_send_group_message()--+
+        |                                                                              +
+        |                          on_send_message() ---<---- msg->{cb} -------<-------+
+        +->run()
+
+    请注意：
+    由于采用了单线程异步框架
+    你不用该在任何回调函数中产生阻塞或者长时间sleep
+    这会导致整个进程被阻塞，无法正常响应处理其他回调
+
+=head1 CLIENT DATA STRUCTURE
+
+    客户端登录成功后，会马上更新个人信息、好友信息、群信息
+    这些相关的信息通过多重hash引用的形式存储在如下形式中：
+    $client->{qq_database}{
+        user        => {}, #个人信息存储在 %{ $client->{qq_database}{user} }中
+        friends     => [], #好友信息存储在 @{ $client->{qq_database}{friends} }中
+        group_list  => [], #群列表信息（不含群成员）存储在@{$client->{qq_database}{group_list}}中
+        group       => [], #群信息（包含群成员）存储在 @{ $client->{qq_database}{group} } 中
+        discuss     => []  #讨论组信息，暂未实现，仅保留
+    }
+
+=over
+
+=item %{ $client->{qq_database}{user} } 个人信息
+    
+    一般情况下，你不应该直接操作该数据结构，而应该通过类提供的方法进行查询
+    hash包含的key及相关说明,注意有些key的值并不是直接的结果，通常是一些索引编号等需要做额外的转换
+    比如生肖的值是数字0，1，2，3，很容易猜测和12生肖依次对应，这部分可以自行研究
+        face        =>  #作用未知
+        birthday    =>  #生日
+        phone       =>  #电话
+        occupation  =>  #职业
+        allow       =>  #权限
+        college     =>  #大学
+        uin         =>  #本次登录唯一标识，发送消息时需要用到
+        blood       =>  #血型
+        constel     =>  #星座
+        homepage    =>  #主页
+        stat        =>  #状态
+        country     =>  #国家
+        city        =>  #城市
+        personal    =>  #个性签名
+        nick        =>  #昵称
+        shengxiao   =>  #生肖
+        email       =>  #邮箱
+        token       =>  #作用未知 
+        client_type =>  #客户端类型
+        province    =>  #省份
+        gender      =>  #性别
+        mobile      =>  #手机
+    
+    例如想获取昵称，可以通过$client->{qq_database}{user}{nick}来获取
+
+=item @{ $client->{qq_database}{friends} } 好友信息
+    
+    一般情况下，你不应该直接操作该数据结构，而应该通过类提供的方法进行查询
+    参见：
+        $client->search_friend()
+        $cleint->update_friends_info()
+    
+    好友信息存储在数组中，数组中的每个元素又是一个hash的引用
+    [
+         {#数组中第1个元素-好友1
+            flag        =>   #作用未知
+            uin         =>   #发送接收消息唯一uin
+            categories  =>   #好友所属分组
+            nick        =>   #好有昵称
+            face        =>   #作用未知
+            markname    =>   #好友备注
+            is_vip      =>   #是否是vip
+            vip_level   =>   #vip等级
+         },
+         {#数组中第2个元素-好友2
+            flag        => 
+            uin         =>
+            categories  =>
+            nick        =>
+            face        =>
+            markname    =>
+            is_vip      =>
+            vip_level   =>
+         },
+        ...#依此类推
+    ]
+
+    比如我要在好友数据库中查找昵称是"小灰"的好友所属的分组，需要这样遍历查找：
+    for my $each_friend (@{ $client->{qq_database}{friends} }) {
+        if( $each_friend->{nick} eq "小灰" ){
+            print "小灰所属的分组是：",$each_friend->{categories},"\n"
+        } 
+    }    
+
+    
+=item @{  $client->{qq_database}{group_list} } 群列表（不包含群成员）信息
+
+    一般情况下，你不应该直接操作该数据结构，而应该通过类提供的方法进行查询
+    参见：
+        $client->update_group_list_info();
+
+    由于群包含的成员数量很多，很多时候我们只需要知道有加入了哪些群，并不关心群里具体的
+    每一位成员，这种情况下只需要获取群列表信息即可，和好友信息类似，群列表信息也是存储在
+    一个数组中，数组中的每个元素又是一个hash引用
+
+    [
+        {#数组中第1个元素，群1
+            flag        =>      #作用未知
+            name        =>      #群名称
+            gid         =>      #群的uin，发送接收消息时使用
+            code        =>      #群的gcode，查找群信息时需要用到        
+            markname    =>      #群备注名称
+        },
+        {#数组中第2个元素，群2
+            flag    =>
+            name    =>
+            gid     =>
+            code    =>
+        },
+        ...#依此类推
+    ]    
+
+    比如我要查找gcode是123456的群对应的群名称
+    for my $each_group (@{  $client->{qq_database}{group_list} }){
+        if($each_group->{code} == 123456){
+            print $each_group->{name};
+        }
+    }
+
+    我要向群名称是"PERL学习交流"的群发送"hello world"消息
+    发送消息需要先获取到群的uin（也就是gid）
+    my $gid ;
+    for my $each_group (@{  $client->{qq_database}{group_list} }){
+        if($each_group->{name} eq "PERL学习交流" ){
+            $gid = $each_group->{gid}
+        }
+    }
+    if($gid){
+        $client->send_group_message(
+            $client->create_group_msg(to_uin=>$gid, content=>"hello world")
+        );
+    }
+
+=item @{  $client->{qq_database}{group} } 群信息（包含群成员）
+
+    一般情况下，你不应该直接操作该数据结构，而应该通过类提供的方法进行查询 
+    参见：
+            $client->search_group();    
+            $client->update_group_info();
+            $client->search_member_in_group();
+
+    此结构更为复杂一些，每个群信息仍然存在放一个数组中，
+    [
+        {#第1个群
+            ginfo   => {
+                face        =>      #作用未知
+                memo        =>      #群介绍
+                class       =>      #群类别
+                fingermemo  =>      #
+                code        =>      #群的gcode，和$client->{qq_database}{group_list}一致
+                createtime  =>      #群创建时间
+                flag        =>      #
+                level       =>      #群等级
+                name        =>      #群名称
+                gid         =>      #群gid ，和$client->{qq_database}{group_list}一致
+                owner       =>
+                
+            },
+            minfo   => [
+                {#群里第1个成员
+                    nick        =>  #该成员昵称
+                    province    =>  #该成员省份
+                    gender      =>  #该成员性别
+                    uin         =>  #该成员uin
+                    country     =>  #该成员国家
+                    city        =>  #该成员城市
+                },
+                {#群里第2个成员
+
+                },
+                ...,
+            ]
+        },
+        {#第2个群   
+            ginfo   => {},
+            minfo   => {},
+        },  
+        ...
+    ]
+
+    比如我要统计第1个群里女性群成员数量
+    my $female_member = 0;
+    for my $each_member @{ $client->{qq_database}{group}[0]{minfo} }{
+        if($each_member->{gender} eq 'female'){
+            $female_member++;
+        }
+    }
+
+=back
+
+    每个接收和发送的消息均存储在一个单独的hash引用中,根据消息类型的不同，内容上稍有出入
+    与此同时，采用了Automated Accessor Generation的手段，
+    每个hash的key产生一个对应的函数来方便读取，每个消息hash引用还绑定了一些方法
+    关于Automated Accessor Generation可以参见cpan Class::Accessor
+
+=over
+
+=item 发送消息结构
+
+    create_sess_msg()/create_group_msg()/create_msg()/reply_message()等会生成此消息结构
+    send_message()/send_sess_message()/send_group_message()等需要用到此消息结构
+    $msg = {
+        type           => #类型，"message"|"group_message"|"sess_message"|"kick_message"
+        msg_id         => #消息id，系统自动维护
+        from_uin       => #发送者uin，就是自己的uin,系统自动维护
+        to_uin         => #接收者uin
+        content        => #发送内容
+        msg_class      = "send" #消息类别,用于区分是发送还是接收的消息
+        msg_time       => #消息发送时间，系统自动维护
+        cb             => #该消息发送完成后的回调函数
+        service_type   => #临时消息需要设置
+        group_sig      => #临时消息需要设置
+        group_code     => #群消息需要设置,系统自动维护
+        send_uin       => #群消息需要设置,系统自动维护
+    }
+
+    由于采用了Automated Accessor Generation的手段，因此当你要获取$msg中的某个key对应value时，
+    你可以才有两种方式：
+    方式1：$msg->{type};
+    方式2：$msg->type;
+    接收到的消息结构也有类似的特性，不再说明
+
+    $msg除上述hash的key以外绑定的方法：
+        $msg->from_qq()     #获取发送者qq号
+        $msg->from_nick()   #获取发送者昵称  
+        $msg->to_qq()       #获取接收者qq号
+        $msg->to_nick()     #获取接收者昵称
+        $msg->to_gname()    #获取发送消息群名称 
+        $msg->group_name()  #获取发送消息群名称
+        $msg->to_markname() #若是好友消息，获取接收该消息的好友备注名称
+        $msg->to_categories() #若是好友消息，获取接收该消息的好友分组名次
+        $msg->from_city() #获取发送者所在城市
+        
+    
+=item 接收到的好友消息结构
+
+    $msg = {
+        type         =  "message"
+        msg_id       #系统自动维护
+        from_uin     #消息发送者的uin，可以使用此uin进行消息回复
+        to_uin       #消息接收者的uin，也就是自己的uin
+        msg_time     #消息发送时刻
+        content      #消息内容，UTF-8编码，表情会转换成为文字，例如"[系统表情]","[图片]"
+        msg_class    = "recv"
+    }
+
+    $msg除上述hash的key以外绑定的方法：
+        $msg->from_qq()     #获取发送者qq号
+        $msg->from_nick()   #获取发送者昵称  
+        $msg->to_qq()       #获取接收者qq号
+        $msg->to_nick()     #获取接收者昵称
+        $msg->from_markname() #获取发送该消息的好友备注名称
+        $msg->from_categories() #获取发送该消息的好友分组名次
+
+=item 接收到的群消息结构
+
+    $msg = {
+        type         =  "group_message"
+        msg_id       #系统自动维护
+        from_uin     #消息来源群的uin，可以使用此uin进行群消息回复
+        to_uin       #消息接收者的uin，也就是自己的uin
+        msg_time     #消息发送时刻
+        content      #消息内容，UTF-8编码，表情会转换成为文字，例如"[系统表情]","[图片]"
+        send_uin     #消息发送者的uin，和from_uin进行区别，此uin是指具体的群成员
+        group_code   #消息来源群的gcode
+        msg_class    = "recv"
+    }
+
+    $msg除上述hash的key以外绑定的方法：
+        $msg->from_qq()     #获取发送者qq号
+        $msg->from_nick()   #获取发送者昵称  
+        $msg->to_qq()       #获取接收者qq号
+        $msg->to_nick()     #获取接收者昵称
+        $msg->from_gname()  #获取消息群名称
+        $msg->group_name()  #获取消息群名称
+        $msg->from_card()   获取发送者群名片
+    
+
+=item 接收到的群临时消息结构
+
+    $msg = {
+        type         =  "group_message"
+        msg_id       #系统自动维护
+        from_uin     #消息来源群的uin，可以使用此uin进行群消息回复
+        to_uin       #消息接收者的uin，也就是自己的uin
+        msg_time     #消息发送时刻
+        content      #消息内容，UTF-8编码，表情会转换成为文字，例如"[系统表情]","[图片]"
+        id           #临时消息id，在create_sess_msg创建时需要用到
+        service_type #临时消息service_type，在create_sess_msg创建时需要用到
+        msg_class    = "recv"
+    }
+
+    $msg除上述hash的key以外绑定的方法：
+        $msg->from_qq()     #获取发送者qq号
+        $msg->from_nick()   #获取发送者昵称  
+        $msg->to_qq()       #获取接收者qq号
+        $msg->to_nick()     #获取接收者昵称
+
+=back
+
+
+=head1 PUBLIC CLASS METHOD
+
+=over
+
+=item new()
+
+    返回一个客户端对象 
+    支持的参数
+    debug=>0|1 ,设置debug=>1来打印调试信息
+    type=>"webqq"|"smartqq",设置type来切换使用webqq或者smartqq，默认使用smartqq
+    webqq是腾讯的老版本，smartqq是最新版本
+    my $client = Webqq::Client->new(debug=>1);
+
+=item on_send_message() :lvalue 
+
+    设置客户端发送消息完成后的回调函数，常用于在回调函数中记录发送消息内容或者判断发送消息状态
+    this is a lvalue subroutine, you must assign a code reference to this subroutine
+    for example:
+        $client->on_send_message() = sub{
+            my ($msg,$is_success,$status) = @_;
+            ...
+        };
+    or use hash form
+        $client->{on_send_message} = sub{
+            my ($msg,$is_success,$status) = @_;
+            ...
+    };
+    your callback will be called after the client finish sending a message
+    this callbak is usually used to determine whether a mssage is sent sucessfully
+    three parameters are passed to your callback:
+        $msg:           the original msg 
+        $is_success:    the send status, true means success,false means fail
+        $status:        the send status, the value is "发送成功" or "发送失败"; 
+    
+
+=item on_receive_message() :lvalue
+    
+    设置客户端接收消息回调函数，客户端接收到消息后会调用设置的回调函数，讲接收到的消息
+    通过hash引用的形式传递给回调函数，你可以在此函数中对接收到的消息进行处理
+    比如打印接收到的消息，对接收到的消息进行应答等
+    this is a lvalue subroutine, you must assign a code reference to this subroutine
+    your callback will be called after the client reveieves a successful msg 
+    $client->on_receive_message() = sub{
+        my $msg = shift;
+    };
+    
+    the msg reveieved is passed to your callback so you can handle that msg at will
+
+=item on_login() :lvalue
+    
+    设置客户端登录成功后的回调函数，客户端在登录成功后会调用该回调函数
+    this is a lvalue subroutine, you must assign a code reference to this subroutine
+    your callback will be called after the client successully login in.
+    $client->on_login() = sub{...;};
+
+=item on_input_img_verifycode() :lvalue
+
+    正常情况下，如果你是直接在终端运行webqq，需要输入验证码时
+    客户端会将验证码图片下载到本地，使用<STDIN>要求你在终端输入，并提示你验证码图片保存路径
+    如果你的客户端是在后台运行，脱离终端，此时无法再通过<STDIN>输入验证码
+    如果设置了该回调函数，且客户端未连接到终端
+    则客户端会尝试调用on_input_img_verifycode来获取验证码
+    你可以在该回调函数中将验证码图片通过邮件发送到手机端
+    手机端通过特殊的链接将验证码最终提交回webqq
+    $client->img_verifycode_file() = sub{
+        #$img_verifycode_file是本地验证码图片路径
+        #$smtp是一个hash引用，用于设置发送邮箱相关的设置，支持的key有：
+        #{
+        #    smtp    =>
+        #    user    =>
+        #    pass    =>
+        #    from
+        #    from_title
+        #    subject
+        #    to
+        #}
+        #实际上，采用的是Mail::SendEasy进行邮件发送，参数可以参考cpan Mail::SendEasy
+        my ($img_verifycode_file,$smtp) = @_;
+    };
+
+=item on_new_friend() :lvalue 
+    
+    设置新增好友时的回调
+    $client->on_new_friend = sub{
+        my $friend = shift;
+        #$friend结构和$client->{qq_database}{user}一致
+    };
+
+=item on_new_group() :lvalue
+
+    设置新增群时的回调
+    $client->on_new_group = sub{
+        my $group = shift;
+        #$group结构和@{$client->{qq_database}{group}}中的元素一致
+    };
+
+=item on_new_group_member() :lvalue
+
+    设置已有群中有新成员加入的回调
+    $client->on_new_group_member = sub{
+        my($group,$member)  =@_;
+        #$group和@{$client->{qq_database}{group}}中元素的->{ginfo}一致
+        #member和@{$client->{qq_database}{group}}中元素的->{minfo}元素一致
+    };
+
+=item login(qq=>$qq,pwd=>$pwd)
+
+    客户端登录，登录成功后才能够正常收发消息，登录失败该函数会die，登录成功返回true
+    $client->login(qq=>xxxx, pwd=> xxxx); #pwd是经过md5加密后的
+
+=item relogin()
+
+    客户端长期运行一段时间，会收到kick的消息要求强制下线
+    默认情况下客户端会自动调用relogin()
+    尝试重新登录，你也可以根据需要主动进行relogin
+    注意relogin过程中可能会需要重新输入验证码
+    $client->relogin()
+
+=item get_qq_from_uin($uin)
+    
+    webqq中每个qq用户在每一次客户端登录后使用的是一个唯一的uin（一串数字）进行身份标识
+    同一个用户在多次登录中uin可能不一样，但qq号码是永远不变的
+    通常情况下发送、接收消息使用uin即可
+    当你需要获取原始的qq号时，可以使用该函数
+    my $qq = $client->get_qq_from_uin($uin);
+    $uin通常是包含在接收到的消息或者客户端自己的数据库中，可以参考客户端数据结构介绍部分
+
+=item send_message($msg)
+    
+    发送好友信息,$msg是一个由$client->create_msg()生成的消息结构
+    参见$client->create_msg()
+
+=item send_sess_message($msg)
+
+    发送临时消息，$msg是一个由$client->create_sess_msg()生成的消息结构
+    参见$client->create_sess_msg()
+
+=item send_group_message()
+
+    发送群消息，$msg是一个由$client->create_group_msg()生成的消息结构
+    参见$client->create_group_msg()
+
+=item reply_message($msg,$content)
+
+    当你使用send_message() send_sess_message() send_group_message()时不可避免你需要自己构造
+    一个消息结构，需要设置消息结构中的目标uin和其他一些关键信息，这种形式适合主动发送消息
+    但大部分时候，我们都是倾向于收到消息后针对此收到的消息进行回复，这种情况下可以考虑使用
+    reply_message(),该方法接收两个参数，第一个参数是接收到的消息，第二个参数是回复的内容,比如：
+    $client->on_receive_message = sub{
+        my $msg = shift;
+        $client->reply_message($msg,"hello world");
+    };
+    $client->run();
+    这种方式更为便捷，不需要关心消息的类型，reply_message()支持回复好友消息，临时消息和群消息
+
+=item create_sess_msg(to_uin=>$uin, content=> $content,cb=>sub{...;})
+    
+    创建一个群临时消息，需要至少设置
+        to_uin          #接受者的uin
+        content         #发送内容，UTF8编码
+        service_type    #临时消息服务类型
+        group_sig       #群临时消息sig
+    其中service_type和group_sig是从接收消息中获取到的, 返回一个消息结构的hash引用:
+    my $sess_msg = $client->create_sess_msg(to_uin=>$uin, content=> $content,);
+
+=item create_group_msg(to_uin=>$uin, content=> $content,cb=>sub{...;})
+
+    创建一个群消息，需要设置的参数
+        to_uin      #目标群的uin，和数据结构中提到的gid、接收消息中的from_uin呼应
+        content     #发送的内容,UTF8编码
+    my $group_msg = $client->create_group_msg(to_uin=>$uin, content=> $content,);
+
+=item create_msg()
+
+    创建一个好友消息，需要设置的参数
+        to_uin      #目标群的uin，和接收消息中的from_uin呼应
+        content     #发送的内容,UTF8编码
+    my $msg = $client->create_msg(to_uin=>$uin, content=> $content,);
+
+=item welcome()
+
+    登录成功后，获取个人信息，打印一些欢迎信息
+    $client->welcome()
+
+=item logout()
+
+    注销登陆，webqq一般不需要注销，要退出直接关闭终止客户端即可    
+    $client->logout()
+
+=item run()
+
+    客户端运行的流程是
+    1、登录 
+    2、设置相关的回调函数 
+    3、进入事件循环
+
+    因此run()往往是放在代码最后执行，且不可缺少
+    $client->run()
+
+=item search_cookie($cookie_name)
+    
+    查找指定cookie对应的值，客户端会自动维护所有的cookie信息，该方法基本用不到
+    my $cookie_val = $client->search_cookie($cookie_name);
+
+=item search_friend($uin)
+    
+    根据提供的uin在@{ $client->{qq_database}{friends} }中查找匹配的结果，
+    返回@{ $client->{qq_database}{friends} }中某一个匹配的元素
+    my $friend_hash_ref = $client->search_friend($uin);
+
+    $friend_hash_ref = 
+
+    {
+        flag        =>   #作用未知
+        uin         =>   #发送接收消息唯一uin
+        categories  =>   #好友所属分组
+        nick        =>   #好有昵称
+        face        =>   #作用未知
+        markname    =>   #好友备注
+        is_vip      =>   #是否是vip
+        vip_level   =>   #vip等级
+    }
+    
+
+=item search_member_in_group($gcode,$member_uin)
+
+    根据提供的gcode和uin在指定的群里搜索指定的成员，返回匹配的群成员引用
+    my $member_hash_ref = $client->search_member_in_group($gcode,$member_uin);
+
+    $member_hash_ref = 
+
+    {
+        nick        =>  #该成员昵称
+        province    =>  #该成员省份
+        gender      =>  #该成员性别
+        uin         =>  #该成员uin
+        country     =>  #该成员国家
+        city        =>  #该成员城市
+    },
+
+=item search_stranger($uin)
+    
+    收到临时消息时，可以消息包含的uin查找对应的陌生人信息
+    my $stranger_hash_ref = $client->search_stranger($uin);
+
+    $stranger_hash_ref = 
+
+    {
+        uin     =>  #uin
+        nick    =>  #昵称
+    }
+
+=item search_group($gcode)
+
+    根据设置的gcode在@{  $client->{qq_database}{group} }中查找对应的群信息
+    my $group_hash_ref = $client->search_group($gcode);
+
+    $group_hash_ref =
+
+    {
+        face        =>      #作用未知
+        memo        =>      #群介绍
+        class       =>      #群类别
+        fingermemo  =>      #
+        code        =>      #群的gcode，和$client->{qq_database}{group_list}一致
+        createtime  =>      #群创建时间
+        flag        =>      #
+        level       =>      #群等级
+        name        =>      #群名称
+        gid         =>      #群gid ，和$client->{qq_database}{group_list}一致
+        owner       =>
+    }    
+    
+
+=item update_user_info()
+
+    更新$client->{qq_database}{user}，如果为空则初始化
+
+=item update_friends_info()
+
+    更新$client->{qq_database}{friends} ，如果为空则初始化
+
+=item update_group_info()
+
+    更新$client->{qq_database}{group} 如果为空则初始化
+
+=item update_group_list_info()
+    
+    更新$client->{qq_database}{group_list} 如果为空则初始化
+
+=item add_job($type,$time,$callback)
+    
+    客户端添加定时任务，参数：
+        $type       #任意字符串
+        $time       #时间HH:MM::SS
+        $callback   #达到指定时刻后执行的动作
+    $client->add_job("定时任务","11:12",sub{...;});
+
+=item get_group_code_from_gid($gid)
+
+    通过gid查找gcode    
+    my $gcode = $client->get_group_code_from_gid($gid);
+
+=back
+
+=head1 PRIVATE CLASS METHOD
+
+=over
+
+=item _prepare_for_login()
+
+=item _check_verify_code()
+
+=item _get_img_verify_code()
+
+=item _check_sig()
+
+=item _login1()
+
+=item _login2()
+
+=item _get_user_info()
+
+=item _get_group_info()
+
+=item _get_group_list_info()
+
+=item _get_friend_info()
+
+=item _get_user_friends()
+
+=item _get_discuss_list_info()
+
+=item _send_message()
+
+=item _send_group_message()
+
+=item _get_msg_tip()
+
+=item _get_vfwebqq()
+
+=back
+
+=head1 OTHER MODULE
+
+=over
+
+=item Webqq::Client::Cache
+
+    一个简单的缓存模块，可以缓存任何内容，支持设置过期时间
+    $cache = Webqq::Client::Cache->new;
+    $cache->store('key',{a=>1,b=2,c=>[1,2,3]},30);
+    $cache->retrieve('key');#得到{a=>1,b=2,c=>[1,2,3]}
+    sleep 30;
+    $cache->retrieve('key');#缓存已过期，得到undef
+
+=item Webqq::Client::Util
+
+    此模块导出4个函数
+    console("UTF-8的内容")         #打印内容到STDOUT，会自动检测终端编码,以防止乱码
+    console_stderr("UTF-8的内容")  #打印内容到STDERR，会自动检测终端编码，以防止乱码
+    hash()                         #webqq密码生成函数，无视
+    
+    truncate($msg_content,max_bytes=>200,max_lines=>3) #截断消息，防止消息太长
+
+=item Webqq::Client::Cron
+
+    客户端定时执行任务模块，已被Webqq::Client继承，提供参见$client->add_job()
+
+=item Webqq::Client::App::ShowMsg
+
+    此模块会默认export一个ShowMsg()的函数，可以打印消息内容
+    该函数需要传入一个参数：发送或者接收到的消息,例如打印客户端发送和接收到的消息
+    use Webqq::Client::App::ShowMsg; #已经导入了一个ShowMsg()函数，可以直接调用
+    $client->on_receive_message = sub{
+        my $msg = shift;
+        ShowMsg($msg);
+    };
+    $client->on_send_message =sub {
+        my $msg = shift;
+        ShowMsg($msg);
+    };
+    $client->run();
+
+=item Webqq::Client::App::SendMsgControl
+
+=item Webqq::Client::App::SmartReply
+
+=item Webqq::Client::App::Perlcode
+
+=item Webqq::Client::App::Perldoc
+
+=item Webqq::Client::App::ShowMsg
+
+=item Webqq::Client::App::Msgstat
+
+=item Webqq::Client::App::SendMsgFromMsg
+
+=item Webqq::Client::App::SendMsgFromSocket
+
+
+=back
+
+=head1 SEE ALSO
+
+https://github.com/sjdy521/Webqq-Client
+
+=head1 AUTHOR
+
+Perfi, E<lt>sjdy521@163.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2014 by Perfi
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.8 or,
+at your option, any later version of Perl 5 you may have available.
+
+
+=cut
