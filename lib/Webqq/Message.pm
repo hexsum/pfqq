@@ -172,6 +172,11 @@ sub _load_extra_accessor {
         my $msg = shift;
         return $client->search_friend($msg->{from_uin})->{categories};
     };
+
+    *Webqq::Message::Message::Recv::from_city = sub {
+        my $msg = shift;
+        return $client->search_friend($msg->{from_uin})->{city};
+    };
     
     *Webqq::Message::Message::Recv::to_nick = sub{
         return "我";

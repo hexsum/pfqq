@@ -4,6 +4,7 @@
 1）完善pod文档
 2）Webqq::Client::App::SmartReply限制条件更加严格
 3）删除$client->_get_msg_tip()
+4）接收到的好友消息增加$msg->from_city()
 
 2014-11-28 Webqq::Client v4.6
 1）修复客户端发送消息失败无法正常返回状态的bug

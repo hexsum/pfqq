@@ -323,8 +323,9 @@
         $msg->from_nick()   #获取发送者昵称  
         $msg->to_qq()       #获取接收者qq号
         $msg->to_nick()     #获取接收者昵称
-        $msg->from_markname() #获取发送该消息的好友备注名称
+        $msg->from_markname()   #获取发送该消息的好友备注名称
         $msg->from_categories() #获取发送该消息的好友分组名称
+        $msg->from_city()       #获取发送者所在城市信息
 
 =item 接收到的群消息结构
 
