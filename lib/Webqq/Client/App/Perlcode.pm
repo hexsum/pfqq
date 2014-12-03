@@ -12,9 +12,9 @@ if($^O !~ /linux/){
     exit;
 }
 chomp(my $PERL_COMMAND = `/bin/env which perl`);
-mkpath "/tmp/webqq/log/",{owner=>"nobody",group=>"nobody",mode=>0711};
-mkpath "/tmp/webqq/bin/",{owner=>"nobody",group=>"nobody",mode=>0711};
-mkpath "/tmp/webqq/src/",{owner=>"nobody",group=>"nobody",mode=>0711};
+mkpath "/tmp/webqq/log/",{owner=>"nobody",group=>"nobody",mode=>0555};
+mkpath "/tmp/webqq/bin/",{owner=>"nobody",group=>"nobody",mode=>0555};
+mkpath "/tmp/webqq/src/",{owner=>"nobody",group=>"nobody",mode=>0555};
 chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/";
 chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/log";
 chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/bin";

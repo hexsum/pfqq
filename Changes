@@ -1,5 +1,10 @@
 版本更新记录:
 
+2014-11-28 Webqq::Client v4.7
+1）完善pod文档
+2）Webqq::Client::App::SmartReply限制条件更加严格
+3）删除$client->_get_msg_tip()
+
 2014-11-28 Webqq::Client v4.6
 1）修复客户端发送消息失败无法正常返回状态的bug
 2）cpan模块信息查询支持显示SYNOPSIS

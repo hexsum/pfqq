@@ -42,7 +42,6 @@
     | 
     ->login()
         |
-        |->timer(60s)->_get_msg_tip()#heartbeat 
         |        +-------------------------<------------------------------+
         |        |                                                        |
         |->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
@@ -254,6 +253,7 @@
     与此同时，采用了Automated Accessor Generation的手段，
     每个hash的key产生一个对应的函数来方便读取，每个消息hash引用还绑定了一些方法
     关于Automated Accessor Generation可以参见cpan Class::Accessor
+    注意：发送和接收消息对应的方法名称和数量可能不同
 
 =over
 
@@ -274,6 +274,7 @@
         group_sig      => #临时消息需要设置
         group_code     => #群消息需要设置,系统自动维护
         send_uin       => #群消息需要设置,系统自动维护
+        ttl            => #发送消息带有一个ttl值，默认是5，当ttl减为1时会被发送消息队列丢弃
     }
 
     由于采用了Automated Accessor Generation的手段，因此当你要获取$msg中的某个key对应value时，
@@ -283,15 +284,26 @@
     接收到的消息结构也有类似的特性，不再说明
 
     $msg除上述hash的key以外绑定的方法：
+
+    如果发送消息是群消息
+        $msg->group_name();#发送消息对应的群名称
+        $msg->to_gname();  #消息对应的群名称
+        $msg->from_qq();   #发送者的qq号
+        $msg->from_nick(); #发送者的昵称
+
+    如果发送消息是好友消息
+        $msg->from_nick     #发送者昵称
+        $msg->from_qq       #发送者qq号
+        $msg->to_nick       #接收者昵称
+        $msg->to_qq         #接收者qq号
+        $msg->to_markname   #接收者备注
+        $msg->to_categories #接收者所属分组
+
+    如果发送消息是临时消息
         $msg->from_qq()     #获取发送者qq号
         $msg->from_nick()   #获取发送者昵称  
         $msg->to_qq()       #获取接收者qq号
         $msg->to_nick()     #获取接收者昵称
-        $msg->to_gname()    #获取发送消息群名称 
-        $msg->group_name()  #获取发送消息群名称
-        $msg->to_markname() #若是好友消息，获取接收该消息的好友备注名称
-        $msg->to_categories() #若是好友消息，获取接收该消息的好友分组名次
-        $msg->from_city() #获取发送者所在城市
         
     
 =item 接收到的好友消息结构
@@ -312,7 +324,7 @@
         $msg->to_qq()       #获取接收者qq号
         $msg->to_nick()     #获取接收者昵称
         $msg->from_markname() #获取发送该消息的好友备注名称
-        $msg->from_categories() #获取发送该消息的好友分组名次
+        $msg->from_categories() #获取发送该消息的好友分组名称
 
 =item 接收到的群消息结构
 
@@ -335,7 +347,8 @@
         $msg->to_nick()     #获取接收者昵称
         $msg->from_gname()  #获取消息群名称
         $msg->group_name()  #获取消息群名称
-        $msg->from_card()   获取发送者群名片
+        $msg->from_card()   #获取发送者群名片
+        $msg->from_city()   #获取消息发送者的所在城市信息
     
 
 =item 接收到的群临时消息结构
@@ -377,6 +390,7 @@
 =item on_send_message() :lvalue 
 
     设置客户端发送消息完成后的回调函数，常用于在回调函数中记录发送消息内容或者判断发送消息状态
+    或者用于发送消息失败后进行重发（腾讯的api接口白天总是不太稳定经常会返回5xx）
     this is a lvalue subroutine, you must assign a code reference to this subroutine
     for example:
         $client->on_send_message() = sub{
@@ -395,6 +409,29 @@
         $is_success:    the send status, true means success,false means fail
         $status:        the send status, the value is "发送成功" or "发送失败"; 
     
+    通过on_send_message回调进行消息重新发送：
+    use Webqq::Client::App::ShowMsg;
+    $client->on_send_message() = sub{
+        my ($msg,$is_success,$status) = @_;
+        if($is_success){
+            #发送成功，打印消息
+            ShowMsg($msg);
+        }
+        else{
+            #发送失败，把消息重新放回消息队列里，$msg->ttl值默认是5,每次经过队列就会递减
+            $client->{send_message_queue}->put($msg);
+
+            #上述的方式用到了$client->{send_message_queue} 这个文档中并没有过多介绍
+            #有兴趣可以参见Webqq::Message::Queue;
+            #或者采用更规范的方式:
+            $client->send_message($msg) if $msg->{type} eq 'message';
+            $client->send_group_message($msg) if $msg->{type} eq 'group_message';
+            $client->send_sess_message($msg) if $msg->{type} eq 'sess_message';
+            #这种方式不好的地方是你需要自己判断消息类型再调用相应的发送方法
+        }
+        
+    };    
+
 
 =item on_receive_message() :lvalue
     
