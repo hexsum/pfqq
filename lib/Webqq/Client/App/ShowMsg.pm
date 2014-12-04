@@ -76,6 +76,8 @@ sub ShowMsg{
             $msg->{content}
         );
     }
+
+    return 1;
 }
 
 sub format_msg{

@@ -557,7 +557,7 @@
     发送临时消息，$msg是一个由$client->create_sess_msg()生成的消息结构
     参见$client->create_sess_msg()
 
-=item send_group_message()
+=item send_group_message($msg)
 
     发送群消息，$msg是一个由$client->create_group_msg()生成的消息结构
     参见$client->create_group_msg()

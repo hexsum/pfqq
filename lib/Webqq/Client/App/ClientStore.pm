@@ -6,5 +6,6 @@ sub ClientStore{
     my $client = shift;     
     my $path = shift;
     store($client->{qq_database},$path);
+    return 1;
 }
 1;

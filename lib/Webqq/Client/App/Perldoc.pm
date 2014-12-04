@@ -13,7 +13,7 @@ my %last_module_time ;
 
 sub Perldoc{
     my $msg = shift;
-    return if time - $msg->{msg_time} > 10;
+    return 1 if time - $msg->{msg_time} > 10;
     my $client = shift; 
     my $perldoc_path = shift;
     $PERLDOC_COMMAND = $perldoc_path if defined $perldoc_path;
@@ -47,12 +47,15 @@ sub Perldoc{
         }
 
         $client->reply_message($msg,$doc) if $doc;
+        return 0;
     }  
 
     elsif($msg->{content} =~ /perldoc\s+((\w+::)*\w+)/ or $msg->{content} =~ /((\w+::)+\w+)/){
         my $module = $1;
         my $is_perldoc = $msg->{content}=~/perldoc/;
-        return if !$is_perldoc  and  time - $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} < 300;
+        if(!$is_perldoc and exists $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} and time - $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} < 600){
+            return 0;
+        }
         my $metacpan_module_api = 'http://api.metacpan.org/v0/module/';
         my $metacpan_pod_api = 'http://api.metacpan.org/v0/pod/';
 
@@ -60,7 +63,7 @@ sub Perldoc{
         if(defined $cache){
             $client->reply_message($msg,$cache->{doc});
             $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
-            return;
+            return 0;
         }
         $client->{asyn_ua}->get($metacpan_module_api . $module,(),sub{   
             my $response = shift;
@@ -78,7 +81,7 @@ sub Perldoc{
                     $code = 404;
 
                     $client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
-                    $client->reply_message($msg,$doc) if $doc;
+                    $client->reply_message($msg,$doc) if $doc and $is_perldoc;
                     $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
                 }
                 else{
@@ -112,7 +115,10 @@ sub Perldoc{
             }
         }); 
                 
+        return 0;
     }
+
+    return 1;
 }
 
 1;

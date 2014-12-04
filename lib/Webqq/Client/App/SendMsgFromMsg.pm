@@ -37,6 +37,8 @@ sub SendMsgFromMsg{
         
         close $fh;
     }
+
+    return 1;
 }
 
 1;

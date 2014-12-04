@@ -1,5 +1,10 @@
 版本更新记录:
 
+2014-12-04 Webqq::Client v4.9
+1）插件支持执行链的功能，在插件链上的每一个插件
+   都可以选择是否要继续执行后续的插件
+2）少量细节完善
+
 2014-12-04 Webqq::Client v4.8
 1）完善on_new_gropu_memner相关的pod文档
 2）新增Webqq::Client::App::HelloGril插件

@@ -17,15 +17,15 @@ $msgstat=(-e "/tmp/webqq/data/msgstat")?retrieve("/tmp/webqq/data/msgstat"):{};
 sub Msgstat{
     my ($msg,$client,$time,$group_filter) = @_; 
     $time = "17:30" unless defined $time;
-    return if $msg->{type} ne 'group_message';
+    return 1 if $msg->{type} ne 'group_message';
     my $group_code = $msg->group_code;
     my $group_name = $msg->group_name;
     my $from_nick = $msg->from_nick;
     my $from_card = $msg->from_card;
     my $from_qq   = $msg->from_qq;
     
-    return unless $group_name;
-    return unless $from_qq;
+    return 1 unless $group_name;
+    return 1 unless $from_qq;
 
     $msgstat->{$group_name}{$from_qq}{nick}=$from_nick;
     $msgstat->{$group_name}{$from_qq}{card}=$from_card;
@@ -69,6 +69,7 @@ sub Msgstat{
         });
         $once=0;
     }
+    return 1;
 }
 
 sub Report{

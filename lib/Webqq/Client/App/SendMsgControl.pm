@@ -19,5 +19,6 @@ sub SendMsgControl{
             console("系统已重新开启消息发送功能\n") if $client->{debug};
             $client->reply_message($msg,"系统已重新开启消息发送功能");
     }
+    return 1;
 }
 1;
