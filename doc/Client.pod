@@ -225,6 +225,7 @@
                     uin         =>  #该成员uin
                     country     =>  #该成员国家
                     city        =>  #该成员城市
+                    card        =>  #群名片
                 },
                 {#群里第2个成员
 
@@ -497,11 +498,31 @@
 
 =item on_new_group_member() :lvalue
 
-    设置已有群中有新成员加入的回调
+    设置已有群中有新成员加入时的回调
+    注意，腾讯的webqq功能受限，已存在的群新增加群成员时，不一定能够获取到新成员的信息
+    webqq还能够显示发送的消息，只是昵称变为发送者的uin
+    smartqq则完全不会显示新成员发送的消息
+    不明白为什么会这样子，这算腾讯很二的地方么。。
+    客户端会努力尝试获取，但实在获取不到只能返回一个默认的结构：
+        $default_member = {
+            nick    =>  undef,
+            province=>  undef,
+            gender  =>  undef,
+            uin     =>  $member_uin,
+            country =>  undef,
+            city    =>  undef,    
+            card    =>  undef,
+        };
+    只能知道发送者的uin，其他的全部都是undef，因此，在进行回调处理时，你需要考虑到这种情况 
+    当客户端重新再次登陆时，会再次获取整个群成员信息，这时候便可以全部成员信息都获取到
+
+    新增好友也有上述类似的情况
+
     $client->on_new_group_member = sub{
         my($group,$member)  =@_;
         #$group和@{$client->{qq_database}{group}}中元素的->{ginfo}一致
         #member和@{$client->{qq_database}{group}}中元素的->{minfo}元素一致
+        my $member_nick = defined $member->{nick}?$member->{nick}:"昵称未知";
     };
 
 =item login(qq=>$qq,pwd=>$pwd)

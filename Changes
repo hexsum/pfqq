@@ -1,5 +1,11 @@
 版本更新记录:
 
+2014-12-04 Webqq::Client v4.8
+1）完善on_new_gropu_memner相关的pod文档
+2）新增Webqq::Client::App::HelloGril插件
+3）修复on_new_gropu_memner回调的bug
+4）修复无法获取群成员信息时导致反复获取的bug
+
 2014-11-28 Webqq::Client v4.7
 1）完善pod文档
 2）Webqq::Client::App::SmartReply限制条件更加严格

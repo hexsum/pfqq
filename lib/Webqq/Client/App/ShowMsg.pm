@@ -32,6 +32,7 @@ sub ShowMsg{
         my $msg_sender_nick = $msg->from_nick;
         my $msg_sender_card = $msg->from_card if $msg->{msg_class} eq 'recv';
         my $msg_sender = $msg_sender_card || $msg_sender_nick;
+        $msg_sender = "昵称未知" unless defined $msg_sender;
         #my $msg_sender_qq  = $msg->from_qq;
         format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
@@ -51,10 +52,12 @@ sub ShowMsg{
         my $msg_receiever_nick = $msg->to_nick;
         my $msg_receiever_markname = $msg->to_markname if $msg->{msg_class} eq 'send';
         my $msg_receiever = $msg_receiever_markname || $msg_receiever_nick;
+        $msg_receiever = "昵称未知" unless defined $msg_receiever;
+        $msg_sender = "昵称未知" unless defined $msg_sender;
         
         format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
-            .   "\@$msg_sender_nick(对好友:\@$msg_receiever_nick) 说: ",
+            .   "\@$msg_sender(对好友:\@$msg_receiever) 说: ",
             $msg->{content} 
         );
     }
@@ -65,6 +68,8 @@ sub ShowMsg{
     elsif($msg->{type} eq 'sess_message'){
         my $msg_sender_nick = $msg->from_nick;
         my $msg_receiever_nick = $msg->to_nick;
+        $msg_sender_nick = "昵称未知" unless defined $msg_sender_nick;
+        $msg_receiever_nick= "昵称未知" unless defined $msg_receiever_nick;
         format_msg(
             strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
             .   "\@$msg_sender_nick(对陌生人:\@$msg_receiever_nick) 说: ",

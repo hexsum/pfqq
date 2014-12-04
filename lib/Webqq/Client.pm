@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "4.7";
+our $VERSION = "4.8";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -107,8 +107,8 @@ sub new {
     $self->{asyn_ua} = AnyEvent::UserAgent->new(
                 cookie_jar  =>  $self->{cookie_jar},
                 agent       =>  $agent,
-                request_timeout =>  0,
-                inactivity_timeout  =>  0,
+                request_timeout =>  300,
+                inactivity_timeout  =>  300,
     );
     $self->{qq_param}{from_uin}  =$self->{qq_param}{qq};
     if($self->{debug}){
@@ -380,13 +380,13 @@ sub search_friend {
     }
     #新增陌生人(你是对方好友，但对方还不是你好友)
     else{
-        my $tmp_friend = {
+        my $default_friend = {
             uin =>  $uin,
             categories  => "陌生人",
-            nick        => "昵称未知",
+            nick        => undef,
         };
-        push @{ $self->{qq_database}{friends} },$tmp_friend;
-        return $tmp_friend;
+        push @{ $self->{qq_database}{friends} },$default_friend;
+        return $default_friend;
     }
 }
 
@@ -402,6 +402,15 @@ sub search_friend {
 #}
 sub search_member_in_group{
     my ($self,$gcode,$member_uin) = @_;
+    my $default_member = {
+        nick    =>  undef,
+        province=>  undef,
+        gender  =>  undef,
+        uin     =>  $member_uin,
+        country =>  undef,
+        city    =>  undef,    
+        card    =>  undef,
+    };
     #在现有的群中查找
     for my $g (@{$self->{qq_database}{group}}){ 
         #如果群是存在的
@@ -413,7 +422,8 @@ sub search_member_in_group{
                     #查到成员信息并返回
                     return dclone($m) if $m->{uin} eq $member_uin; 
                 }
-                #查不到成员信息，说明可能是新增的成员，重新更新一次群信息
+                #查不到成员信息，说明是新增的成员，重新更新一次群信息
+                my $new_group_member = {};
                 my $group_info = $self->_get_group_info($g->{ginfo}{code});
                 #群成员信息更新成功
                 if(defined $group_info and ref $group_info->{minfo} eq 'ARRAY'){
@@ -422,20 +432,23 @@ sub search_member_in_group{
                         #找到新增的成员信息了
                         if($m->{uin} eq $member_uin){   
                             #更新到现有的群中并返回
-                            push @{$g->{minfo} },$m;
-                            if(ref $self->{on_new_group_member} eq 'CODE'){
-                                $self->{on_new_group_member}->($g,$m);
-                            }
-                            return dclone($m);
+                            $new_group_member = $m;
                         }    
                     }
                     #仍然找不到信息，只好直接返回空了
-                    return {};
+                    $new_group_member = $default_member;
                 }
                 #群成员信息更新失败
                 else{
-                    return {};
+                    $new_group_member = $default_member;
                 }
+                $new_group_member_clone = dclone($new_group_member);
+                push @{$g->{minfo}},$new_group_member;
+                if(ref $self->{on_new_group_member} eq 'CODE'){
+                    $self->{on_new_group_member}->($g,$new_group_member_clone);
+                }
+                return $new_group_member_clone;
+                
             }
             #群数据中只有ginfo，没有minfo
             else{
@@ -452,18 +465,20 @@ sub search_member_in_group{
                         }
                     } 
                     #靠 还是没找到
-                    return {};
+                    push $g->{minfo},$default_member;
+                    return $default_member;
                 }
                 #很可惜，还是拿不到minfo
                 else{
-                    return {};
+                    push $g->{minfo},$default_member;
+                    return $default_member;
                 }
             }
         }
     }
     #遍历完整个群也没有匹配的群，说明群有新增了，需要更新群信息
     my $group_info = $self->_get_group_info($gcode);
-    if(defined $group_info){
+    if(defined $group_info ){
         #更新群列表信息
         #全局更新的话，担心webqq不支持（只允许启动的时候查询一次群列表）
         #$self->update_group_list_info();
@@ -483,7 +498,7 @@ sub search_member_in_group{
         }
     }
 
-    return {};
+    return $default_member;
 }
 
 sub search_stranger{
@@ -495,7 +510,8 @@ sub search_stranger{
             }
         }
     } 
-    $self->_get_stranger_info($tuin) || {};
+    
+    $self->_get_stranger_info($tuin) || {uin=>$tuin,nick=>undef};
 }
 
 #根据gcode查询对应的群信息,返回的是一个hash的引用
@@ -526,9 +542,6 @@ sub search_group{
             code    =>  $group_info->{ginfo}{code},
         });
         $self->update_group_info($group_info);
-        if(ref $self->{on_new_group} eq 'CODE'){
-            $self->{on_new_group}->($group_info);
-        }
         return dclone($group_info->{ginfo});
     }
     else{ 
@@ -619,6 +632,9 @@ sub update_group_info{
             }
         } 
         push @{$self->{qq_database}{group}},$group;
+        if(ref $self->{on_new_group} eq 'CODE'){
+            $self->{on_new_group}->($group);
+        }
         return;
     }
     $self->update_group_list_info();

@@ -19,9 +19,15 @@ sub Perldoc{
     $PERLDOC_COMMAND = $perldoc_path if defined $perldoc_path;
     if($msg->{content} =~/perldoc\s+-(v|f)\s+([^ ]+)/){
         my ($p,$v) = ($1,$2);
-        $v=~s/"/\\"/;
         my $doc = '';
-        open PERLDOC,qq{$PERLDOC_COMMAND -Tt -$p "$v" 2>&1|} or $doc = '@灰灰 run perldoc fail';
+        my $command;
+        if($v eq q{$'}){
+            $command = qq{$PERLDOC_COMMAND -Tt -$p "$v" 2>&1|};
+        } 
+        else{
+            $command = qq{$PERLDOC_COMMAND -Tt -$p '$v' 2>&1|};
+        }
+        open PERLDOC,$command or $doc = '@灰灰 run perldoc fail';
         while(<PERLDOC>){
             last if $.>10;
             $doc .= $_;

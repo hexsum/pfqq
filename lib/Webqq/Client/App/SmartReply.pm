@@ -21,7 +21,7 @@ sub SmartReply{
     my $msg = shift;
     my $client = shift;
     my $msg_type = $msg->{type};    
-    return unless $msg->{content} =~/\@小灰 /;
+    return unless $msg->{content} =~/\@小灰/;
     my $userid = $msg->from_qq;
     return if exists $ban{$userid};
     my $from_nick;
@@ -61,7 +61,7 @@ sub SmartReply{
     }
 
     my $input = $msg->{content};
-    $input=~s/\@[^ ]+ |\[[^\[\]]+\]\x01|\[[^\[\]]+\]//g;
+    $input=~s/\@[^ ]+ ?|\[[^\[\]]+\]\x01|\[[^\[\]]+\]//g;
     my @query_string = (
         "key"       =>  "4c53b48522ac4efdfe5dfb4f6149ae51",
         "userid"    =>  $userid,
@@ -84,6 +84,9 @@ sub SmartReply{
         } 
         elsif($data->{code}== 200000){
             $reply = encode("utf8","$data->{text}\n$data->{url}");
+        }
+        else{
+            return;
         }
         $reply  = "\@$from_nick " . $reply  if rand(100)>20;
         $reply = truncate($reply,max_bytes=>300,max_lines=>5) if $msg_type eq 'group_message';
