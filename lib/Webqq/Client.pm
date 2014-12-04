@@ -465,12 +465,12 @@ sub search_member_in_group{
                         }
                     } 
                     #靠 还是没找到
-                    push $g->{minfo},$default_member;
+                    push @{$g->{minfo}},$default_member;
                     return $default_member;
                 }
                 #很可惜，还是拿不到minfo
                 else{
-                    push $g->{minfo},$default_member;
+                    push @{$g->{minfo}},$default_member;
                     return $default_member;
                 }
             }
