@@ -1,23 +1,22 @@
-package Webqq::Client::App::HelloGirl;
-use Exporter 'import';
+package Webqq::Client::Plugin::HelloGirl;
 use AE;
-@EXPORT=qw(HelloGirl);
 my @hello = (
     "希望你在群里开心愉快,有问题我们会尽快帮忙解决",
     "有问题尽管问哦，谁敢欺负你找管理员",
     "\@全体成员 难得女生发问，请大家尽快帮忙解决",
 );
 my %last;
-sub HelloGirl{
+sub call{
     my ($msg,$client) = @_;
     if($msg->{type} eq 'group_message'){
         my $gender = $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{gender};
         if($gender eq 'female'){
+            my $from_nick;
             if($msg->{type} eq 'group_message'){
-                my $from_nick = $msg->{card} || $msg->from_nick;
+                $from_nick = $msg->{card} || $msg->from_nick;
             }
             else{
-                my $from_nick = $msg->from_nick;
+                $from_nick = $msg->from_nick;
             }
             
             my $from_qq   = $msg->from_qq;

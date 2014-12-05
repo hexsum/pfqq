@@ -1,8 +1,6 @@
-package Webqq::Client::App::SendMsgControl;
-use Exporter 'import';
+package Webqq::Client::Plugin::SendMsgControl;
 use Webqq::Client::Util qw(console);
-@EXPORT=qw(SendMsgControl);
-sub SendMsgControl{
+sub call{
     my($msg,$client) = @_;
     if($msg->{content}=~/^-shutdown$/){
         my $from_qq = $msg->from_qq;

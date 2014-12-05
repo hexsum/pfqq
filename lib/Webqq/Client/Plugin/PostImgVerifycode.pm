@@ -1,4 +1,4 @@
-package Webqq::Client::App::PostImgVerifycode;
+package Webqq::Client::Plugin::PostImgVerifycode;
 use IO::Socket::INET;
 use Webqq::Client::Util qw(console);
 use HTTP::Date;
@@ -6,9 +6,7 @@ use IO::Handle;
 use Sys::HostIP qw(ips);
 use Mail::SendEasy;
 use File::Basename;
-use Exporter 'import';
-our @EXPORT = qw(PostImgVerifycode);
-sub PostImgVerifycode{
+sub call{
     my($img_verifycode_file,$smtp) =@_;
     unless(ref $smtp eq 'HASH'){
         console "PostImgVerifycode需要正确的smtp信息\n";    

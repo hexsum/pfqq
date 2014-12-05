@@ -185,7 +185,7 @@ sub login{
 
     #登录不成功，客户端退出运行
     if($self->{login_state} ne 'success'){
-        console "登录失败，客户端退出\n";
+        console "登录失败，客户端退出（可能验证码错误或者网络不稳定，请多尝试几次）\n";
         exit;
     }
     else{
@@ -310,7 +310,19 @@ sub run {
     $self->{send_message_queue}->get(sub{
         my $msg = shift;
         #消息的ttl值减少到0则丢弃消息
-        return if $msg->{ttl}==0;
+        if($msg->{ttl} <= 0){
+            my $status = {is_success=>0,status=>"发送失败"};
+            my $send_message_callback = $msg->{cb} || $self->{on_send_message};
+            if(ref $send_message_callback eq 'CODE'){
+                $send_message_callback->(
+                    $msg,
+                    $status->{is_success},
+                    $status->{status},
+                );
+            }
+        
+            return;
+        }
         $msg->{ttl}--;
         my $rand_watcher_id = rand();
         #my $now = AE::now;

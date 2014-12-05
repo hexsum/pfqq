@@ -65,6 +65,7 @@ sub _create_msg {
         msg_time    => time,
         cb          => $p{cb},
         ttl         => 5,
+        allow_plugin => 1,
     );
     if($p{type} eq 'sess_message'){
         $msg{service_type} = $p{service_type};
@@ -233,8 +234,8 @@ sub parse_send_status_msg{
     my $client = shift;
     my ($json_txt) = @_;
     my $json     = undef;
-    eval{$json = JSON->new->decode($json_txt)};
-    console_stderr "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@;
+    eval{$json = JSON->new->utf8->decode($json_txt)};
+    console_stderr "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@ and $client->{debug};
     if(ref $json eq 'HASH' and $json->{retcode}==0){
         return {is_success=>1,status=>"发送成功"}; 
     }
@@ -275,8 +276,8 @@ sub parse_receive_msg{
     my $client = shift;
     my ($json_txt) = @_;  
     my $json     = undef;
-    eval{$json = JSON->new->decode($json_txt)};
-    console_stderr "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@;
+    eval{$json = JSON->new->utf8->decode($json_txt)};
+    console_stderr "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@ and $client->{debug};
     if($json){
         #一个普通的消息
         if($json->{retcode}==0){
@@ -294,7 +295,8 @@ sub parse_receive_msg{
                         ruin        =>  $m->{value}{ruin},
                         id          =>  $m->{value}{id},
                         msg_class   =>  "recv",
-                        ttl         =>  5,
+                        ttl         =>  5,  
+                        allow_plugin => 1,
                     };
                     $client->msg_put($msg);
                 }
@@ -309,6 +311,7 @@ sub parse_receive_msg{
                         content     =>  $m->{value}{content},
                         msg_class   =>  "recv",
                         ttl         =>  5,
+                        allow_plugin => 1,
                     };
                     $client->msg_put($msg);
                 }   
@@ -325,6 +328,7 @@ sub parse_receive_msg{
                         group_code  =>  $m->{value}{group_code}, 
                         msg_class   =>  "recv",
                         ttl         =>  5,
+                        allow_plugin => 1,
                     };
                     $client->msg_put($msg);
                 }

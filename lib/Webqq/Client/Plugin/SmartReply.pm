@@ -1,11 +1,9 @@
-package Webqq::Client::App::SmartReply;
-use Exporter 'import';
+package Webqq::Client::Plugin::SmartReply;
 use JSON;
 use AE;
 use Encode;
 use POSIX qw(strftime);
 use Webqq::Client::Util qw(truncate console);
-@EXPORT=qw(SmartReply);
 my $API = 'http://www.tuling123.com/openapi/api';
 my %limit;
 my %ban;
@@ -17,7 +15,7 @@ my @limit_reply = (
 );
 #my $API = 'http://www.xiaodoubi.com/bot/api.php?chat=';
 my $once = 1;
-sub SmartReply{
+sub call{
     my $msg = shift;
     my $client = shift;
     my $msg_type = $msg->{type};    
@@ -39,20 +37,20 @@ sub SmartReply{
     if($msg->{type} eq 'group_message'){
         my $key = strftime("%H:%M",localtime(time));
         $key=~s/[0-9]$//;
-        $limit{$key}{$userid}++;
+        $limit{$key}{$msg->{from_uin}}{$userid}++;
 
-        my $limit = $limit{$key}{$userid};
-        if($limit>3 and $limit<=5){
+        my $limit = $limit{$key}{$msg->{from_uin}}{$userid};
+        if($limit>=3 and $limit<=4){
             $client->reply_message($msg,"\@$from_nick " . $limit_reply[int rand($#limit_reply+1)]);
             return 1;
         }
     
-        if($limit >5 and $limit <=7){
+        if($limit >=5 and $limit <=6){
             $client->reply_message($msg,"\@$from_nick " . "警告，您提问过于频繁，即将被列入黑名单，请克制\n");
             return 1;
         }
 
-        if($limit > 7){
+        if($limit > 6){
             $ban{$userid} = 1;
             $client->reply_message($msg,"\@$from_nick " . "您已被列入黑名单，10分钟内提问无视\n");
             my $watcher = rand();

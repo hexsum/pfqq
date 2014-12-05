@@ -392,7 +392,6 @@
 =item on_send_message() :lvalue 
 
     设置客户端发送消息完成后的回调函数，常用于在回调函数中记录发送消息内容或者判断发送消息状态
-    或者用于发送消息失败后进行重发（腾讯的api接口白天总是不太稳定经常会返回5xx）
     this is a lvalue subroutine, you must assign a code reference to this subroutine
     for example:
         $client->on_send_message() = sub{
@@ -411,7 +410,7 @@
         $is_success:    the send status, true means success,false means fail
         $status:        the send status, the value is "发送成功" or "发送失败"; 
     
-    通过on_send_message回调进行消息重新发送：
+
     use Webqq::Client::App::ShowMsg;
     $client->on_send_message() = sub{
         my ($msg,$is_success,$status) = @_;
@@ -420,16 +419,8 @@
             ShowMsg($msg);
         }
         else{
-            #发送失败，把消息重新放回消息队列里，$msg->ttl值默认是5,每次经过队列就会递减
-            $client->{send_message_queue}->put($msg);
-
-            #上述的方式用到了$client->{send_message_queue} 这个文档中并没有过多介绍
-            #有兴趣可以参见Webqq::Message::Queue;
-            #或者采用更规范的方式:
-            $client->send_message($msg) if $msg->{type} eq 'message';
-            $client->send_group_message($msg) if $msg->{type} eq 'group_message';
-            $client->send_sess_message($msg) if $msg->{type} eq 'sess_message';
-            #这种方式不好的地方是你需要自己判断消息类型再调用相应的发送方法
+            #发送失败
+            ShowMsg($msg,"[发送失败]");
         }
         
     };    
@@ -550,16 +541,19 @@
 =item send_message($msg)
     
     发送好友信息,$msg是一个由$client->create_msg()生成的消息结构
+    如果发送失败默认会尝试重新发送，最多尝试5次
     参见$client->create_msg()
 
 =item send_sess_message($msg)
 
-    发送临时消息，$msg是一个由$client->create_sess_msg()生成的消息结构
+    发送临时消息，$msg是一个由$client->create_sess_msg()生成的消息结构  
+    如果发送失败默认会尝试重新发送，最多尝试5次
     参见$client->create_sess_msg()
 
-=item send_group_message()
+=item send_group_message($msg)
 
-    发送群消息，$msg是一个由$client->create_group_msg()生成的消息结构
+    发送群消息，$msg是一个由$client->create_group_msg()生成的消息结构   
+    如果发送失败默认会尝试重新发送，最多尝试5次
     参见$client->create_group_msg()
 
 =item reply_message($msg,$content)
@@ -574,6 +568,7 @@
     };
     $client->run();
     这种方式更为便捷，不需要关心消息的类型，reply_message()支持回复好友消息，临时消息和群消息
+    如果回复失败默认会尝试重新发送，最多尝试5次
 
 =item create_sess_msg(to_uin=>$uin, content=> $content,cb=>sub{...;})
     
@@ -800,7 +795,9 @@
     };
     $client->on_send_message =sub {
         my $msg = shift;
-        ShowMsg($msg);
+        my $is_success = shift;
+        my $status = shift;
+        ShowMsg($msg,"[$status]");
     };
     $client->run();
 

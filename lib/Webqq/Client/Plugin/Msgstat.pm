@@ -1,9 +1,7 @@
-package Webqq::Client::App::Msgstat;
+package Webqq::Client::Plugin::Msgstat;
 use Storable qw(retrieve store);
 use File::Path qw/mkpath/;
 use Webqq::Client::Util qw(console console_stderr);
-use Exporter 'import';
-@EXPORT = qw(Msgstat Report);
 
 if($^O !~ /linux/){
     console_stderr "Webqq::Client::App::Msgstat只能运行在linux系统上\n";
@@ -14,7 +12,7 @@ mkpath "/tmp/webqq/data",{mode=>0711};
 my $msgstat;
 my $once = 1;
 $msgstat=(-e "/tmp/webqq/data/msgstat")?retrieve("/tmp/webqq/data/msgstat"):{};
-sub Msgstat{
+sub call{
     my ($msg,$client,$time,$group_filter) = @_; 
     $time = "17:30" unless defined $time;
     return 1 if $msg->{type} ne 'group_message';
@@ -40,7 +38,7 @@ sub Msgstat{
 
     if($once){
         $client->{watchers}{rand()} = AE::timer 60,300,sub{
-            console "消息统计数据存盘\n";
+            console "消息统计数据存盘\n" if $client->{debug};
             store($msgstat,"/tmp/webqq/data/msgstat");
         };
         #my $group_name = "PERL学习交流";

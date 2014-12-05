@@ -1,11 +1,9 @@
-package Webqq::Client::App::Perlcode;
+package Webqq::Client::Plugin::Perlcode;
 use File::Temp qw/tempfile/;
 use Webqq::Client::Util qw(console_stderr);
 use File::Path qw/mkpath rmtree/;
 use IPC::Run qw(run timeout start pump finish harness);
 use POSIX qw(strftime);
-use Exporter 'import';
-@EXPORT = qw(Perlcode);
 
 if($^O !~ /linux/){
     console_stderr "Webqq::Client::App::Perlcode只能运行在linux系统上\n";
@@ -21,11 +19,12 @@ chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/bin";
 chown +(getpwnam("nobody"))[2,3],"/tmp/webqq/src";
 
 open LOG,">>/tmp/webqq/log/exec.log" or die $!;
-sub Perlcode{
+sub call{
     my ($msg,$client,$perl_path) = @_;
     return 1 if time - $msg->{msg_time} > 10;
     $PERL_COMMAND = $perl_path if defined $perl_path;
     if($msg->{content} =~/(?::c|>>>)(.*?)(?::e$|__END__|$)/s or $msg->{content} =~/perl\s+-e\s+'([^']+)'/s){
+        $msg->{allow_plugin} = 0;
         my $doc = '';
         my $code = $1;
         $code=~s/CORE:://g;

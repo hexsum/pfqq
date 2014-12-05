@@ -7,13 +7,16 @@ sub Webqq::Client::_send_message{
     #将整个hash从UTF8还原为unicode
     $msg->{$_} = decode("utf8",$msg->{$_} ) for keys %$msg;
     my $ua = $self->{asyn_ua};
-    my $send_message_callback = $msg->{cb};
-    ref $cb eq 'CODE'?$send_message_callback = $cb:$send_message_callback = $self->{on_send_message};
+    my $send_message_callback = $msg->{cb} || $self->{on_send_message};
     my $callback = sub{
         my $response = shift;   
         print $response->content() if $self->{debug};
         my $status = $self->parse_send_status_msg( $response->content() );
-        if(ref $send_message_callback eq 'CODE' and defined $status){
+        if(defined $status and $status->{is_success} == 0){
+            $self->send_message($msg_origin);
+            return;
+        }
+        elsif(defined $status and ref $send_message_callback eq 'CODE'){
             $send_message_callback->(
                 $msg_origin,                   #msg
                 $status->{is_success},  #is_success
