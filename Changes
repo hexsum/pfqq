@@ -5,6 +5,7 @@
 2）新增Webqq::Client::Plugin模块，用于管理插件
 3）新增$msg->{allow_plugin}属性用于插件之间协作
 4）更新对应的pod文档
+5）demo示例代码更新
 
 2014-12-04 Webqq::Client v4.9
 1）插件支持执行链的功能，在插件链上的每一个插件

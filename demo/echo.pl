@@ -2,8 +2,6 @@
 #你发送什么信息给它，它就回复相同的内容给你
 use lib '../lib/';
 use Webqq::Client;
-use Webqq::Message;
-use Webqq::Client::Util qw(console);
 use Digest::MD5 qw(md5_hex);
 
 my $qq = 12345678;
@@ -11,11 +9,14 @@ my $pwd = md5_hex('your password');
 my $client = Webqq::Client->new(debug=>0);
 $client->login( qq=> $qq, pwd => $pwd);
 
+
+$client->load("ShowMsg");
 #设置全局默认的发送消息后的回调函数，主要用于判断消息是否成功发送
 $client->on_send_message = sub{
     my ($msg,$is_success,$status) = @_;
-    ##程序默认输出的是UTF8编码，你的终端可能是其他编码，做下自适应
-    console "msg_id: ",$msg->{msg_id}," ",$status,"\n" ;
+
+    #使用ShowMsg插件打印发送的消息
+    $client->call("ShowMsg",$msg);
 };
 
 #设置接收到消息后的回调函数
@@ -28,9 +29,15 @@ $client->on_receive_message = sub{
     #    to_uin      => 消息接受者uin，就是自己的qq
     #    content     => 消息内容，采用UTF8编码
     #    msg_time    => 消息的接收时间
+    #    ttl
+    #    msg_class
+    #    allow_plugin
     #}
     my $msg = shift;
-    
+   
+    #使用ShowMsg插件打印接收到的消息 
+    $client->call("ShowMsg",$msg);
+
     #新的方式
     $client->reply_message($msg,$msg->{content});
 
@@ -49,5 +56,4 @@ $client->on_receive_message = sub{
     #    ) ;        
     #}
 };
-$SIG{INT} = sub{$client->logout();exit;};
 $client->run;
