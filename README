@@ -8,7 +8,6 @@ client
  | 
  ->login()
     |
-    |->timer(60s)->_get_msg_tip()#heartbeat 
     |        +-------------------------<------------------------------+
     |        |                                                        |
     |->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
