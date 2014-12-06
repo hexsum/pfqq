@@ -276,7 +276,7 @@
         group_code     => #群消息需要设置,系统自动维护
         send_uin       => #群消息需要设置,系统自动维护
         ttl            => #发送消息带有一个ttl值，默认是5，当ttl减为0时会被发送消息队列丢弃
-        allow_plugin   => #是否运行插件处理该消息标记，插件之间互相配合需要用到
+        allow_plugin   => #是否允许插件处理该消息标记，插件之间互相配合需要用到
     }
 
     由于采用了Automated Accessor Generation的手段，因此当你要获取$msg中的某个key对应value时，
@@ -341,7 +341,7 @@
         send_uin     #消息发送者的uin，和from_uin进行区别，此uin是指具体的群成员
         group_code   #消息来源群的gcode
         msg_class    = "recv"
-        allow_plugin #是否运行插件处理该消息标记，插件之间互相配合需要用到
+        allow_plugin #是否允许插件处理该消息标记，插件之间互相配合需要用到
         ttl          #默认是5，当ttl减为0时会被发送消息队列丢弃
     }
 
@@ -368,7 +368,7 @@
         id           #临时消息id，在create_sess_msg创建时需要用到
         service_type #临时消息service_type，在create_sess_msg创建时需要用到
         msg_class    = "recv"
-        allow_plugin #是否运行插件处理该消息标记，插件之间互相配合需要用到
+        allow_plugin #是否允许插件处理该消息标记，插件之间互相配合需要用到
         ttl          #默认是5，当ttl减为0时会被发送消息队列丢弃
     }
 
@@ -416,7 +416,7 @@
         $status:        the send status, the value is "发送成功" or "发送失败"; 
 
     注意，如果发送消息失败，客户端默认会根据$msg->{ttl}重试多次，
-    因此你不需要再根据$is_success为假时自己在进行重试
+    因此你不需要再根据$is_success自己再进行重试
 
 =item on_receive_message() :lvalue
     
