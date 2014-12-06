@@ -4,6 +4,7 @@ use POSIX qw(strftime);
 use Encode;
 
 sub call{
+    my $client = shift;
     my $msg = shift;
     my $attach = shift; 
     if($msg->{type} eq 'group_message'){

@@ -1,7 +1,7 @@
 package Webqq::Client::Plugin::SendMsgControl;
 use Webqq::Client::Util qw(console);
 sub call{
-    my($msg,$client) = @_;
+    my($client,$msg) = @_;
     if($msg->{content}=~/^-shutdown$/){
         my $from_qq = $msg->from_qq;
         return unless $from_qq == 308165330;

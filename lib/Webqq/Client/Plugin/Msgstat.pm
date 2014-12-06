@@ -13,7 +13,7 @@ my $msgstat;
 my $once = 1;
 $msgstat=(-e "/tmp/webqq/data/msgstat")?retrieve("/tmp/webqq/data/msgstat"):{};
 sub call{
-    my ($msg,$client,$time,$group_filter) = @_; 
+    my ($client,$msg,$time,$group_filter) = @_; 
     $time = "17:30" unless defined $time;
     return 1 if $msg->{type} ne 'group_message';
     my $group_code = $msg->group_code;

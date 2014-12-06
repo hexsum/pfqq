@@ -10,9 +10,9 @@ chomp(my $PERLDOC_COMMAND = `/bin/env which perldoc`);
 my %last_module_time ;
 
 sub call{
+    my $client = shift; 
     my $msg = shift;
     return 1 if time - $msg->{msg_time} > 10;
-    my $client = shift; 
     my $perldoc_path = shift;
     $PERLDOC_COMMAND = $perldoc_path if defined $perldoc_path;
     if($msg->{content} =~/perldoc\s+-(v|f)\s+([^ ]+)/){

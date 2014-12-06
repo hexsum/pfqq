@@ -33,7 +33,7 @@ sub load {
 sub call_all{
     my $self = shift;
     for(sort {$self->{plugins}{$a}{id}<=>$self->{plugins}{$b}{id}} keys  %{$self->{plugins}}){
-        &{$self->{plugins}{$_}{code}}(@_);
+        &{$self->{plugins}{$_}{code}}($self,@_);
     }
 }
 
@@ -41,15 +41,17 @@ sub call{
     my $self = shift;
     my @plugins;
     if(ref $_[0] eq 'ARRAY'){
-        @plugins = @{shift(@_)};
+        @plugins = @{$_[0]};
+        shift;
     }
     else{
-        push @plugin,shift(@_);
+        push @plugins,$_[0];
+        shift;
     }
 
     for(@plugins){
         if(exists $self->{plugins}{$_}){
-            &{$self->{plugins}{$_}{code}}(@_);   
+            &{$self->{plugins}{$_}{code}}($self,@_);   
         }
         else{
             die "运行插件[ $_ ]失败：找不到该插件\n"; 

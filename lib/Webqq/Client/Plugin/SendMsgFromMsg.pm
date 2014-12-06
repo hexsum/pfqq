@@ -8,8 +8,8 @@ my %GROUP_MARKNAME = qw(
 );
 
 sub call{
-    my $msg = shift;
     my $client = shift; 
+    my $msg = shift;
     if($msg->{content} =~/^(?::m)(?:\n|[\t ]+)(.*?)(?:\n^|[\t ]+)(?::e)$/ms){
         my $command = $1;
         open my $fh,"<",\$command or return;

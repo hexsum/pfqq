@@ -16,8 +16,9 @@ my @limit_reply = (
 #my $API = 'http://www.xiaodoubi.com/bot/api.php?chat=';
 my $once = 1;
 sub call{
-    my $msg = shift;
     my $client = shift;
+    my $msg = shift;
+    return if $msg->{allow_plugin} == 0;
     my $msg_type = $msg->{type};    
     if($msg_type eq 'group_message'){
         return 1  if $msg->{content} !~/\@小灰/;

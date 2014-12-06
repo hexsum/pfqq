@@ -7,6 +7,7 @@ use Sys::HostIP qw(ips);
 use Mail::SendEasy;
 use File::Basename;
 sub call{
+    my $client = shift;
     my($img_verifycode_file,$smtp) =@_;
     unless(ref $smtp eq 'HASH'){
         console "PostImgVerifycode需要正确的smtp信息\n";    

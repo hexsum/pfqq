@@ -2,12 +2,12 @@ package Webqq::Client;
 use Encode;
 use LWP::Protocol::https;
 use Storable qw(dclone);
-use base qw(Webqq::Message Webqq::Client::Cron);
+use base qw(Webqq::Message Webqq::Client::Cron Webqq::Client::Plugin);
 use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "4.9";
+our $VERSION = "5.0";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -97,6 +97,8 @@ sub new {
         login_state         => "init",
         watchers            => {},
         type                => $p{type} || 'smartqq',#webqq or smartqq
+        plugin_num          =>  0,
+        plugins             =>  {}
         
     };
     $self->{ua} = LWP::UserAgent->new(

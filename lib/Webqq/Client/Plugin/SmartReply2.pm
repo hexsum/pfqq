@@ -1,8 +1,8 @@
 package Webqq::Client::Plugin::SmartReply2;
 my $API = 'http://www.xiaodoubi.com/bot/api.php?chat=';
 sub call{
-    my $msg = shift;
     my $client = shift;
+    my $msg = shift;
     my $res;
     eval{
         local $SIG{ALRM} = sub{die "timout\n"};
