@@ -721,6 +721,7 @@
     更多说明参加下方的Webqq::Client::Plugin
 
 =item call($module,$param1,$param2...)
+
 =item call([$module1,$module2,...],$param1,$param2...)
 
     该方法继承自Webqq::Client::Plugin
@@ -858,7 +859,7 @@
     1;
     $client->load("Test");
     my $plugin_code_ref = $client->plugin("Test");
-    $plugin_code_ref是Webqq::Client::Plugin::Tes::call()的引用
+    $plugin_code_ref是Webqq::Client::Plugin::Test::call()的引用
 
 
     6、$client->clear()
