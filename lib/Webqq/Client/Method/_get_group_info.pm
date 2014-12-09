@@ -1,4 +1,5 @@
 use JSON;
+use Webqq::Client::Util qw(console);
 sub Webqq::Client::_get_group_info {
     my $self = shift;
     my $gcode = shift;
@@ -23,8 +24,19 @@ sub Webqq::Client::_get_group_info {
                 ;
     my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);
     if($response->is_success){
-        print substr($response->content(),0,80),"...\n" if $self->{debug};
-        my $json = JSON->new->utf8->decode($response->content()); 
+        my $json;
+        eval{
+            $json = JSON->new->utf8->decode($response->content()) ;
+        };
+        $json = {} unless defined $json;
+        my $ginfo_status = exists $json->{result}{ginfo}?"[ginfo-ok]":"[ginfo-not-ok]";
+        my $minfo_status = exists $json->{result}{minfo}?"[minfo-ok]":"[minfo-not-ok]";
+        
+        if($self->{debug}){
+            print substr($response->content(),0,80),"${ginfo_status}${minfo_status}...\n";
+            console $@."\n" if $@;
+        }
+
         return undef unless exists $json->{result}{ginfo};
         #return undef unless exists $json->{result}{minfo};
         $json->{result}{ginfo}{name} = encode("utf8",$json->{result}{ginfo}{name});

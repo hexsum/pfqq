@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "5.1";
+our $VERSION = "5.2";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -451,15 +451,17 @@ sub search_member_in_group{
                 #群成员信息更新成功
                 if(defined $group_info and ref $group_info->{minfo} eq 'ARRAY'){
                     #再次查找新增的成员
+                    my $flag = 0;
                     for my $m (@{$group_info->{minfo}}){    
                         #找到新增的成员信息了
                         if($m->{uin} eq $member_uin){   
                             #更新到现有的群中并返回
                             $new_group_member = $m;
+                            $flag=1;
                         }    
                     }
                     #仍然找不到信息，只好直接返回空了
-                    $new_group_member = $default_member;
+                    $new_group_member = $default_member if $flag==0;
                 }
                 #群成员信息更新失败
                 else{
