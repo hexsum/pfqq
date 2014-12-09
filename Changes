@@ -1,5 +1,9 @@
 版本更新记录:
 
+2014-12-09 Webqq::Client v5.1
+1）调整pod文档格式
+2）回调函数使用eval包裹
+
 2014-12-06 Webqq::Client v5.0
 1）Webqq::Client::App::*重新更名为Webqq::Client::Plugin::
 2）新增Webqq::Client::Plugin模块，用于管理插件

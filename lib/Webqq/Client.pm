@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "5.0";
+our $VERSION = "5.1";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -203,7 +203,10 @@ sub login{
     $self->update_group_info();
     #执行on_login回调
     if(ref $self->{on_login} eq 'CODE'){
-        $self->{on_login}->($self);
+        eval{
+            $self->{on_login}->($self);
+        };
+        console $@ . "\n" if $self->{debug} and $@;
     }
     return 1;
 }
@@ -304,7 +307,10 @@ sub run {
         my $msg = shift;
         #接收队列中接收到消息后，调用相关的消息处理回调，如果未设置回调，消息将丢弃
         if(ref $self->on_receive_message eq 'CODE'){
-            $self->on_receive_message->($msg); 
+            eval{
+                $self->on_receive_message->($msg); 
+            };
+            console $@ . "\n" if $self->{debug} and $@;
         }
     });
 
@@ -388,7 +394,10 @@ sub search_friend {
     if(defined $friend){
         push @{ $self->{qq_database}{friends} },$friend;
         if(ref $self->{on_new_friend} eq 'CODE'){
-            $self->{on_new_friend}->($friend);
+            eval{
+                $self->{on_new_friend}->($friend);
+            };
+            cosole $@ . "\n" if $self->{debug} and $@;
         }
         return $friend;
     }
@@ -459,7 +468,10 @@ sub search_member_in_group{
                 $new_group_member_clone = dclone($new_group_member);
                 push @{$g->{minfo}},$new_group_member;
                 if(ref $self->{on_new_group_member} eq 'CODE'){
-                    $self->{on_new_group_member}->($g,$new_group_member_clone);
+                    eval{
+                        $self->{on_new_group_member}->($g,$new_group_member_clone);
+                    };
+                    console $@ . "\n" if $self->{debug} and $@;
                 }
                 return $new_group_member_clone;
                 
@@ -647,7 +659,10 @@ sub update_group_info{
         } 
         push @{$self->{qq_database}{group}},$group;
         if(ref $self->{on_new_group} eq 'CODE'){
-            $self->{on_new_group}->($group);
+            eval{
+                $self->{on_new_group}->($group);
+            };
+            console $@ . "\n" if $self->{debug} and $@;
         }
         return;
     }

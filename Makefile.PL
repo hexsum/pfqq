@@ -28,7 +28,7 @@ WriteMakefile(
     },
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (
-       #ABSTRACT_FROM  => 'src/Webqq/Client.pm', # retrieve abstract from module
-       ABSTRACT       => 'A webqq robot in Perl Language',
+       #ABSTRACT_FROM  => 'lib/Webqq/Client.pm', # retrieve abstract from module
+       ABSTRACT       => 'A webqq client in Perl Language',
        AUTHOR         => 'Perfi <sjdy521@163.com>') : ()),
 );
