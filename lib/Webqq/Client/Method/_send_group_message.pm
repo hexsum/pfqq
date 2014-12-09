@@ -13,7 +13,11 @@ sub Webqq::Client::_send_group_message{
         my $response = shift;
         print $response->content() if $self->{debug};
         my $status = $self->parse_send_status_msg( $response->content() );
-        if(ref $send_message_callback eq 'CODE' and defined $status){
+        if(defined $status and $status->{is_success} ==0){
+            $self->send_group_message($msg_origin);
+            return;
+        }
+        elsif(defined $status and ref $send_message_callback eq 'CODE'){
             $send_message_callback->(
                 $msg_origin,
                 $status->{is_success},

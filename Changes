@@ -1,5 +1,9 @@
 版本更新记录:
 
+2014-12-09 Webqq::Client v5.3
+1）修复ShowMsg插件bug
+2）修复发送消息重试机制失效的bug
+
 2014-12-09 Webqq::Client v5.2
 1）修复search_member_in_group()存在的bug导致无法正常获取新入群成员信息
 2）_get_group_info()在debug模式下打印的调试信息进行了精简

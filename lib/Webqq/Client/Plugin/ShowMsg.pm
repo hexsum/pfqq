@@ -37,7 +37,7 @@ sub call{
         format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
             .   "\@$msg_sender(在群:$group_name) 说: ",
-                $msg->{content} . $alarm
+                $msg->{content} . $attach
         );         
     }
     #我们多了如下的get数据项
@@ -58,7 +58,7 @@ sub call{
         format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
             .   "\@$msg_sender(对好友:\@$msg_receiever) 说: ",
-            $msg->{content}  . $alarm
+            $msg->{content}  . $attach
         );
     }
 
@@ -73,7 +73,7 @@ sub call{
         format_msg(
             strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
             .   "\@$msg_sender_nick(对陌生人:\@$msg_receiever_nick) 说: ",
-            $msg->{content} . $alarm
+            $msg->{content} . $attach
         );
     }
 
