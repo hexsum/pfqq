@@ -4,7 +4,7 @@
 
 =head1 NAME
 
-  Webqq::Client - A webqq client in Perl Language
+Webqq::Client - A webqq client in Perl Language
 
 =head1 SYNOPSIS
 
