@@ -81,7 +81,7 @@ sub call{
                     $code = 404;
 
                     $client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
-                    $client->reply_message($msg,$doc) if $doc and $is_perldoc;
+                    $client->reply_message($msg,$doc)  ;
                     $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
                 }
                 else{
@@ -98,7 +98,7 @@ sub call{
                         "简述      : $abstract\n" . 
                         "文档链接: $podlink\n"
                     ;
-                    print print "GET " . $metacpan_pod_api . $module,"\n" if $client->{debug};
+                    print "GET " . $metacpan_pod_api . $module,"\n" if $client->{debug};
                     $client->{asyn_ua}->get($metacpan_pod_api . $module,(Accept=>"text/plain"),sub{
                         my $res = shift;
                         my ($SYNOPSIS) = $res->content()=~/^SYNOPSIS$(.*?)^[A-Za-z]+$/ms;
@@ -108,7 +108,7 @@ sub call{
                             $doc  = truncate($doc,max_bytes=>1000,max_lines=>30);                        
                         }
                         $client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
-                        $client->reply_message($msg,$doc) if $doc;
+                        $client->reply_message($msg,$doc);
                         $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
                     });
                 }

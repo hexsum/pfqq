@@ -222,12 +222,8 @@ sub relogin{
     $self->{asyn_ua}->cookie_jar($self->{cookie_jar});
     #重新设置初始化参数
     $self->{qq_param} = dclone($self->{default_qq_param});
-    #停止心跳请求
-    undef $self->{timer_heartbeat};
-    #重新设置一个心跳请求
-    #$self->{timer_heartbeat} = AE::timer 0 , 60 , sub{ $self->_get_msg_tip()};
-    #$self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
-    #$self->{cache_for_group_sig} = Webqq::Client::Cache->new;
+    $self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
+    $self->{cache_for_group_sig} = Webqq::Client::Cache->new;
     $self->login(qq=>$self->{default_qq_param}{qq},pwd=>$self->{default_qq_param}{pwd});
 }
 sub _get_vfwebqq;
@@ -333,10 +329,6 @@ sub run {
         }
         $msg->{ttl}--;
         my $rand_watcher_id = rand();
-        #my $now = AE::now;
-        #$self->{send_last_schedule_time} = $now  unless defined $self->{send_last_schedule_time};
-        #$self->{send_last_schedule_time} += 1.5;
-        #my $delay = $self->{last_send_schedule_time} - $now;
         $self->{watchers}{$rand_watcher_id} = AE::timer 1.5,0,sub{
             delete $self->{watchers}{$rand_watcher_id};
             $self->_send_message($msg)  if $msg->{type} eq 'message';
@@ -349,7 +341,6 @@ sub run {
     console "开始接收消息\n";
     $self->_recv_message();
     console "客户端运行中...\n";
-    #$self->{timer_heartbeat} = AE::timer 30 , 60 , sub{ $self->_get_msg_tip()};
     #$self->{timer_user_info} = AE::timer 30 , 60 , sub{ $self->update_user_info()};
     #$self->{timer_friends_info} = AE::timer 1800 , 1800 , sub{ $self->update_friends_info()};
     #$self->{timer_group_info} = AE::timer 1800 , 1800 , sub{
