@@ -36,8 +36,7 @@ sub call{
     }
     
     if($msg->{type} eq 'group_message'){
-        my $key = strftime("%H:%M",localtime(time));
-        $key=~s/[0-9]$//;
+        my $key = strftime("%H",localtime(time));
         $limit{$key}{$msg->{from_uin}}{$userid}++;
 
         my $limit = $limit{$key}{$msg->{from_uin}}{$userid};
@@ -53,9 +52,9 @@ sub call{
 
         if($limit > 6){
             $ban{$userid} = 1;
-            $client->reply_message($msg,"\@$from_nick " . "您已被列入黑名单，10分钟内提问无视\n");
+            $client->reply_message($msg,"\@$from_nick " . "您已被列入黑名单，1小时内提问无视\n");
             my $watcher = rand();
-            $client->{watchers}{$watcher} = AE::timer 600,0,sub{
+            $client->{watchers}{$watcher} = AE::timer 3600,0,sub{
                 delete $client->{watchers}{$watcher};
                 delete $ban{$userid};
             };
@@ -97,10 +96,8 @@ sub call{
     });
  
     if($once){
-        $client->{watchers}{rand()} = AE::timer 600,600,sub{
-            my $key = strftime("%H:%M",localtime(time-600));
-            $key =~s/[0-9]$//g;
-            #console "删除\%limit的key: $key\n" if $client->{debug};
+        $client->{watchers}{rand()} = AE::timer 3600,3600,sub{
+            my $key = strftime("%H",localtime(time-3600));
             delete $limit{$key};
         };
         $once = 0;
