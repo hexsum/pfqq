@@ -4,10 +4,12 @@ sub Webqq::Client::_check_sig {
     my $self = shift;
     my $api_url = $self->{qq_param}{api_check_sig};  
     my $ua = $self->{ua};
-    my $response = $ua->get($api_url);
-    if($response->is_success){
-        return 1;
+    for(my $i=0;$i<=$self->{ua_retry_times};$i++){
+        my $response = $ua->get($api_url);
+        if($response->is_success){
+            return 1;
+        }
     }
-    else{return 0}
+    return 0;
 }
 1;

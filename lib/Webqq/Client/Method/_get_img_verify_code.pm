@@ -20,33 +20,35 @@ sub Webqq::Client::_get_img_verify_code{
 
     my @query_string_pairs;
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string) ;
-    
-    my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);
-    if($response->is_success){
-        my ($fh, $filename) = tempfile("webqq_img_verfiy_XXXX",SUFFIX =>".jpg",TMPDIR => 1);
-        binmode $fh;
-        print $fh $response->content();
-        close $fh; 
-        if(-t STDIN){
-            console "请输入图片验证码 [ $filename ]: ";
-            chomp($self->{qq_param}{verifycode} = <STDIN>);
-            $self->{qq_param}{img_verifycode_source} = 'TTY';
-        }
-        elsif(ref $self->{on_input_img_verifycode} eq 'CODE'){
-            my $code = $self->{on_input_img_verifycode}->($filename);
-            if(defined $code){
-                $self->{qq_param}{verifycode} = $code;
-                $self->{qq_param}{img_verifycode_source} = 'CALLBACK';
+   
+    for(my $i=1;$i<=$self->{ua_retry_times};$i++){ 
+        my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);
+        if($response->is_success){
+            my ($fh, $filename) = tempfile("webqq_img_verfiy_XXXX",SUFFIX =>".jpg",TMPDIR => 1);
+            binmode $fh;
+            print $fh $response->content();
+            close $fh; 
+            if(-t STDIN){
+                console "请输入图片验证码 [ $filename ]: ";
+                chomp($self->{qq_param}{verifycode} = <STDIN>);
+                $self->{qq_param}{img_verifycode_source} = 'TTY';
             }
-            else{console "无法从回调函数中获取有效的验证码，程序退出\n";exit;}
+            elsif(ref $self->{on_input_img_verifycode} eq 'CODE'){
+                my $code = $self->{on_input_img_verifycode}->($filename);
+                if(defined $code){
+                    $self->{qq_param}{verifycode} = $code;
+                    $self->{qq_param}{img_verifycode_source} = 'CALLBACK';
+                }
+                else{console "无法从回调函数中获取有效的验证码，程序退出\n";exit;}
+            }
+            else{
+                console "STDIN未连接到tty，无法输入验证码，程序退出...\n";
+                exit;
+            }
+            $self->{qq_param}{verifysession} = $self->search_cookie("verifysession") if $self->{qq_param}{verifysession} eq '';
+            return 1;
         }
-        else{
-            console "STDIN未连接到tty，无法输入验证码，程序退出...\n";
-            exit;
-        }
-        $self->{qq_param}{verifysession} = $self->search_cookie("verifysession") if $self->{qq_param}{verifysession} eq '';
-        return 1;
     }
-    else{return 0}    
+    return 0;
 }
 1;

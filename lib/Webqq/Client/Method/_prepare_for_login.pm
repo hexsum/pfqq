@@ -24,17 +24,17 @@ sub Webqq::Client::_prepare_for_login{
     );
 
     my $regex_pattern = 'var\s*(' . join("|",@global_param) . ')\s*=\s*encodeURIComponent\("(.*?)"\)';
-    my $response = $ua->get($api_url,@headers);
-    if($response->is_success){
-        my $content = $response->content();
-        my %kv = map {uri_escape($_)} $content=~/$regex_pattern/g ;        
-        for(keys %kv){
-            $self->{qq_param}{$_} = $kv{$_};
+    for(my $i=1;$i<=$self->{ua_retry_times};$i++){
+        my $response = $ua->get($api_url,@headers);
+        if($response->is_success){
+            my $content = $response->content();
+            my %kv = map {uri_escape($_)} $content=~/$regex_pattern/g ;        
+            for(keys %kv){
+                $self->{qq_param}{$_} = $kv{$_};
+            }
+            return 1;
         }
-        return 1;
     }
-    else{
-        return 0;
-    }
+    return 0;
 }
 1;

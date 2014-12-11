@@ -19,18 +19,20 @@ sub Webqq::Client::_login2{
         $r{passwd_sig} = $self->{qq_param}{passwd_sig};
     }
 
-    my $response = $ua->post($api_url,[r=>to_json(\%r),clientid=>$self->{qq_param}{clientid},psessionid=>$self->{qq_param}{psessionid}], @headers);
-    if($response->is_success){
-        print $response->content() if $self->{debug};
-        my $content = $response->content();
-        my $data = from_json($content);
-        if($data->{retcode} ==0){
-            $self->{qq_param}{psessionid} = $data->{result}{psessionid};
-            $self->{qq_param}{vfwebqq} = $data->{result}{vfwebqq};
-            $self->{login_state} = 'success';
+    for(my $i=0;$i<=$self->{ua_retry_times};$i++){
+        my $response = $ua->post($api_url,[r=>to_json(\%r),clientid=>$self->{qq_param}{clientid},psessionid=>$self->{qq_param}{psessionid}], @headers);
+        if($response->is_success){
+            print $response->content() if $self->{debug};
+            my $content = $response->content();
+            my $data = from_json($content);
+            if($data->{retcode} ==0){
+                $self->{qq_param}{psessionid} = $data->{result}{psessionid};
+                $self->{qq_param}{vfwebqq} = $data->{result}{vfwebqq};
+                $self->{login_state} = 'success';
+            }
+            return 1;
         }
-        return 1;
     }
-    else{return 0}
+    return 0;
 }
 1;

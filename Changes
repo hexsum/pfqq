@@ -1,5 +1,9 @@
 版本更新记录:
 
+2014-12-09 Webqq::Client v5.4
+1）登录过程增加请求失败重试机制
+2）新增Webqq::Client::Plugin::PicLimit插件，对群里发图数量太多警告
+
 2014-12-09 Webqq::Client v5.3
 1）修复ShowMsg插件bug
 2）修复发送消息重试机制失效的bug

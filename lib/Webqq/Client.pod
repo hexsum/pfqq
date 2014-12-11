@@ -1031,6 +1031,8 @@ $clent->search_group()/$clent->search_member_in_group()会自动调用update_gro
 
 =item Webqq::Client::Plugin::SendMsgControl
 
+=item Webqq::Client::Plugin::PicLimit
+
 =item Webqq::Client::Plugin::SmartReply
 
 =item Webqq::Client::Plugin::Perlcode

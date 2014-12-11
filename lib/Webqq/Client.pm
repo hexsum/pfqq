@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "5.3";
+our $VERSION = "5.4";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -98,7 +98,8 @@ sub new {
         watchers            => {},
         type                => $p{type} || 'smartqq',#webqq or smartqq
         plugin_num          =>  0,
-        plugins             =>  {}
+        plugins             =>  {},
+        ua_retry_times   =>  5, 
         
     };
     $self->{ua} = LWP::UserAgent->new(
