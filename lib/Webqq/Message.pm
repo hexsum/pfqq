@@ -251,7 +251,7 @@ sub msg_put{
     shift @{ $msg->{content} };
     for my $c (@{ $msg->{content} }){
         if(ref $c eq 'ARRAY'){
-            if($c->[0] eq 'cface'){$c=decode("utf8","[图片]");}
+            if($c->[0] eq 'cface' or $c->[0] eq 'offpic'){$c=decode("utf8","[图片]");}
             elsif($c->[0] eq 'face'){$c=decode("utf8",face_to_txt($c));}
             else{$c = decode("utf8","[未识别内容]");}
         }
