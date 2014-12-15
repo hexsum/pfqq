@@ -1,5 +1,10 @@
 版本更新记录:
 
+2014-12-15 Webqq::Client v5.5
+1）查询增加缓存机制，提高查询速度
+2）修复on_new_group_member/on_new_friend回调在某些情况下无法正常触发的bug
+3）增加get_single_long_nick()的方法用于获取指定qq用户的个性签名
+
 2014-12-09 Webqq::Client v5.4
 1）登录过程增加请求失败重试机制
 2）新增Webqq::Client::Plugin::PicLimit插件，对群里发图数量太多警告

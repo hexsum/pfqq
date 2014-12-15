@@ -267,6 +267,10 @@ sub msg_put{
     #将整个hash从unicode转为UTF8编码
     $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
     $msg->{content}=~s/\r|\n/\n/g;
+    if($msg->{content}=~/\(\d+\) 被管理员禁言\d+(分钟|小时|天)$/ or $msg->{content}=~/\(\d+\) 被管理员解除禁言$/){
+        $msg->{type} = "sys_g_msg";
+        return;
+    }
     my $msg_pkg = "\u$msg->{type}::Recv"; $msg_pkg=~s/_(.)/\u$1/g;
     $msg = $client->_mk_ro_accessors($msg,$msg_pkg) ;
     $client->{receive_message_queue}->put($msg);
@@ -331,6 +335,10 @@ sub parse_receive_msg{
                         allow_plugin => 1,
                     };
                     $client->msg_put($msg);
+                }
+                #收到系统消息
+                elsif($m->{poll_type} eq 'sys_g_msg'){
+                    
                 }
                 #收到强制下线消息
                 elsif($m->{poll_type} eq 'kick_message'){

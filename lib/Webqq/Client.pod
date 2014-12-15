@@ -852,6 +852,14 @@ $clent->search_group()/$clent->search_member_in_group()会自动调用update_gro
 
     my $gcode = $client->get_group_code_from_gid($gid);
 
+=item get_single_long_nick($uin)
+
+通过uin查找个性签名
+
+    my $single_long_nick = $client->get_single_long_nick($uin);
+
+返回utf-8编码的个性签名
+
 =item load($module1,$module2...)
 
 该方法继承自Webqq::Client::Plugin

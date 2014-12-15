@@ -5,7 +5,7 @@ sub Webqq::Client::_get_stranger_info {
     my $tuin = shift;
     return undef if $self->{type} ne 'webqq';
     my $ua = $self->{ua};
-    my $cache_data = $self->{cache_for_stranger_info}->retrieve($tuin);
+    my $cache_data = $self->{cache_for_stranger}->retrieve($tuin);
     return $cache_data if defined $cache_data;
     my $api_url = 'http://s.web2.qq.com/api/get_stranger_info2';
     my @headers = (
@@ -30,7 +30,7 @@ sub Webqq::Client::_get_stranger_info {
         my $json = JSON->new->utf8->decode($response->content()); 
         return undef if $json->{retcode}!=0;
         $json->{result}{nick} = encode("utf8",$json->{result}{nick});
-        $self->{cache_for_stranger_info}->store($tuin,$json->{result},300);
+        $self->{cache_for_stranger}->store($tuin,$json->{result},300);
         return $json->{result};
     }
     

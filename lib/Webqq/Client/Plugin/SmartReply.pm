@@ -8,8 +8,8 @@ my $API = 'http://www.tuling123.com/openapi/api';
 my %limit;
 my %ban;
 my @limit_reply = (
-    "对不起，请不要这么频繁的提问题",
-    "对不起，您的提问次数太多",
+    "对不起，请不要这么频繁的艾特我",
+    "对不起，您的艾特次数太多",
     "说这么多话不累么，请休息几分钟",
     "能不能小窗我啊，别吵着大家",
 );
@@ -46,7 +46,7 @@ sub call{
         }
     
         if($limit >=5 and $limit <=6){
-            $client->reply_message($msg,"\@$from_nick " . "警告，您提问过于频繁，即将被列入黑名单，请克制\n");
+            $client->reply_message($msg,"\@$from_nick " . "警告，您艾特过于频繁，即将被列入黑名单，请克制\n");
             return 1;
         }
 

@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "5.4";
+our $VERSION = "5.5";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -36,7 +36,7 @@ use Webqq::Client::Method::_get_vfwebqq;
 use Webqq::Client::Method::_send_sess_message;
 use Webqq::Client::Method::logout;
 use Webqq::Client::Method::get_qq_from_uin;
-use Webqq::Client::Method::_get_msg_tip;
+use Webqq::Client::Method::get_single_long_nick;
 
 
 sub new {
@@ -79,11 +79,14 @@ sub new {
             group       =>  [],
             discuss     =>  [],
         },
-        cache_for_uin_to_qq     => Webqq::Client::Cache->new,
-        cache_for_group_sig     => Webqq::Client::Cache->new,
-        cache_for_stranger_info => Webqq::Client::Cache->new,
-        cache_for_group         => Webqq::Client::Cache->new,
-        cache_for_metacpan      => Webqq::Client::Cache->new,
+        cache_for_uin_to_qq         => Webqq::Client::Cache->new,
+        cache_for_group_sig         => Webqq::Client::Cache->new,
+        cache_for_stranger          => Webqq::Client::Cache->new,
+        cache_for_friend            => Webqq::Client::Cache->new,
+        cache_for_single_long_nick  => Webqq::Client::Cache->new,
+        cache_for_group             => Webqq::Client::Cache->new,
+        cache_for_group_member      => Webqq::Client::Cache->new,
+        cache_for_metacpan          => Webqq::Client::Cache->new,
         on_receive_message  =>  undef,
         on_send_message     =>  undef,
         on_login            =>  undef,
@@ -225,6 +228,11 @@ sub relogin{
     $self->{qq_param} = dclone($self->{default_qq_param});
     $self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
     $self->{cache_for_group_sig} = Webqq::Client::Cache->new;
+    $self->{cache_for_group} = Webqq::Client::Cache->new;
+    $self->{cache_for_group_member} = Webqq::Client::Cache->new;
+    $self->{cache_for_friend} = Webqq::Client::Cache->new;
+    $self->{cache_for_stranger} = Webqq::Client::Cache->new;
+    $self->{cache_for_single_long_nick} = Webqq::Client::Cache->new;
     $self->login(qq=>$self->{default_qq_param}{qq},pwd=>$self->{default_qq_param}{pwd});
 }
 sub _get_vfwebqq;
@@ -245,6 +253,7 @@ sub _send_group_message;
 sub _get_msg_tip;
 sub change_status;
 sub get_qq_from_uin;
+sub get_single_long_nick;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -269,7 +278,7 @@ sub welcome{
     my $self = shift;
     my $w = $self->{qq_database}{user};
     console "欢迎回来, $w->{nick}($w->{province})\n";
-    console "个人说明: " . ($w->{personal}?$w->{personal}:"（无）") . "\n"
+    console "个性签名: " . ($w->{single_long_nick}?$w->{single_long_nick}:"（无）") . "\n"
     #个人信息存储在$self->{qq_database}{user}中
     #    face
     #    birthday
@@ -302,6 +311,11 @@ sub run {
     #设置从接收消息队列中接收到消息后对应的处理函数
     $self->{receive_message_queue}->get(sub{
         my $msg = shift;
+    
+        #对收到的消息进行search的目的是为了触发on_new_friend/on_new_group_member回调
+        $self->search_friend($msg->{from_uin}) if $msg->{type} eq 'message';
+        $self->search_member_in_group($msg->{group_code},$msg->{send_uin}) if $msg->{type} eq 'group_message';
+        
         #接收队列中接收到消息后，调用相关的消息处理回调，如果未设置回调，消息将丢弃
         if(ref $self->on_receive_message eq 'CODE'){
             eval{
@@ -378,18 +392,26 @@ sub search_cookie{
 #}
 sub search_friend {
     my ($self,$uin) = @_;
+    my $cache_data = $self->{cache_for_friend}->retrieve($uin);
+    return $cache_data if defined $cache_data; 
+    
     for my $f( @{ $self->{qq_database}{friends} }){
-        return dclone($f) if $f->{uin} eq $uin;
+        if($f->{uin} eq $uin ){
+            my $f_clone = dclone($f);
+            $self->{cache_for_friend}->store($uin,$f_clone);
+            return $f_clone;
+        }
     } 
     #新增好友
     my $friend = $self->_get_friend_info($uin);
     if(defined $friend){
+        $self->{cache_for_friend}->store($uin,$friend);
         push @{ $self->{qq_database}{friends} },$friend;
         if(ref $self->{on_new_friend} eq 'CODE'){
             eval{
                 $self->{on_new_friend}->($friend);
             };
-            cosole $@ . "\n" if $self->{debug} and $@;
+            console $@ . "\n" if $self->{debug} and $@;
         }
         return $friend;
     }
@@ -417,14 +439,16 @@ sub search_friend {
 #}
 sub search_member_in_group{
     my ($self,$gcode,$member_uin) = @_;
+    my $cache_data =  $self->{cache_for_group_member}->retrieve("$gcode|$member_uin");
+    return $cache_data if defined $cache_data;
     my $default_member = {
-        nick    =>  undef,
-        province=>  undef,
-        gender  =>  undef,
-        uin     =>  $member_uin,
-        country =>  undef,
-        city    =>  undef,    
-        card    =>  undef,
+        nick     =>  undef,
+        province =>  undef,
+        gender   =>  undef,
+        uin      =>  $member_uin,
+        country  =>  undef,
+        city     =>  undef,
+        card     =>  undef,
     };
     #在现有的群中查找
     for my $g (@{$self->{qq_database}{group}}){ 
@@ -435,7 +459,11 @@ sub search_member_in_group{
             if(exists $g->{minfo} and ref $g->{minfo} eq 'ARRAY'){
                 for my $m(@{$g->{minfo} }){ 
                     #查到成员信息并返回
-                    return dclone($m) if $m->{uin} eq $member_uin; 
+                    if($m->{uin} eq $member_uin){
+                        my $m_clone = dclone($m);
+                        $self->{cache_for_group_member}->store("$gcode|$member_uin",$m_clone);
+                        return $m_clone; 
+                    }
                 }
                 #查不到成员信息，说明是新增的成员，重新更新一次群信息
                 my $new_group_member = {};
@@ -448,6 +476,7 @@ sub search_member_in_group{
                         #找到新增的成员信息了
                         if($m->{uin} eq $member_uin){   
                             #更新到现有的群中并返回
+                            $self->{cache_for_group_member}->store("$gcode|$member_uin",dclone($m));
                             $new_group_member = $m;
                             $flag=1;
                         }    
@@ -481,7 +510,9 @@ sub search_member_in_group{
                     for my $m (@{$group_info->{minfo}}){
                         if($m->{uin} eq $member_uin){
                             #找到了赶紧返回
-                            return dclone($m);
+                            my $m_clone = dclone($m);
+                            $self->{cache_for_group_member}->store("$gcode|$member_uin",$m_clone);
+                            return $m_clone;
                         }
                     } 
                     #靠 还是没找到
@@ -512,7 +543,9 @@ sub search_member_in_group{
         if(ref $group_info->{minfo} eq 'ARRAY'){
             for my $m (@{$group_info->{minfo}}){
                 if($m->{uin} eq $member_uin){
-                    return dclone($m);
+                    my $m_clone = dclone($m);
+                    $self->{cache_for_group_member}->store("$gcode|$member_uin",$m_clone);
+                    return $m_clone;
                 }
             }
         }
@@ -523,10 +556,14 @@ sub search_member_in_group{
 
 sub search_stranger{
     my($self,$tuin) = @_;
+    my $cache_data =  $self->{cache_for_stranger}->retrieve($tuin);
+    return $cache_data if defined $cache_data;
     for my $g ( @{$self->{qq_database}{group}} ){
         for my $m (@{ $g->{minfo}  }){
             if($m->{uin} eq $tuin){
-                return dclone($m) ;
+                my $m_clone = dclone($m);
+                $self->{cache_for_stranger}->store($tuin,$m_clone);
+                return $m_clone;
             }
         }
     } 
@@ -551,8 +588,15 @@ sub search_stranger{
 
 sub search_group{
     my($self,$gcode) = @_;
+    my $cache_data = $self->{cache_for_group}->retrieve($gcode);
+    return $cache_data if defined $cache_data;
+
     for(@{ $self->{qq_database}{group} }){
-        return dclone($_->{ginfo}) if $_->{ginfo}{code} eq $gcode;
+        if($_->{ginfo}{code} eq $gcode){
+            my $clone = dclone($_->{ginfo});
+            $self->{cache_for_group}->store($gcode,$clone);
+            return $clone;
+        }
     }
     my $group_info = $self->_get_group_info($gcode);
     if(defined $group_info){
@@ -562,7 +606,9 @@ sub search_group{
             code    =>  $group_info->{ginfo}{code},
         });
         $self->update_group_info($group_info);
-        return dclone($group_info->{ginfo});
+        my $clone = dclone($group_info->{ginfo});
+        $self->{cache_for_group}->store($gcode,$clone);
+        return $clone;
     }
     else{ 
         return {};
@@ -590,6 +636,10 @@ sub update_user_info{
                 $self->{qq_database}{user}{$key} = encode("utf8",$user_info->{$key});
             }
         }
+        my $single_long_nick = $self->get_single_long_nick($self->{qq_param}{qq});
+        if(defined $single_long_nick){
+            $self->{qq_database}{user}{single_long_nick} = $single_long_nick;
+        }   
     }
     else{console "更新个人信息失败\n";}
 }

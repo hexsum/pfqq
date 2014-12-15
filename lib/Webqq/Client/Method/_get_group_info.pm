@@ -4,8 +4,6 @@ sub Webqq::Client::_get_group_info {
     my $self = shift;
     my $gcode = shift;
     my $ua = $self->{ua};
-    #my $cache_data =  $self->{cache_for_group}->retrieve($gcode);
-    #return $cache_data if defined $cache_data;
     my $api_url = 'http://s.web2.qq.com/api/get_group_info_ext2';
     my @query_string  = (
         gcode   =>  $gcode,
