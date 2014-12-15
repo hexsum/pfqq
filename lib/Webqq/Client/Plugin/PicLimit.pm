@@ -19,8 +19,16 @@ sub call{
     my $key = strftime("%H",localtime(time));     
     $limit{$key}{$msg->{from_uin}}{$from_qq}++;
 
-    if($limit{$key}{$msg->{from_uin}}{$from_qq} >= 3){
-       $client->reply_message($msg,"\@$from_nick " . $limit_reply[ int(rand($#limit_reply+1)) ]); 
+    my $limit = $limit{$key}{$msg->{from_uin}}{$from_qq};   
+ 
+    if($limit >= 3 and $limit <=4){
+        $client->reply_message($msg,"\@$from_nick " . $limit_reply[ int(rand($#limit_reply+1)) ]); 
+    }
+    elsif($limit>=5 and $limit <=6){
+        $client->reply_message($msg,"\@$from_nick " . "无视警告，请管理员予以禁言惩罚");
+    }
+    elsif($limit>6){
+        $client->reply_message($msg,"\@$from_nick " . "大量发图，严重影响群内交流，请管理员将此人踢出");
     }
 
     if($once){
