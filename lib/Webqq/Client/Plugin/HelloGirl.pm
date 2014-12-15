@@ -1,9 +1,11 @@
 package Webqq::Client::Plugin::HelloGirl;
 use AE;
 my @hello = (
-    "希望你在群里开心愉快,有问题我们会尽快帮忙解决",
+    "希望你在群里开心愉快",
     "有问题尽管问哦，谁敢欺负你找管理员",
-    "\@全体成员 难得女生发话，有问题请大家尽快帮忙解决",
+    "\@全体成员 请注意，女王发话了",
+    "妹子一枚，鉴定完毕，大家欢迎呀",
+    "打劫！打劫！请把你身上所有不懂的问题全部交出来",
 );
 my %last;
 sub call{
@@ -11,6 +13,7 @@ sub call{
     if($msg->{type} eq 'group_message'){
         my $gender = $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{gender};
         if($gender eq 'female'){
+            my $is_question = $msg->{content}=~/问|帮|怎么/;
             my $from_nick;
             if($msg->{type} eq 'group_message'){
                 $from_nick = $msg->{card} || $msg->from_nick;
@@ -28,7 +31,7 @@ sub call{
             $client->{watchers}{$watcher} = AE::timer 600,0,sub{
                 delete $client->{watchers}{$watcher};
                 $client->reply_message($msg,"\@$from_nick " . "还需要什么帮助吗");
-            } if rand(100) > 60;     
+            } if $is_question;     
             $last{$from_qq} = time;
             return 1;
         }
