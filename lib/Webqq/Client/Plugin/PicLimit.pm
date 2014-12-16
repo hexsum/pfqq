@@ -11,7 +11,7 @@ sub call{
     my $client = shift;
     my $msg = shift;
     return if $msg->{type} ne 'group_message';
-    return if $msg->{content} !~ /\[图片\]/;
+    return if $msg->{content} !~ /\[图片\]|\[[^\[\]]+\]\x01/;
     my $from_nick = $msg->from_card || $msg->from_nick;
     my $from_qq   = $msg->from_qq;
     #my $group_name = $msg->group_name;
