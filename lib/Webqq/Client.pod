@@ -932,6 +932,8 @@ $clent->search_group()/$clent->search_member_in_group()会自动调用update_gro
 
 =item _get_vfwebqq()
 
+=item _report()
+
 =back
 
 =head1 OTHER MODULE

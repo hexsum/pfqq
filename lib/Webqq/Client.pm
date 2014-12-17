@@ -7,7 +7,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "5.5";
+our $VERSION = "5.6";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -37,6 +37,7 @@ use Webqq::Client::Method::_send_sess_message;
 use Webqq::Client::Method::logout;
 use Webqq::Client::Method::get_qq_from_uin;
 use Webqq::Client::Method::get_single_long_nick;
+use Webqq::Client::Method::_report;
 
 
 sub new {
@@ -59,8 +60,10 @@ sub new {
             passwd_sig              =>  '',
             verifycode              =>  undef,
             verifysession           =>  undef,
+            pt_verifysession        =>  undef,
             md5_salt                =>  undef,
             cap_cd                  =>  undef,
+            isRandSalt              =>  0,
             ptvfsession             =>  undef,
             api_check_sig           =>  undef,
             g_pt_version            =>  undef,
@@ -70,6 +73,7 @@ sub new {
             g_daid                  =>  164,
             g_appid                 =>  1003903,
             g_pt_version            =>  10092,
+            je                      =>  undef,
             rc                      =>  1,
         },
         qq_database     =>  {
@@ -178,16 +182,33 @@ sub login{
     console "QQ账号: $self->{default_qq_param}{qq} 密码: $self->{default_qq_param}{pwd}\n";
     #my $is_big_endian = unpack( 'xc', pack( 's', 1 ) ); 
     $self->{qq_param}{qq} = $self->{default_qq_param}{qq};
-    $self->{qq_param}{pwd} = pack "H*",lc $self->{default_qq_param}{pwd};
+    $self->{default_qq_param}{pwd} = lc $self->{default_qq_param}{pwd};
+    $self->{qq_param}{pwd} = $self->{default_qq_param}{pwd} ;
 
+    if(
            $self->_prepare_for_login()    
         && $self->_check_verify_code()     
-        && $self->_get_img_verify_code()   
-        && $self->_login1()                
-        && $self->_check_sig()             
-        && $self->_get_vfwebqq()
-        && $self->_login2();
-    
+        && $self->_get_img_verify_code()
+
+    ){
+        while(){
+            my $ret = $self->_login1();
+            if($ret == -1){
+                $self->_get_img_verify_code();
+                next;
+            }
+            elsif($ret == 1){
+                   $self->_report()
+                && $self->_check_sig() 
+                && $self->_get_vfwebqq()
+                && $self->_login2();
+                last;
+            }
+            else{
+                last;
+            }
+        }
+    }
 
     #登录不成功，客户端退出运行
     if($self->{login_state} ne 'success'){
@@ -254,6 +275,7 @@ sub _get_msg_tip;
 sub change_status;
 sub get_qq_from_uin;
 sub get_single_long_nick;
+sub _report;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{

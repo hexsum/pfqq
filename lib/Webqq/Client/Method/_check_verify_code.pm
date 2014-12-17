@@ -21,8 +21,16 @@ sub Webqq::Client::_check_verify_code{
         r           =>  rand(),
     ); 
     
+    if($self->{type} eq 'smartqq'){
+        unshift @query_string,(
+            pt_tea  => 1,
+        );
+    }
+    
     my @query_string_pairs;
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string);
+
+    $ua->cookie_jar()->set_cookie(0,"chkuin",$self->{qq_param}{qq},"/","ptlogin2.qq.com",);    
 
     for(my $i=1;$i<=$self->{ua_retry_times};$i++){
         my $response = $ua->get($api_url.'?'.join("&",@query_string_pairs),@headers);
@@ -30,11 +38,13 @@ sub Webqq::Client::_check_verify_code{
             my $content = $response->content();
             print $content,"\n" if $self->{debug};
             my %d = ();
-            @d{qw( retcode cap_cd md5_salt verifysession)} = $content=~/'(.*?)'/g ;
+            @d{qw( retcode cap_cd md5_salt verifysession isRandSalt)} = $content=~/'(.*?)'/g ;
             $d{md5_salt} =~ s/\\\\x/\x/g; 
-            $self->{qq_param}{md5_salt} = eval qq{"$d{md5_salt}"};
+            #$self->{qq_param}{md5_salt} = eval qq{"$d{md5_salt}"};
+            $self->{qq_param}{md5_salt} = $d{md5_salt};
             $self->{qq_param}{cap_cd} = $d{cap_cd};
             $self->{qq_param}{verifysession} = $d{verifysession};
+            $self->{qq_param}{isRandSalt}   = $d{isRandSalt};
             if($d{retcode} ==0){
                 console "检查结果: 很幸运，本次登录不需要验证码\n";
                 $self->{qq_param}{verifycode} = $d{cap_cd};

@@ -1,4 +1,4 @@
-Webqq-Client v5.5
+Webqq-Client v5.6
 ========================
 使用Perl语言编写的Webqq客户端
 
@@ -30,6 +30,7 @@ client
 
 核心依赖模块
 
+  JE
   JSON
   Digest::MD5
   AnyEvent::UserAgent

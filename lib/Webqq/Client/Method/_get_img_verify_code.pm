@@ -14,9 +14,13 @@ sub Webqq::Client::_get_img_verify_code{
     my @query_string = (
         aid        => $self->{qq_param}{g_appid},
         uin        => $self->{qq_param}{qq}, 
-        cap_cd     => $self->{qq_param}{cap_cd},
         r          => rand(),
     );    
+    if($self->{type} eq 'webqq'){
+        push @query_string,(
+            cap_cd     => $self->{qq_param}{cap_cd},
+        );
+    }
 
     my @query_string_pairs;
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string) ;
@@ -45,7 +49,6 @@ sub Webqq::Client::_get_img_verify_code{
                 console "STDIN未连接到tty，无法输入验证码，程序退出...\n";
                 exit;
             }
-            $self->{qq_param}{verifysession} = $self->search_cookie("verifysession") if $self->{qq_param}{verifysession} eq '';
             return 1;
         }
     }
