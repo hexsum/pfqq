@@ -21,8 +21,8 @@ sub Webqq::Client::_login1{
     else{
         console "客户端加密算法生成中，这可能会花费几分钟，请耐心等待...\n";
         my $je;
-        if(defined $self->{qq_param}{je}){
-            $je = $self->{qq_param}{je};
+        if(defined $self->{je}){
+            $je = $self->{je};
         }
         else{
             local $/ = undef;
@@ -33,7 +33,7 @@ sub Webqq::Client::_login1{
                 console "客户端加密算法执行错误：$@\n";
                 return 0;
             } 
-            $self->{qq_param}{je} = $je;
+            $self->{je} = $je;
         }
         my $p = $je->eval(qq#
             var p = '$self->{qq_param}{pwd}';
