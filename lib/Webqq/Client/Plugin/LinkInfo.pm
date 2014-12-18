@@ -4,7 +4,6 @@ use Webqq::Client::Util qw(console);
 use Date::Parse;
 use POSIX qw(strftime);
 use Encode;
-my %cache;
 sub call{
     my $client = shift;
     my $msg = shift;
@@ -18,7 +17,7 @@ sub call{
                 if($response->header("content-type")=~/charset\s*=\s*(utf\-?8|gb2312|gbk|gb18030)/i){
                        $charset = $1; 
                 }
-                elsif($response->content()=~/<meta.*?http-equiv.*?Content-Type.?charset.?(utf\-?8|gb2312|gbk|gb18030)/si){
+                elsif($response->content()=~/<meta.*?charset\s*=\s*(utf\-?8|gb2312|gbk|gb18030)/si){
                         $charset = $1;
                 }
                 else{
@@ -40,7 +39,7 @@ sub call{
                     $expires =~s/ \d+时\d+分\d+秒$//;
                 }
                 else{
-                    $expires = "--------";
+                    $expires = "----";
                 } 
                 
                 $p->handler(start=>sub{
