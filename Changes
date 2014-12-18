@@ -7,6 +7,7 @@
    而smartqq采用的是 md5带盐加密+RSA+Base64 三重组合
    采用了JE模块直接perl中运行javascript代码
    要运行客户端请确保你已经安装了该模块
+3）新增LinkInfo的插件，获取url的标题和正文内容
 
 2014-12-15 Webqq::Client v5.5
 1）查询增加缓存机制，提高查询速度

@@ -1,0 +1,80 @@
+package Webqq::Client::Plugin::LinkInfo;
+use HTML::Parser;
+use Webqq::Client::Util qw(console);
+use Date::Parse;
+use POSIX qw(strftime);
+use Encode;
+my %cache;
+sub call{
+    my $client = shift;
+    my $msg = shift;
+    if($msg->{content}=~m#(https?://[^/]+[^\s\x80-\xff]+)#s){
+        my $url = $1;       
+        print "GET $url\n" if $client->{debug};
+        $client->{asyn_ua}->get($url,(),sub{
+            my $response = shift;
+            if($response->is_success){
+                my $charset ;
+                if($response->header("content-type")=~/charset\s*=\s*(utf\-?8|gb2312|gbk|gb18030)/i){
+                       $charset = $1; 
+                }
+                elsif($response->content()=~/<meta.*?http-equiv.*?Content-Type.?charset.?(utf\-?8|gb2312|gbk|gb18030)/si){
+                        $charset = $1;
+                }
+                else{
+                    return;
+                }
+
+                return unless defined $charset;
+                console "获取 $url 编码信息[$charset]\n" if $client->{debug};
+                my $p=HTML::Parser->new;
+                $p->ignore_elements(qw(script style));
+                $p->utf8_mode(0);
+
+                my $is_title = 0;
+                my $title;
+                my $content; 
+                my $expires = $response->header("last-modified");
+                if(defined $expires){
+                    $expires = strftime('%c',localtime(str2time($expires)));
+                    $expires =~s/ \d+时\d+分\d+秒$//;
+                }
+                else{
+                    $expires = "--------";
+                } 
+                
+                $p->handler(start=>sub{
+                    my $tagname = shift;
+                    $is_title=($tagname eq 'title'?1:0);  
+                    $p->handler(text=>sub{my $text = shift;$is_title?($title .=$text):($content .= $text);},"text");
+                },"tagname");
+
+                my $html;
+                if($charset=~/^gb/i){
+                    $html = decode("gb2312",$response->content);
+                }
+                elsif($charset=~/^utf/i){
+                    $html = decode("utf8",$response->content);
+                }
+                $p->parse($html);
+                $p->eof;
+                $title=~s/\s+|&nbsp;/ /g;
+                $title=~s/&quot;/"/g;
+                $content=~s/\s+|&nbsp;/ /g;
+                $content=~s/&quot;/"/g;
+
+                $title = substr($title,0,100) . (length($title)>100?"...":"");
+                $content = substr($content,0,100) . "...";
+
+                $url = substr($url,0,50) . (length($url)>50?"...":"");
+                
+                $title = "【网页标题】" . encode("utf8",$title);
+                $expires = "【更新时间】" . $expires ;
+                $content = "【网页正文】" . encode("utf8",$content);
+                
+                $client->reply_message($msg,"$title\n$expires\n$content\n$url");
+            }   
+        });
+    }
+}
+1;
