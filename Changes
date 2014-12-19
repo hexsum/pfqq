@@ -1,5 +1,12 @@
 版本更新记录:
 
+2014-12-19 Webqq::Client v5.7
+1）修复LinkInfo/SmartReply插件的多出bug
+2）完善Perlcode插件的资源限制
+3）新增$msg->{raw_conent}属性用于获取更多原始消息内容
+4）新增javascript运行测试脚本
+5）优化javascript加载速度
+
 2014-12-17 Webqq::Client v5.6
 1）客户端验证码输错会进行多次重试
 2）支持smartqq登录密码加密算法

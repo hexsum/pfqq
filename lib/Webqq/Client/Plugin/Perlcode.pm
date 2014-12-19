@@ -30,7 +30,7 @@ sub call{
         $code=~s/CORE:://g;
         $code=~s/CORE::GLOBAL:://g;
         unless($code=~/^\s+$/s){
-            $code = q#BEGIN{use BSD::Resource;setrlimit(RLIMIT_NOFILE,10,10);setrlimit(RLIMIT_CPU,8,8);setrlimit(RLIMIT_FSIZE,1024,1024);setrlimit(RLIMIT_NPROC,5,5);setrlimit(RLIMIT_AS,104857600,104857600);*CORE::GLOBAL::fork=sub{};}$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chdir '/tmp/webqq/bin';chroot '/tmp/webqq/bin' or die "chroot fail: $!";chdir "/";setuid($u);setgid($g);%ENV=();}# .  $code;
+            $code = q#BEGIN{use BSD::Resource;setrlimit(RLIMIT_NOFILE,10,10);setrlimit(RLIMIT_CPU,8,8);setrlimit(RLIMIT_FSIZE,1024,1024);setrlimit(RLIMIT_NPROC,5,5);setrlimit(RLIMIT_STACK,1024*1024*10,1024*1024*10);setrlimit(RLIMIT_DATA,1024*1024*10,1024*1024*10);*CORE::GLOBAL::fork=sub{};}$|=1;use POSIX qw(setuid setgid);{my($u,$g)= (getpwnam("nobody"))[2,3];chdir '/tmp/webqq/bin';chroot '/tmp/webqq/bin' or die "chroot fail: $!";chdir "/";setuid($u);setgid($g);%ENV=();}# .  $code;
             my ($fh, $filename) = tempfile("webqq_perlcode_XXXXXXXX",SUFFIX =>".pl",DIR => "/tmp/webqq/src");
             print $code,"\n",$filename,"\n" if $client->{debug};
             print $fh $code;

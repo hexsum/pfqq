@@ -18,10 +18,11 @@ my $once = 1;
 sub call{
     my $client = shift;
     my $msg = shift;
+    my $self_nick = $client->{qq_database}{user}{nick};
     return if $msg->{allow_plugin} == 0;
     my $msg_type = $msg->{type};    
     if($msg_type eq 'group_message'){
-        return 1  if $msg->{content} !~/\@小灰/;
+        return 1  if $msg->{content} !~/\@\Q$self_nick\E/;
     }
     my $userid = $msg->from_qq;
     return 1 if exists $ban{$userid};
@@ -63,7 +64,7 @@ sub call{
     }
 
     my $input = $msg->{content};
-    $input=~s/\@[^ ]+ ?|\[[^\[\]]+\]\x01|\[[^\[\]]+\]//g;
+    $input=~s/\@\Q$self_nick\E ?|\[[^\[\]]+\]\x01|\[[^\[\]]+\]//g;
     my @query_string = (
         "key"       =>  "4c53b48522ac4efdfe5dfb4f6149ae51",
         "userid"    =>  $userid,

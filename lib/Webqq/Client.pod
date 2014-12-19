@@ -348,13 +348,45 @@ $msg除上述hash的key以外绑定的方法：
 =item 接收到的好友消息结构
 
     $msg = {
-        type         =  "message"
+        type         =>  "message"
         msg_id       #系统自动维护
         from_uin     #消息发送者的uin，可以使用此uin进行消息回复
         to_uin       #消息接收者的uin，也就是自己的uin
         msg_time     #消息发送时刻
         content      #消息内容，UTF-8编码，表情会转换成为文字，例如"[系统表情]","[图片]"
+        raw_content  => [], #一个数组引用，原始消息按图片、表情、文本等形式分别存储在数组中
         msg_class    = "recv"
+        allow_plugin #是否允许插件处理该消息标记，插件之间互相配合需要用到
+        ttl          #默认是5，当ttl减为0时会被发送消息队列丢弃
+    }
+
+$msg->{raw_content}中的每一个元素又是一个hash的引用
+
+好友消息、群消息、临时消息均包含该结构，不再重复说明
+
+文本类消息的hash引用为
+
+    {   
+        type    =>  'txt',
+        content =>  'xxxxxxx', #utf8编码的文本消息
+    }
+
+图片类消息的hash引用为
+
+    {
+        type    =>  'cface',
+        content =>  '[图片]',
+        name    =>  'xxxx.jpg',#文件名
+        server  =>  'xxx.xxx.xxx.xxx:80', #图片存储服务器
+        file_id =>  '图片文件id',
+    }
+
+表情类消息的hash引用为
+
+    {
+        type    =>  'face',
+        content =>  '[微笑]',
+        id      =>  14, #表情的唯一数字id
     }
 
 $msg除上述hash的key以外绑定的方法：
@@ -378,7 +410,8 @@ $msg除上述hash的key以外绑定的方法：
         content      #消息内容，UTF-8编码，表情会转换成为文字，例如"[系统表情]","[图片]"
         send_uin     #消息发送者的uin，和from_uin进行区别，此uin是指具体的群成员
         group_code   #消息来源群的gcode
-        msg_class    = "recv"
+        msg_class    = "recv"   
+        raw_content  => [], #一个数组引用，原始消息按图片、表情、文本等形式分别存储在数组中
         allow_plugin #是否允许插件处理该消息标记，插件之间互相配合需要用到
         ttl          #默认是5，当ttl减为0时会被发送消息队列丢弃
     }
@@ -406,7 +439,8 @@ $msg除上述hash的key以外绑定的方法：
         content      #消息内容，UTF-8编码，表情会转换成为文字，例如"[系统表情]","[图片]"
         id           #临时消息id，在create_sess_msg创建时需要用到
         service_type #临时消息service_type，在create_sess_msg创建时需要用到
-        msg_class    = "recv"
+        msg_class    = "recv"   
+        raw_content  => [], #一个数组引用，原始消息按图片、表情、文本等形式分别存储在数组中
         allow_plugin #是否允许插件处理该消息标记，插件之间互相配合需要用到
         ttl          #默认是5，当ttl减为0时会被发送消息队列丢弃
     }
