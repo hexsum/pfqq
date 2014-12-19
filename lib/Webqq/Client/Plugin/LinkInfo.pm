@@ -13,15 +13,15 @@ sub call{
         $client->{asyn_ua}->head($url,(),sub{
             my $response = shift;
             return if !$response->is_success;
-            return if $response->header("content-type") !~ /text\/html/;
+            if($response->header("content-type") !~ /text\/html/){
+                print "$url [not-text/html]\n";
+                return;
+            }
             print "GET $url\n" if $client->{debug};
             $client->{asyn_ua}->get($url,(),sub{
                 my $response = shift;
                 return if !$response->is_success;
-                if($response->header("content-type") !~ /text\/html/){
-                    print "$url [not-text/html]\n";
-                    return;
-                }
+                return if $response->header("content-type") !~ /text\/html/;
                 my $charset ;
                 if($response->header("content-type")=~/charset\s*=\s*(utf\-?8|gb2312|gbk|gb18030)/i){
                     $charset = $1; 
