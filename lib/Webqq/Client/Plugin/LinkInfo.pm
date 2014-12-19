@@ -12,6 +12,7 @@ sub call{
         print "GET $url\n" if $client->{debug};
         $client->{asyn_ua}->get($url,(),sub{
             my $response = shift;
+            return if $response->header("content-type") !~ /text\/html/;
             if($response->is_success){
                 my $charset ;
                 if($response->header("content-type")=~/charset\s*=\s*(utf\-?8|gb2312|gbk|gb18030)/i){
@@ -38,9 +39,6 @@ sub call{
                     $expires = strftime('%c',localtime(str2time($expires)));
                     $expires =~s/ \d+时\d+分\d+秒$//;
                 }
-                else{
-                    $expires = "----";
-                } 
                 
                 $p->handler(start=>sub{
                     my $tagname = shift;
@@ -68,10 +66,10 @@ sub call{
                 $url = substr($url,0,50) . (length($url)>50?"...":"");
                 
                 $title = "【网页标题】" . encode("utf8",$title);
-                $expires = "【更新时间】" . $expires ;
+                $expires = "【更新时间】" . $expires . "\n" if defined $expires;
                 $content = "【网页正文】" . encode("utf8",$content);
                 
-                $client->reply_message($msg,"$title\n$expires\n$content\n$url");
+                $client->reply_message($msg,"$title\n${expires}$content\n$url");
             }   
         });
     }

@@ -5,7 +5,7 @@ sub Webqq::Client::_send_message{
     my($self,$msg) = @_;
     my $msg_origin = dclone($msg);
     #将整个hash从UTF8还原为unicode
-    $msg->{$_} = decode("utf8",$msg->{$_} ) for keys %$msg;
+    $msg->{$_} = decode("utf8",$msg->{$_} )  for grep {$_ ne 'raw_content'} keys %$msg;
     my $ua = $self->{asyn_ua};
     my $send_message_callback = $msg->{cb} || $self->{on_send_message};
     my $callback = sub{

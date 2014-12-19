@@ -247,25 +247,55 @@ sub parse_send_status_msg{
 sub msg_put{   
     my $client = shift;
     my $msg = shift;
+    $msg->{raw_content} = [];
     my $msg_content;
     shift @{ $msg->{content} };
     for my $c (@{ $msg->{content} }){
         if(ref $c eq 'ARRAY'){
-            if($c->[0] eq 'cface' or $c->[0] eq 'offpic'){$c=decode("utf8","[图片]");}
-            elsif($c->[0] eq 'face'){$c=decode("utf8",face_to_txt($c));}
-            else{$c = decode("utf8","[未识别内容]");}
+            if($c->[0] eq 'cface' or $c->[0] eq 'offpic'){
+                push @{$msg->{raw_content}},{
+                    type    =>  'cface',
+                    content =>  '[图片]',
+                    name    =>  $c->[1]{name},
+                    file_id =>  $c->[1]{file_id},
+                    key     =>  $c->[1]{key},
+                    server  =>  $c->[1]{server},
+                };
+                $c=decode("utf8","[图片]");
+            }
+            elsif($c->[0] eq 'face'){
+                push @{$msg->{raw_content}},{
+                    type    =>  'face',
+                    content =>  face_to_txt($c),
+                    id      =>  $c->[1],
+                }; 
+                $c=decode("utf8",face_to_txt($c));
+            }
+            else{
+                push @{$msg->{raw_content}},{
+                    type    =>  'unknown',
+                    content =>  '[未识别内容]',
+                };
+                $c = decode("utf8","[未识别内容]");
+            }
         }
         elsif($c eq " "){
             next;
         }
         else{
             $c=~s/ $//;   
+            #{"retcode":0,"result":[{"poll_type":"group_message","value":{"msg_id":538,"from_uin":2859929324,"to_uin":3072574066,"msg_id2":545490,"msg_type":43,"reply_ip":182424361,"group_code":2904892801,"send_uin":1951767953,"seq":3024,"time":1418955773,"info_seq":390179723,"content":[["font",{"size":12,"color":"000000","style":[0,0,0],"name":"\u5FAE\u8F6F\u96C5\u9ED1"}],"[\u50BB\u7B11]\u0001 "]}}]}
+            #if($c=~/\[[^\[\]]+?\]\x{01}/)
+            push @{$msg->{raw_content}},{
+                type    =>  'txt',
+                content =>  encode("utf8",$c),
+            };
         }
         $msg_content .= $c;
     }
     $msg->{content} = $msg_content;
     #将整个hash从unicode转为UTF8编码
-    $msg->{$_} = encode("utf8",$msg->{$_} ) for keys %$msg;
+    $msg->{$_} = encode("utf8",$msg->{$_} ) for grep {$_ ne 'raw_content'}  keys %$msg;
     $msg->{content}=~s/\r|\n/\n/g;
     if($msg->{content}=~/\(\d+\) 被管理员禁言\d+(分钟|小时|天)$/ or $msg->{content}=~/\(\d+\) 被管理员解除禁言$/){
         $msg->{type} = "sys_g_msg";

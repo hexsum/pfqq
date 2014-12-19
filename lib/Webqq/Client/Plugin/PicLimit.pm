@@ -6,11 +6,26 @@ my @limit_reply = (
     "警告，请不要频繁发图",
     "对不起，本群禁止频繁贴图", 
 );
+
+my @spam_reply = (
+    "警告，本群禁止发灌水图",
+    "请不要灌水",
+);
 my $once = 1;
 sub call{
     my $client = shift;
     my $msg = shift;
     return if $msg->{type} ne 'group_message';
+
+    for(@{$msg->{raw_content}}){
+        next if $_->{type} ne 'cface';
+        if($_->{name}=~/\.gif$/i){ 
+            my $from_nick = $msg->from_card || $msg->from_nick;
+            $client->reply_message($msg,"\@$from_nick " . $spam_reply[ int(rand($#spam_reply+1)) ]);
+            return;
+        }
+    };
+
     return if $msg->{content} !~ /\[图片\]|\[[^\[\]]+\]\x01/;
     my $from_nick = $msg->from_card || $msg->from_nick;
     my $from_qq   = $msg->from_qq;
