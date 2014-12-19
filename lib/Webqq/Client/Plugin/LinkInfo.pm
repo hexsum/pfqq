@@ -9,17 +9,25 @@ sub call{
     my $msg = shift;
     if($msg->{content}=~m#(https?://[^/]+[^\s\x80-\xff]+)#s){
         my $url = $1;       
-        print "GET $url\n" if $client->{debug};
-        $client->{asyn_ua}->get($url,(),sub{
+        print "HEAD $url\n" if $client->{debug};
+        $client->{asyn_ua}->head($url,(),sub{
             my $response = shift;
+            return if !$response->is_success;
             return if $response->header("content-type") !~ /text\/html/;
-            if($response->is_success){
+            print "GET $url\n" if $client->{debug};
+            $client->{asyn_ua}->get($url,(),sub{
+                my $response = shift;
+                return if !$response->is_success;
+                if($response->header("content-type") !~ /text\/html/){
+                    print "$url [not-text/html]\n";
+                    return;
+                }
                 my $charset ;
                 if($response->header("content-type")=~/charset\s*=\s*(utf\-?8|gb2312|gbk|gb18030)/i){
-                       $charset = $1; 
+                    $charset = $1; 
                 }
                 elsif($response->content()=~/<meta.*?charset\s*=\s*(utf\-?8|gb2312|gbk|gb18030)/si){
-                        $charset = $1;
+                    $charset = $1;
                 }
                 else{
                     return;
@@ -39,7 +47,7 @@ sub call{
                     $expires = strftime('%c',localtime(str2time($expires)));
                     $expires =~s/ \d+时\d+分\d+秒$//;
                 }
-                
+            
                 $p->handler(start=>sub{
                     my $tagname = shift;
                     $is_title=($tagname eq 'title'?1:0);  
@@ -70,7 +78,7 @@ sub call{
                 $content = "【网页正文】" . encode("utf8",$content);
                 
                 $client->reply_message($msg,"$title\n${expires}$content\n$url");
-            }   
+            });
         });
     }
 }
