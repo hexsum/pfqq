@@ -89,7 +89,7 @@ HTML
         elsif($uri =~ /\/img_code\?code=(.{4})/){
             my $code = $1;
             my $data = "验证码已提交" ;
-            my $len = length($body);
+            my $len = length($data);
             print $c 
                 "HTTP/1.1 200 OK\r\n" .
                 "Date: " . time2str() . "\r\n" .
