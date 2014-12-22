@@ -12,7 +12,7 @@ Webqq::Client - A webqq client in Perl Language
     use Digest::MD5 qw(md5_hex);
     my $qq = 12345678;
 
-    #你的qq密码请使用md5加密后再传递给Webqq::Client
+    #使用md5_hex将你的qq密码进行md5加密后再传递给Webqq::Client
     #我可不想被怀疑有盗号行为
     my $pwd = md5_hex('your password');
     
