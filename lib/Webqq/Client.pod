@@ -660,8 +660,19 @@ webqq中每个qq用户在每一次客户端登录后使用的是一个唯一的u
 $uin通常是包含在接收到的消息或者客户端自己的数据库中，可以参考客户端数据结构介绍部分
 
 =item send_message($msg)
+
+=item send_message(to_uin=>$uin, content=>$content)
     
-发送好友信息,$msg是一个由$client->create_msg()生成的消息结构
+发送好友信息，如果传递给send_message的参数只有一个$msg
+
+它必须是一个由$client->create_msg()生成的消息结构
+
+    my $msg=$client->create_msg(to_uin=>$uin, content=>$content);
+    $client->send_message($msg);
+
+或者你可以按如下方式直接调用send_message()
+
+    $client->send_message(to_uin=>$uin, content=>$content);
 
 如果发送失败默认会尝试重新发送，最多尝试5次
 
@@ -669,7 +680,18 @@ $uin通常是包含在接收到的消息或者客户端自己的数据库中，�
 
 =item send_sess_message($msg)
 
-发送临时消息，$msg是一个由$client->create_sess_msg()生成的消息结构  
+=item send_sess_message(to_uin=>$uin,group_code=>$gcode,content=>$content)
+
+发送临时消息，send_sess_message的参数只有一个$msg
+
+它必须是由$client->create_sess_msg()生成的消息结构  
+
+    my $msg=$client->create_sess_msg(to_uin=>$uin, group_code=>$gcode,content=>$content);
+    $client->send_sess_message($msg);
+
+或者你可以按如下方式直接调用send_sess_message()
+
+    $client->send_sess_message(to_uin=>$uin, group_code=>$gcode,content=>$content);
 
 如果发送失败默认会尝试重新发送，最多尝试5次
 
@@ -677,7 +699,18 @@ $uin通常是包含在接收到的消息或者客户端自己的数据库中，�
 
 =item send_group_message($msg)
 
-发送群消息，$msg是一个由$client->create_group_msg()生成的消息结构   
+=item send_group_message(to_uin=>$uin,content=>$content)
+
+发送群消息，send_group_message的参数如果只有一个$msg
+
+它必须是由$client->create_group_msg()生成的消息结构   
+
+    my $msg=$client->create_group_msg(to_uin=>$uin, content=>$content);
+    $client->send_group_message($msg);
+
+或者你可以按如下方式直接调用send_group_message()
+
+    $client->send_group_message(to_uin=>$uin, content=>$content);
 
 如果发送失败默认会尝试重新发送，最多尝试5次
 

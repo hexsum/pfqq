@@ -8,7 +8,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "5.8";
+our $VERSION = "5.9";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -287,21 +287,39 @@ sub _report;
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
     my $self = shift;
-    my $msg = shift;
-    $self->{send_message_queue}->put($msg);
+    if(@_ == 1 and ref $_[0] eq 'Webqq::Message::Message::Send'){
+        my $msg = shift;
+        $self->{send_message_queue}->put($msg); 
+    }
+    else{
+        my $msg = $self->_create_msg(@_,type=>'message');    
+        $self->{send_message_queue}->put($msg);    
+    }
 };
 #接受一个群临时消息，将它放到发送消息队列中
 sub send_sess_message{
     my $self = shift;
-    my $msg = shift;
-    $self->{send_message_queue}->put($msg);
+    if(@_ == 1 and ref $_[0] eq 'Webqq::Message::SessMessage::Send'){
+        my $msg = shift;
+        $self->{send_message_queue}->put($msg);
+    }
+    else{
+        my $msg = $self->_create_msg(@_,type=>'sess_message');
+        $self->{send_message_queue}->put($msg);
+    }
 }
 
 #接受一个群消息，将它放到发送消息队列中
 sub send_group_message{
-    my $self = shift;
-    my $msg = shift;
-    $self->{send_message_queue}->put($msg);
+    my $self = shift;   
+    if(@_ == 1 and ref $_[0] eq 'Webqq::Message::GroupMessage::Send'){
+        my $msg = shift;
+        $self->{send_message_queue}->put($msg);
+    }
+    else{
+        my $msg = $self->_create_msg(@_,type=>'group_message');
+        $self->{send_message_queue}->put($msg);
+    }
 };
 sub welcome{
     my $self = shift;

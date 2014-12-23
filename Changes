@@ -1,5 +1,9 @@
 版本更新记录:
 
+2014-12-23 Webqq::Client v5.9
+1）发送消息方法调用更加便捷
+2）调整一些demo示例代码
+
 2014-12-23 Webqq::Client v5.8
 1）create_sess_msg()方法修复主动发送群临时消息的bug
 2）ShowMsg插件可以打印群临时消息所属的群名称

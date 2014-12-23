@@ -11,6 +11,7 @@ my $client = Webqq::Client->new(debug=>0);
 
 #登录
 $client->login( qq=> $qq, pwd => $pwd);
+
 #加载Webqq::Client::Plugin::ShowMsg插件
 $client->load("ShowMsg");
 
