@@ -1,5 +1,11 @@
 版本更新记录:
 
+2014-12-23 Webqq::Client v5.8
+1）create_sess_msg()方法修复主动发送群临时消息的bug
+2）ShowMsg插件可以打印群临时消息所属的群名称
+3）PostImgVerifycode修复提交验证码后页面响应为空的bug
+4）修复pod里密码md5加密容易引起歧义的描述
+
 2014-12-19 Webqq::Client v5.7
 1）修复LinkInfo/SmartReply插件的多出bug
 2）完善Perlcode插件的资源限制

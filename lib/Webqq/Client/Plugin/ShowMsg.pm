@@ -68,13 +68,23 @@ sub call{
     elsif($msg->{type} eq 'sess_message'){
         my $msg_sender_nick = $msg->from_nick;
         my $msg_receiever_nick = $msg->to_nick;
+        my $group_name = $msg->group_name;
         $msg_sender_nick = "昵称未知" unless defined $msg_sender_nick;
         $msg_receiever_nick= "昵称未知" unless defined $msg_receiever_nick;
-        format_msg(
-            strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
-            .   "\@$msg_sender_nick(对陌生人:\@$msg_receiever_nick) 说: ",
-            $msg->{content} . $attach
-        );
+        if($msg->{msg_class} eq 'recv'){
+            format_msg(
+                strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
+                .   "\@$msg_sender_nick(来自群:$group_name 对:\@$msg_receiever_nick) 说: ",
+                $msg->{content} . $attach
+            );
+        }
+        elsif($msg->{msg_class} eq 'send'){
+            format_msg(
+                strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
+                .   "\@$msg_sender_nick(对:\@$msg_receiever_nick 来自群:$group_name) 说: ",
+                $msg->{content} . $attach
+            );
+        }
     }
 
     return 1;

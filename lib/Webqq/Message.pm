@@ -30,10 +30,11 @@ sub reply_message{
     elsif($msg->{type} eq 'sess_message'){
         $client->send_sess_message(
             $client->create_sess_msg(
-                group_sig =>  $client->_get_group_sig($msg->{id},$msg->{from_uin},$msg->{service_type}),
-                to_uin    =>  $msg->{from_uin},
-                content   =>  $content,
+                group_sig   =>  $client->_get_group_sig($msg->{gid},$msg->{from_uin},$msg->{service_type}),
+                to_uin      =>  $msg->{from_uin},
+                content     =>  $content,
                 service_type =>  $msg->{service_type},
+                group_code  => $msg->{group_code},
             )
         );
     }
@@ -68,8 +69,24 @@ sub _create_msg {
         allow_plugin => 1,
     );
     if($p{type} eq 'sess_message'){
-        $msg{service_type} = $p{service_type};
-        $msg{group_sig} = $p{group_sig};
+        if(defined $p{service_type} and defined $p{group_sig}){
+            $msg{service_type} = $p{service_type};
+            $msg{group_sig} = $p{group_sig};
+            $msg{group_code} = $p{group_code};
+        }
+        elsif($p{group_code}){
+            $msg{group_code} = $p{group_code};
+            $msg{group_sig} = $client->_get_group_sig(
+                $client->search_group($p{group_code})->{gid},
+                $p{to_uin},
+                0,   
+            );
+            $msg{service_type} = 0;
+        }
+        else{
+            console "create_sess_msg()必须设置group_code参数\n";
+            return ;
+        }
     }
     elsif($p{type} eq 'group_message'){
         $msg{group_code} = $p{group_code}||$client->get_group_code_from_gid($p{to_uin});
@@ -126,7 +143,8 @@ sub _load_extra_accessor {
 
     *Webqq::Message::SessMessage::Recv::from_nick = sub{
         my $msg = shift;
-        return $client->search_stranger($msg->{from_uin})->{nick}; 
+        return $client->search_member_in_group($msg->{group_code},$msg->{to_uin})->{nick};
+        #return $client->search_stranger($msg->{from_uin})->{nick}; 
     };
     *Webqq::Message::SessMessage::Recv::from_qq = sub {
         my $msg = shift;
@@ -140,6 +158,15 @@ sub _load_extra_accessor {
         return $client->{qq_param}{qq};
     };
 
+    *Webqq::Message::SessMessage::Recv::group_name = sub {
+        my $msg = shift;
+        return $client->search_group($msg->{group_code})->{name} ; 
+    };
+    *Webqq::Message::SessMessage::Recv::from_group = sub {
+        my $msg = shift;
+        return $client->search_group($msg->{group_code})->{name} ;
+    };
+
     *Webqq::Message::SessMessage::Send::from_nick = sub{
         return "我";
     };
@@ -148,13 +175,21 @@ sub _load_extra_accessor {
     };
     *Webqq::Message::SessMessage::Send::to_nick = sub{
         my $msg = shift;
-        return $client->search_stranger($msg->{to_uin})->{nick};
+        return $client->search_member_in_group($msg->{group_code},$msg->{to_uin})->{nick};
+        #return $client->search_stranger($msg->{to_uin})->{nick};
     };
     *Webqq::Message::SessMessage::Send::to_qq = sub{
         my $msg = shift;
         return $client->get_qq_from_uin($msg->{to_uin});
     };
-    
+    *Webqq::Message::SessMessage::Send::group_name = sub{
+        my $msg = shift;
+        return $client->search_group($msg->{group_code})->{name} ;
+    };
+    *Webqq::Message::SessMessage::Send::to_group = sub{
+        my $msg = shift;
+        return $client->search_group($msg->{group_code})->{name} ;
+    }; 
 
 
     *Webqq::Message::Message::Recv::from_nick = sub{
@@ -318,6 +353,8 @@ sub parse_receive_msg{
             for my $m (@{ $json->{result} }){
                 #收到群临时消息
                 if($m->{poll_type} eq 'sess_message'){
+                    #service_type =0 表示群临时消息，1 表示讨论组临时消息
+                    return if $m->{value}{service_type} != 0;
                     my $msg = {
                         type        =>  'sess_message',
                         msg_id      =>  $m->{value}{msg_id},
@@ -327,7 +364,8 @@ sub parse_receive_msg{
                         content     =>  $m->{value}{content},
                         service_type=>  $m->{value}{service_type},
                         ruin        =>  $m->{value}{ruin},
-                        id          =>  $m->{value}{id},
+                        gid         =>  $m->{value}{id},
+                        group_code  =>  $client->get_group_code_from_gid($m->{value}{id}),
                         msg_class   =>  "recv",
                         ttl         =>  5,  
                         allow_plugin => 1,
