@@ -1,5 +1,6 @@
 package Webqq::Client;
 use Encode;
+use Time::HiRes qw(gettimeofday);
 use LWP::Protocol::https;
 use Storable qw(dclone);
 use base qw(Webqq::Message Webqq::Client::Cron Webqq::Client::Plugin);
@@ -7,7 +8,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "5.7";
+our $VERSION = "5.8";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -44,6 +45,12 @@ sub new {
     my $class = shift;
     my %p = @_;
     my $agent = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062';
+
+    my ($second,$microsecond)=gettimeofday;
+    my $send_msg_id = $second*1000+$microsecond;
+    $send_msg_id=($send_msg_id-$send_msg_id%1000)/1000;
+    $send_msg_id=($send_msg_id%10000)*10000;
+
     my $self = {
         cookie_jar  => HTTP::Cookies->new(hide_cookie2=>1), 
         qq_param        =>  {
@@ -51,8 +58,8 @@ sub new {
             pwd                     =>  undef,    
             is_need_img_verifycode  =>  0,
             img_verifycode_source  =>   'TTY',   #NONE|TTY|CALLBACK
-            send_msg_id             =>  11111111+int(rand(99999999)),
-            clientid                =>  11111111+int(rand(99999999)),
+            send_msg_id             =>  $send_msg_id,
+            clientid                =>  53999199,
             psessionid              =>  'null',
             vfwebqq                 =>  undef,
             ptwebqq                 =>  undef,
