@@ -1,5 +1,8 @@
 版本更新记录:
 
+2014-12-24 Webqq::Client v6.2
+1）修复on_input_img_verifycode文档错误
+
 2014-12-24 Webqq::Client v6.1
 1）取消MakeFile中的DateTime依赖
 
