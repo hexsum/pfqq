@@ -2,6 +2,8 @@ package Webqq::Client::Cron;
 use Webqq::Client::Util qw(console_stderr console);
 use POSIX qw(mktime);
 use DateTime;
+use DateTime::TimeZone;
+my $TZ = DateTime::TimeZone->new( name => "local" );
 sub add_job{
     my $self = shift;
     AE::now_update;
@@ -16,8 +18,7 @@ sub add_job{
     my $next_epoch;
     my $delay;
 
-    my $now = DateTime->from_epoch( epoch => $now_epoch ,); 
-    $now->set_time_zone("Asia/Shanghai");
+    my $now = DateTime->from_epoch( epoch => $now_epoch ,time_zone=>$TZ); 
     my $next = $now->clone;
     $next->set(%$time);
     if( DateTime->compare( $now, $next ) > -1 ) {
