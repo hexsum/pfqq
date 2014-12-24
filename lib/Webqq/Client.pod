@@ -544,20 +544,33 @@ webqq是腾讯的老版本，smartqq是最新版本
 
 手机端通过特殊的链接将验证码最终提交回webqq
 
-    $client->img_verifycode_file() = sub{
+    $client->on_input_img_verifycode() = sub{
         #$img_verifycode_file是本地验证码图片路径
-        #$smtp是一个hash引用，用于设置发送邮箱相关的设置，支持的key有：
-        #{
-        #    smtp    =>
-        #    user    =>
-        #    pass    =>
-        #    from
-        #    from_title
-        #    subject
-        #    to
-        #}
-        #实际上，采用的是Mail::SendEasy进行邮件发送，参数可以参考cpan Mail::SendEasy
-        my ($img_verifycode_file,$smtp) = @_;
+        my $img_verifycode_file = shift;
+
+        #通过你自己的方式获取到图片的验证码是xxxx;
+        #比如把验证码通过邮件附件发送到手机，然后生成一个提交验证码的页面
+        #手机端查看邮件附件中的验证码，再通过页面把验证码最终提交给服务器
+        ...;
+
+        return "xxxx"
+    };
+    
+    #实际上已经有写好的一个插件Webqq::Client::Plugin::PostImgVerifycode
+    $client->load("PostImgVerifycode");
+    $client->on_input_img_verifycode() = sub{
+        my ($img_verifycode_file) = @_;
+        my $smtp = {
+            smtp    =>'smtp.163.com',
+            user    =>'sjdyd521@163.com', 
+            pass    =>'xxxx',
+            from    =>'sjdyd521@163.com',
+            to      =>'sjdy521@163.com',
+            from_title => 'QQ机器人',
+            subject => '验证码',
+        };
+
+        return &{$client->plugin("PostImgVerifycode")}($client,$img_verifycode_file,$smtp);
     };
 
 =item on_new_friend() :lvalue 
