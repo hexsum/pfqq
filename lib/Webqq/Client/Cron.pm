@@ -2,6 +2,7 @@ package Webqq::Client::Cron;
 use Webqq::Client::Util qw(console_stderr console);
 use POSIX qw(mktime);
 use Time::Piece;
+use Time::Seconds;
 sub add_job{
     my $self = shift;
     #AE::now_update;
@@ -17,13 +18,13 @@ sub add_job{
     my @now = localtime;
     my $now = mktime(@now);
     my @next = @{[@now]};
-    for my $t (keys %$time){
-          $t eq 'year'        ? ($next[5]=$time->{$t}-1900)
-        : $t eq 'month'       ? ($next[4]=$time->{$t}-1)
-        : $t eq 'day'         ? ($next[3]=$time->{$t})
-        : $t eq 'hour'        ? ($next[2]=$time->{$t})
-        : $t eq 'minute'      ? ($next[1]=$time->{$t})
-        : $t eq 'second'      ? ($next[0]=$time->{$t})
+    for my $k (keys %$time){
+          $k eq 'year'        ? ($next[5]=$time->{$k}-1900)
+        : $k eq 'month'       ? ($next[4]=$time->{$k}-1)
+        : $k eq 'day'         ? ($next[3]=$time->{$k})
+        : $k eq 'hour'        ? ($next[2]=$time->{$k})
+        : $k eq 'minute'      ? ($next[1]=$time->{$k})
+        : $k eq 'second'      ? ($next[0]=$time->{$k})
         : next;
     } 
 
@@ -48,7 +49,7 @@ sub add_job{
             $next += ONE_MINUTE;
         }        
     }    
-
+    
     console "[$type]下一次触发时间为：" . $next->strftime("%Y/%m/%d %H:%M:%S\n") if $self->{debug}; 
     $delay = $next - $now;
     my $rand_watcher_id = rand();

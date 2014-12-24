@@ -1,5 +1,8 @@
 版本更新记录:
 
+2014-12-24 Webqq::Client v6.3
+1）修复add_job会导致程序出现死循环的严重bug
+
 2014-12-24 Webqq::Client v6.2
 1）修复on_input_img_verifycode文档错误
 
