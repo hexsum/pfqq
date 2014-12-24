@@ -13,7 +13,6 @@ WriteMakefile(
         "AnyEvent::UserAgent"   => 0,
         "LWP::UserAgent"        => 0,
         "LWP::Protocol::https"  => 0,
-        "DateTime"              => 0,
         "JE"                    => 0,
     }, # e.g., Module::Name => 1.1
     dist              => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
