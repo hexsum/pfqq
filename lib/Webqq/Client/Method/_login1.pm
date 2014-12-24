@@ -104,7 +104,7 @@ sub Webqq::Client::_login1{
             print $response->content() if $self->{debug};
             my $content = $response->content();
             my %d = ();
-            @d{qw( retcode unknown_1 api_check_sig unknown_2 status nickname )} = $content=~/'(.*?)'/g;
+            @d{qw( retcode unknown_1 api_check_sig unknown_2 status uin )} = $content=~/'(.*?)'/g;
             #ptuiCB('4','0','','0','您输入的验证码不正确，请重新输入。', '12345678');
             #ptuiCB('3','0','','0','您输入的帐号或密码不正确，请重新输入。', '2735534596');
              
@@ -115,8 +115,11 @@ sub Webqq::Client::_login1{
             elsif($d{retcode} == 3){
                 console "您输入的帐号或密码不正确，客户端退出...\n";
                 exit;
+            }   
+            elsif($d{retcode} != 0){
+                console "$d{status}，客户端退出...\n";
+                exit;
             }
-            return 0 if $d{retcode} != 0;
             $self->{qq_param}{api_check_sig} = $d{api_check_sig};
             $self->{qq_param}{ptwebqq} = $self->search_cookie('ptwebqq');
             return 1;
