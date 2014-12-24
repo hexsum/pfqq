@@ -1,5 +1,8 @@
 版本更新记录:
 
+2014-12-24 Webqq::Client v6.1
+1）取消MakeFile中的DateTime依赖
+
 2014-12-24 Webqq::Client v6.0
 1）修改登陆异常时的报错信息
 2）_login1()返回异常时，打印错误原因
