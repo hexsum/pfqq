@@ -1,5 +1,10 @@
 版本更新记录:
 
+2014-12-24 Webqq::Client v6.0
+1）修改登陆异常时的报错信息
+2）_login1()返回异常时，打印错误原因
+3）Webqq::Client::Cron取消对DateTime的依赖，改为Time::Piece和Time::Seconds
+
 2014-12-23 Webqq::Client v5.9
 1）发送消息方法调用更加便捷
 2）调整一些demo示例代码
