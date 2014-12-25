@@ -36,7 +36,8 @@ sub call{
                 return unless defined $charset;
                 console "获取 $url 编码信息[$charset]\n" if $client->{debug};
                 my $p=HTML::Parser->new;
-                $p->ignore_elements(qw(script style));
+                $p->ignore_elements(qw(script style a img));
+                #$p->report_tags(qw(div p));
                 $p->utf8_mode(0);
 
                 my $is_title = 0;
@@ -63,10 +64,11 @@ sub call{
                 }
                 $p->parse($html);
                 $p->eof;
-                $title=~s/\s+|&nbsp;/ /g;
-                $title=~s/&quot;/"/g;
-                $content=~s/\s+|&nbsp;/ /g;
-                $content=~s/&quot;/"/g;
+                $title=~s/\s+|&[^&;]+;/ /g;
+                $content=~s/\s+|&[^&;]+;/ /g;
+
+                return unless $title;
+                return unless $content;
 
                 $title = substr($title,0,100) . (length($title)>100?"...":"");
                 $content = substr($content,0,100) . "...";
