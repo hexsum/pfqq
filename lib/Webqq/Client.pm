@@ -117,9 +117,10 @@ sub new {
         
     };
     $self->{ua} = LWP::UserAgent->new(
-                cookie_jar  =>  $self->{cookie_jar},
-                agent       =>  $agent,
-                timeout     =>  300,
+                cookie_jar      =>  $self->{cookie_jar},
+                agent           =>  $agent,
+                timeout         =>  300,
+                ssl_opts        =>  {verify_hostname => 0},
     );
     $self->{asyn_ua} = AnyEvent::UserAgent->new(
                 cookie_jar  =>  $self->{cookie_jar},
