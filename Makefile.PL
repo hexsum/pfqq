@@ -14,6 +14,8 @@ WriteMakefile(
         "LWP::UserAgent"        => 0,
         "LWP::Protocol::https"  => 0,
         "JE"                    => 0,
+        "Time::Piece"           => 0,
+        "Time::Seconds"         => 0,
     }, # e.g., Module::Name => 1.1
     dist              => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Webqq-Client-*' },
