@@ -18,10 +18,9 @@ sub reply_message{
         );
     }
     elsif($msg->{type} eq 'group_message'){
-        my $to_uin = $client->search_group($msg->{group_code})->{gid} || $msg->{from_uin};
         $client->send_group_message(
             $client->create_group_msg( 
-                to_uin=>$to_uin,    
+                to_uin=>$msg->{from_uin},    
                 content=>$content,
                 group_code=>$msg->{group_code}  
             )  
@@ -102,11 +101,13 @@ sub _load_extra_accessor {
     my $client = shift;
     *Webqq::Message::GroupMessage::Recv::group_name = sub{
         my $msg = shift;
-        return $client->search_group($msg->{group_code})->{name} ;
+        my $g = $client->search_group($msg->{group_code});
+        return defined $g?$g->{name}:undef ;
     };
     *Webqq::Message::GroupMessage::Recv::from_gname = sub{
         my $msg = shift;
-        return $client->search_group($msg->{group_code})->{name} ;
+        my $g = $client->search_group($msg->{group_code});
+        return defined $g?$g->{name}:undef ;
     };
     *Webqq::Message::GroupMessage::Recv::from_qq = sub{
         my $msg = shift;
@@ -114,24 +115,29 @@ sub _load_extra_accessor {
     };
     *Webqq::Message::GroupMessage::Recv::from_nick = sub{
         my $msg = shift;
-        return $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{nick};
+        my $m = $client->search_member_in_group($msg->{group_code},$msg->{send_uin});
+        return defined $m?$m->{nick}:undef;
     };
     *Webqq::Message::GroupMessage::Recv::from_card = sub{
         my $msg = shift;
-        return $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{card};
+        my $m = $client->search_member_in_group($msg->{group_code},$msg->{send_uin});
+        return defined $m?$m->{card}:undef;
     };
     *Webqq::Message::GroupMessage::Recv::from_city = sub{
         my $msg = shift;
-        return $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{city};
+        my $m = $client->search_member_in_group($msg->{group_code},$msg->{send_uin});
+        return defined $m?$m->{city}:undef;
     };
 
     *Webqq::Message::GroupMessage::Send::group_name = sub{
         my $msg = shift;
-        return $client->search_group($msg->{group_code})->{name} ;
+        my $g  = $client->search_group($msg->{group_code});
+        return defined $g?$g->{name}:undef;
     };
     *Webqq::Message::GroupMessage::Send::to_gname = sub{
         my $msg = shift;
-        return $client->search_group($msg->{group_code})->{name} ;
+        my $g  = $client->search_group($msg->{group_code});
+        return defined $g?$g->{name}:undef;
     };
     *Webqq::Message::GroupMessage::Send::from_qq = sub{
         return $client->{qq_param}{qq};
@@ -143,12 +149,11 @@ sub _load_extra_accessor {
 
     *Webqq::Message::SessMessage::Recv::from_nick = sub{
         my $msg = shift;
-        return $client->search_member_in_group($msg->{group_code},$msg->{to_uin})->{nick};
-        #return $client->search_stranger($msg->{from_uin})->{nick}; 
+        my $m = $client->search_member_in_group($msg->{group_code},$msg->{from_uin});
+        return defined $m?$m->{nick}:undef;
     };
     *Webqq::Message::SessMessage::Recv::from_qq = sub {
         my $msg = shift;
-        #return $client->get_qq_from_uin($msg->{from_uin}); 
         return $msg->{ruin};
     };
     *Webqq::Message::SessMessage::Recv::to_nick = sub{
@@ -160,11 +165,13 @@ sub _load_extra_accessor {
 
     *Webqq::Message::SessMessage::Recv::group_name = sub {
         my $msg = shift;
-        return $client->search_group($msg->{group_code})->{name} ; 
+        my $g = $client->search_group($msg->{group_code});
+        return defined $g?$g->{name}:undef;
     };
     *Webqq::Message::SessMessage::Recv::from_group = sub {
         my $msg = shift;
-        return $client->search_group($msg->{group_code})->{name} ;
+        my $g = $client->search_group($msg->{group_code});
+        return defined $g?$g->{name}:undef;
     };
 
     *Webqq::Message::SessMessage::Send::from_nick = sub{
@@ -175,8 +182,8 @@ sub _load_extra_accessor {
     };
     *Webqq::Message::SessMessage::Send::to_nick = sub{
         my $msg = shift;
-        return $client->search_member_in_group($msg->{group_code},$msg->{to_uin})->{nick};
-        #return $client->search_stranger($msg->{to_uin})->{nick};
+        my $m = $client->search_member_in_group($msg->{group_code},$msg->{to_uin});
+        return defined $m?$m->{nick}:undef;
     };
     *Webqq::Message::SessMessage::Send::to_qq = sub{
         my $msg = shift;
@@ -184,17 +191,20 @@ sub _load_extra_accessor {
     };
     *Webqq::Message::SessMessage::Send::group_name = sub{
         my $msg = shift;
-        return $client->search_group($msg->{group_code})->{name} ;
+        my $g = $client->search_group($msg->{group_code});
+        return defined $g?$g->{name}:undef;
     };
     *Webqq::Message::SessMessage::Send::to_group = sub{
         my $msg = shift;
-        return $client->search_group($msg->{group_code})->{name} ;
+        my $g = $client->search_group($msg->{group_code});
+        return defined $g?$g->{name}:undef;
     }; 
 
 
     *Webqq::Message::Message::Recv::from_nick = sub{
         my $msg = shift;
-        return $client->search_friend($msg->{from_uin})->{nick};
+        my $f = $client->search_friend($msg->{from_uin});
+        return defined $f?$f->{nick}:undef;
     };
     *Webqq::Message::Message::Recv::from_qq = sub{
         my $msg = shift;
@@ -202,16 +212,19 @@ sub _load_extra_accessor {
     };
     *Webqq::Message::Message::Recv::from_markname = sub{
         my $msg = shift;
-        return $client->search_friend($msg->{from_uin})->{markname};
+        my $f = $client->search_friend($msg->{from_uin});
+        return defined $f?$f->{markname}:undef;
     };
     *Webqq::Message::Message::Recv::from_categories = sub {
-        my $msg = shift;
-        return $client->search_friend($msg->{from_uin})->{categories};
+        my $msg = shift;    
+        my $f = $client->search_friend($msg->{from_uin});
+        return defined $f?$f->{categories}:undef;
     };
 
     *Webqq::Message::Message::Recv::from_city = sub {
         my $msg = shift;
-        return $client->search_friend($msg->{from_uin})->{city};
+        my $f = $client->search_friend($msg->{from_uin});
+        return defined $f?$f->{city}:undef;
     };
     
     *Webqq::Message::Message::Recv::to_nick = sub{
@@ -230,7 +243,8 @@ sub _load_extra_accessor {
     };
     *Webqq::Message::Message::Send::to_nick = sub{
         my $msg = shift;
-        return $client->search_friend($msg->{to_uin})->{nick};
+        my $f = $client->search_friend($msg->{to_uin});
+        return defined $f?$f->{nick}:undef;
     };
     *Webqq::Message::Message::Send::to_qq = sub{
         my $msg = shift;
@@ -238,11 +252,13 @@ sub _load_extra_accessor {
     };
     *Webqq::Message::Message::Send::to_markname = sub{
         my $msg = shift;
-        return $client->search_friend($msg->{to_uin})->{markname};
+        my $f = $client->search_friend($msg->{to_uin});
+        return defined $f?$f->{markname}:undef;
     };
     *Webqq::Message::Message::Send::to_categories = sub{
         my $msg = shift;
-        return $client->search_friend($msg->{to_uin})->{categories};
+        my $f = $client->search_friend($msg->{to_uin});
+        return defined $f?$f->{categories}:undef;
     };
 
 }

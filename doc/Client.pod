@@ -635,7 +635,7 @@ smartqq则完全不会显示新成员发送的消息
 
     $client->on_new_group_member = sub{
         my($group,$member)  =@_;
-        #$group和@{$client->{qq_database}{group}}中元素的->{ginfo}一致
+        #$group和@{$client->{qq_database}{group}}中元素一致
         #member和@{$client->{qq_database}{group}}中元素的->{minfo}元素一致
         my $member_nick = defined $member->{nick}?$member->{nick}:"昵称未知";
     };
@@ -812,7 +812,7 @@ reply_message(),该方法接收两个参数，第一个参数是接收到的消�
     
 根据提供的uin在@{ $client->{qq_database}{friends} }中查找匹配的结果，
 
-返回@{ $client->{qq_database}{friends} }中某一个匹配的元素
+返回@{ $client->{qq_database}{friends} }中某一个匹配的元素，失败返回undef
 
     my $friend_hash_ref = $client->search_friend($uin);
 
@@ -832,7 +832,7 @@ reply_message(),该方法接收两个参数，第一个参数是接收到的消�
 
 =item search_member_in_group($gcode,$member_uin)
 
-根据提供的gcode和uin在指定的群里搜索指定的成员，返回匹配的群成员引用
+根据提供的gcode和uin在指定的群里搜索指定的成员，返回匹配的群成员引用，查询失败返回undef
 
     my $member_hash_ref = $client->search_member_in_group($gcode,$member_uin);
 
@@ -849,7 +849,7 @@ reply_message(),该方法接收两个参数，第一个参数是接收到的消�
 
 =item search_stranger($uin)
     
-收到临时消息时，可以消息包含的uin查找对应的陌生人信息
+收到临时消息时，可以消息包含的uin查找对应的陌生人信息，查询失败返回undef
 
     my $stranger_hash_ref = $client->search_stranger($uin);
 
@@ -862,7 +862,7 @@ reply_message(),该方法接收两个参数，第一个参数是接收到的消�
 
 =item search_group($gcode)
 
-根据设置的gcode在@{  $client->{qq_database}{group} }中查找对应的群信息
+根据设置的gcode在@{  $client->{qq_database}{group} }中查找对应的群信息，查询失败返回undef
 
     my $group_hash_ref = $client->search_group($gcode);
 

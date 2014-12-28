@@ -11,7 +11,8 @@ my %last;
 sub call{
     my ($client,$msg) = @_;
     if($msg->{type} eq 'group_message'){
-        my $gender = $client->search_member_in_group($msg->{group_code},$msg->{send_uin})->{gender};
+        my $member = $client->search_member_in_group($msg->{group_code},$msg->{send_uin});
+        my $gender = $member->{gender} if defined $member;
         if($gender eq 'female'){
             my $is_question = $msg->{content}=~/问|帮|怎么/;
             my $from_nick;
