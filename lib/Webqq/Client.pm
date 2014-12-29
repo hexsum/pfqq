@@ -630,7 +630,7 @@ sub update_group_info{
                         last;
                     }
                 }
-                push @{ $self->{qq_database}{group} }, $group_info if $flag = 0;
+                push @{ $self->{qq_database}{group} }, $group_info if $flag == 0;
             }
             else{
                 push @{ $self->{qq_database}{group} }, $group_info;
