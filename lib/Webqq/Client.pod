@@ -121,7 +121,7 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
 一般情况下，你不应该直接操作该数据结构，而应该通过类提供的方法进行查询，参见：
 
     $client->search_friend()
-    $cleint->update_friends_info()
+    $client->update_friends_info()
     
 好友信息存储在数组中，数组中的每个元素又是一个hash的引用
 
@@ -290,10 +290,10 @@ create_sess_msg()/create_group_msg()/create_msg()/reply_message()等会生成此
 send_message()/send_sess_message()/send_group_message()等需要用到此消息结构
 
     $msg = {
-        type           => #类型，"message"|"group_message"|"sess_message"|"kick_message"
+        type           => #类型，"message"|"group_message"|"sess_message"
         msg_id         => #消息id，系统自动维护
         from_uin       => #发送者uin，就是自己的uin,系统自动维护
-        to_uin         => #接收者uin
+        to_uin         => #接收者或者接收群的uin
         content        => #发送内容
         msg_class      = "send" #消息类别,用于区分是发送还是接收的消息
         msg_time       => #消息发送时间，系统自动维护
@@ -404,7 +404,7 @@ $msg除上述hash的key以外绑定的方法：
     $msg = {
         type         =  "group_message"
         msg_id       #系统自动维护
-        from_uin     #消息来源群的uin，可以使用此uin进行群消息回复
+        from_uin     #消息来源群的uin，也就是群gid，可以使用此uin进行群消息回复
         to_uin       #消息接收者的uin，也就是自己的uin
         msg_time     #消息发送时刻
         content      #消息内容，UTF-8编码，表情会转换成为文字，例如"[系统表情]","[图片]"
@@ -431,7 +431,7 @@ $msg除上述hash的key以外绑定的方法：
 =item 接收到的群临时消息结构
 
     $msg = {
-        type         =  "group_message"
+        type         =  "sess_message"
         msg_id       #系统自动维护
         from_uin     #消息来源群的uin，可以使用此uin进行群消息回复
         to_uin       #消息接收者的uin，也就是自己的uin
