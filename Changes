@@ -1,9 +1,13 @@
 版本更新记录:
 
-2014-12-24 Webqq::Client v6.5
+2014-12-29 Webqq::Client v6.6
+1）进一步完善文档
+2）修复update_group_info多次调用导致群信息重复的bug
+
+2014-12-28 Webqq::Client v6.5
 1）MakeFile.PL增加Time::Piece/Time::Seconds依赖模块
 
-2014-12-24 Webqq::Client v6.4
+2014-12-28 Webqq::Client v6.4
 1）客户端search_group/search_friend/search_member_in_group功能进行优化
 2）客户端on_new_friend/on_new_group/on_new_group_member回调优化
 
