@@ -115,6 +115,8 @@ sub new {
         plugins                     =>  {},
         ua_retry_times              =>  5, 
         je                          =>  undef,
+        last_dispatch_time          =>  undef,
+        send_interval               =>  1,
         
     };
     $self->{ua} = LWP::UserAgent->new(
@@ -373,13 +375,23 @@ sub run {
             return;
         }
         $msg->{ttl}--;
+
         my $rand_watcher_id = rand();
-        $self->{watchers}{$rand_watcher_id} = AE::timer 1.5,0,sub{
+        my $delay = 0;
+        my $now = time;
+        if(defined $self->{last__time}){
+            $delay = $now<$self->{last_dispatch_time}+$self->{send_interval}?
+                        $self->{last_dispatch_time}+$self->{send_interval}-$now
+                    :   0;
+        }
+        $self->{watchers}{$rand_watcher_id} = AE::timer $delay,0,sub{
             delete $self->{watchers}{$rand_watcher_id};
             $self->_send_message($msg)  if $msg->{type} eq 'message';
             $self->_send_group_message($msg)  if $msg->{type} eq 'group_message';
             $self->_send_sess_message($msg)  if $msg->{type} eq 'sess_message';
         };
+        $self->{last_dispatch_time} = $now+$delay;
+        
     });
 
 
