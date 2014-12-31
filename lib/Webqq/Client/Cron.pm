@@ -29,8 +29,8 @@ sub add_job{
     } 
 
     my $next = mktime(@next);
-    my $now = localtime($now);
-    my $next = localtime($next);
+    $now = localtime($now);
+    $next = localtime($next);
 
     if($now >= $next){
         if( $time->{month} ) {

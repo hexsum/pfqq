@@ -1,5 +1,8 @@
 版本更新记录:
 
+2014-12-31 Webqq::Client v6.8
+1）修复Webqq::Client::Cron变量重复声明的错误
+
 2014-12-31 Webqq::Client v6.7
 1）完善客户端消息发送间隔控制，可以设置$client->{send_interval}，默认1s
 
