@@ -104,7 +104,8 @@ sub new {
         on_new_friend               =>  undef,
         on_new_group                =>  undef,
         on_new_group_member         =>  undef,
-        on_input_img_verifycode     => undef,
+        on_input_img_verifycode     =>  undef,
+        on_run                      =>  undef,
         receive_message_queue       =>  Webqq::Message::Queue->new,
         send_message_queue          =>  Webqq::Message::Queue->new,
         debug                       => $p{debug}, 
@@ -163,6 +164,10 @@ sub on_receive_message :lvalue{
 sub on_login :lvalue {
     my $self = shift;
     $self->{on_login};
+}
+sub on_run :lvalue {
+    my $self = shift;
+    $self->{on_run};
 }
 
 sub on_new_friend :lvalue {
@@ -242,7 +247,7 @@ sub login{
         eval{
             $self->{on_login}->($self);
         };
-        console $@ . "\n" if $self->{debug} and $@;
+        console $@ . "\n" if $@;
     }
     return 1;
 }
@@ -353,7 +358,7 @@ sub run {
             eval{
                 $self->on_receive_message->($msg); 
             };
-            console $@ . "\n" if $self->{debug} and $@;
+            console $@ . "\n" if $@;
         }
     });
 
@@ -403,6 +408,13 @@ sub run {
     #$self->{timer_group_info} = AE::timer 1800 , 1800 , sub{
     #    $self->update_group_info();
     #};
+
+    if(ref $self->{on_run} eq 'CODE'){
+        eval{
+            $self->{on_run}->($self);
+        };
+        console "$@\n" if $@;
+    }
 
     $self->{cv} = AE::cv;
     $self->{cv}->recv;
@@ -707,7 +719,7 @@ sub _detect_new_friend{
             eval{
                 $self->{on_new_friend}->($friend); 
             };
-            console $@ . "\n" if $self->{debug} and $@;
+            console $@ . "\n" if  $@;
         }
         return ;
     }
@@ -742,7 +754,7 @@ sub _detect_new_group{
             eval{
                 $self->{on_new_group}->($clone);
             };  
-            console $@ . "\n" if $self->{debug} and $@;
+            console $@ . "\n" if  $@;
         }
         return ;    
     }
@@ -804,7 +816,7 @@ sub _detect_new_group_member{
             eval{
                 $self->{on_new_group_member}->(dclone($group),dclone($new_group_member));
             };
-            console $@ . "\n" if $self->{debug} and $@;
+            console $@ . "\n" if $@;
         }
         return;
     }

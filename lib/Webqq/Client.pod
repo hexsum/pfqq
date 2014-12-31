@@ -528,6 +528,12 @@ webqq是腾讯的老版本，smartqq是最新版本
 
     $client->on_login() = sub{...;};
 
+=item on_run() :lvalue
+
+设置客户端执行run之前的回调
+    
+    $client->on_run() = sub{...;};
+
 =item on_input_img_verifycode() :lvalue
 
 正常情况下，如果你是直接在终端运行webqq，需要输入验证码时
