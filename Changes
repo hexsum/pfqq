@@ -1,5 +1,8 @@
 版本更新记录:
 
+2014-12-31 Webqq::Client v6.7
+1）完善客户端消息发送间隔控制，可以设置$client->{send_interval}，默认1s
+
 2014-12-29 Webqq::Client v6.6
 1）进一步完善文档
 2）修复update_group_info多次调用导致群信息重复的bug
