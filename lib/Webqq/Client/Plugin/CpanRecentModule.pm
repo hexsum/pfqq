@@ -19,11 +19,15 @@ sub call{
                 return;
             }
             my @module;
+            my ($S2,$M2,$H2,$d2,$m2,$y2) = gmtime;
+            $y2 = $y2+1900;
+            $m2 = $m2+1;
+            map {$_=sprintf "%02d",$_} ($S2,$M2,$H2,$d2,$m2);
+            map {$_=sprintf "%04d",$_} ($y2);
+
             for my $item (@{ $xml->{'rdf:RDF'}{item} } ){
-                my ($y1,$m1,$d1,$H1,$M1,$S1) = split /-|T|Z/,$item->{'dc:date'};
-                my ($S2,$M2,$H2,$d2,$m2,$y2) = gmtime;
-                $y2 = $y2+1900;
-                $m2 = $m2+1;
+                my ($y1,$m1,$d1,$H1,$M1,$S1) = $item->{'dc:date'}=~/(\d{4})\-(\d{2})\-(\d{2})T(\d{2}):(\d{2}):(\d{2})/;
+                #my ($y1,$m1,$d1,$H1,$M1,$S1) = split /-|T|Z|:/,$item->{'dc:date'};
                 next if "$y2-$m2-$d2-$H2" ne "$y1-$m1-$d1-$H1";
                 my @tmp = split /-/,$item->{title};
                 push @module,{
