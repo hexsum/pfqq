@@ -53,7 +53,7 @@ sub call{
         $msg->{allow_plugin} = 0;
         my $module = $1;
         my $is_perldoc = $msg->{content}=~/perldoc/;
-        if(!$is_perldoc and exists $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} and time - $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} < 600){
+        if(!$is_perldoc and exists $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} and time - $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} < 1800){
             return 0;
         }
         my $metacpan_module_api = 'http://api.metacpan.org/v0/module/';
@@ -92,11 +92,11 @@ sub call{
                     my $abstract=   $json->{abstract};
                     my $podlink     = 'https://metacpan.org/pod/' . $module;
                     $doc = 
-                        "模块名称: $module\n" . 
-                        "当前版本: $version\n" . 
-                        "作者      : $author\n" . 
-                        "简述      : $abstract\n" . 
-                        "文档链接: $podlink\n"
+                        "模块: $module\n" . 
+                        "版本: $version\n" . 
+                        "作者: $author\n" . 
+                        "简述: $abstract\n" . 
+                        "链接: $podlink\n"
                     ;
                     print "GET " . $metacpan_pod_api . $module,"\n" if $client->{debug};
                     $client->{asyn_ua}->get($metacpan_pod_api . $module,(Accept=>"text/plain"),sub{
