@@ -948,6 +948,14 @@ $clent->search_group()/$clent->search_member_in_group()会自动调用update_gro
 
     my $gcode = $client->get_group_code_from_gid($gid);
 
+=item get_dwz($url)
+
+使用百度短地址api生成url对应的短地址，由于是在线生成，如果超时返回undef
+
+    my $url = "http://www.baidu.com";
+    my $dwz = $client->get_dwz($url);
+    $dwz = $url unless defined $dwz;
+
 =item get_single_long_nick($uin)
 
 通过uin查找个性签名

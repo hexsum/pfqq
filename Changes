@@ -1,5 +1,10 @@
 版本更新记录:
 
+2015-01-03 Webqq::Client v6.9
+1）CpanRecentModule插件bug修复
+2）客户端消息发送间隔默认修改为2s
+3）增加$client->get_dwz()方法，生成url对应的短地址
+
 2014-12-31 Webqq::Client v6.8
 1）修复Webqq::Client::Cron变量重复声明的错误
 

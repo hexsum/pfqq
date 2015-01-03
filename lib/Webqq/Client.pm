@@ -1,5 +1,6 @@
 package Webqq::Client;
 use strict;
+use JSON;
 use Encode;
 use Time::HiRes qw(gettimeofday);
 use LWP::Protocol::https;
@@ -9,7 +10,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "6.8";
+our $VERSION = "6.9";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -40,6 +41,7 @@ use Webqq::Client::Method::logout;
 use Webqq::Client::Method::get_qq_from_uin;
 use Webqq::Client::Method::get_single_long_nick;
 use Webqq::Client::Method::_report;
+use Webqq::Client::Method::get_dwz;
 
 
 sub new {
@@ -117,7 +119,7 @@ sub new {
         ua_retry_times              =>  5, 
         je                          =>  undef,
         last_dispatch_time          =>  undef,
-        send_interval               =>  1,
+        send_interval               =>  2,
         
     };
     $self->{ua} = LWP::UserAgent->new(
@@ -384,16 +386,19 @@ sub run {
         my $rand_watcher_id = rand();
         my $delay = 0;
         my $now = time;
-        if(defined $self->{last__time}){
+        if(defined $self->{last_dispatch_time}){
             $delay = $now<$self->{last_dispatch_time}+$self->{send_interval}?
                         $self->{last_dispatch_time}+$self->{send_interval}-$now
                     :   0;
         }
         $self->{watchers}{$rand_watcher_id} = AE::timer $delay,0,sub{
             delete $self->{watchers}{$rand_watcher_id};
-            $self->_send_message($msg)  if $msg->{type} eq 'message';
-            $self->_send_group_message($msg)  if $msg->{type} eq 'group_message';
-            $self->_send_sess_message($msg)  if $msg->{type} eq 'sess_message';
+            $msg->{msg_time} = time;
+                $msg->{type} eq 'message'       ?   $self->_send_message($msg)
+            :   $msg->{type} eq 'group_message' ?   $self->_send_group_message($msg)
+            :   $msg->{type} eq 'sess_message'  ?   $self->_send_sess_message($msg)
+            :                                       undef
+            ;
         };
         $self->{last_dispatch_time} = $now+$delay;
         
