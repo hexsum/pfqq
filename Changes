@@ -1,5 +1,13 @@
 版本更新记录:
 
+2015-01-12 Webqq::Client v7.0
+1）新增cookie跨域私有方法$client->_cookie_proxy()
+2）新增下载好友自定义图片私有方法$client->_get_offpic()
+3）新增下载好友自定义图片回调$client->on_receieve_offpic
+4）$msg->{raw_content}将cface和offpic进行区分
+5）修复Perlcode插件空白命令仍然执行的bug
+6）修复SmartReply空白内容仍然执行api查询的bug
+
 2015-01-03 Webqq::Client v6.9
 1）CpanRecentModule插件bug修复
 2）客户端消息发送间隔默认修改为2s

@@ -303,7 +303,7 @@ sub msg_put{
     shift @{ $msg->{content} };
     for my $c (@{ $msg->{content} }){
         if(ref $c eq 'ARRAY'){
-            if($c->[0] eq 'cface' or $c->[0] eq 'offpic'){
+            if($c->[0] eq 'cface'){
                 push @{$msg->{raw_content}},{
                     type    =>  'cface',
                     content =>  '[图片]',
@@ -311,6 +311,14 @@ sub msg_put{
                     file_id =>  $c->[1]{file_id},
                     key     =>  $c->[1]{key},
                     server  =>  $c->[1]{server},
+                };
+                $c=decode("utf8","[图片]");
+            }
+            elsif($c->[0] eq 'offpic'){
+                push @{$msg->{raw_content}},{
+                    type        =>  'offpic',
+                    content     =>  '[图片]',
+                    file_path   =>  $c->[1]{file_path},
                 };
                 $c=decode("utf8","[图片]");
             }

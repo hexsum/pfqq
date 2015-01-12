@@ -65,6 +65,7 @@ sub call{
 
     my $input = $msg->{content};
     $input=~s/\@\Q$self_nick\E ?|\[[^\[\]]+\]\x01|\[[^\[\]]+\]//g;
+    return unless $input;
     my @query_string = (
         "key"       =>  "4c53b48522ac4efdfe5dfb4f6149ae51",
         "userid"    =>  $userid,

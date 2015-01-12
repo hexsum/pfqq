@@ -371,7 +371,7 @@ $msg->{raw_content}中的每一个元素又是一个hash的引用
         content =>  'xxxxxxx', #utf8编码的文本消息
     }
 
-图片类消息的hash引用为
+非好友自定义图片消息的hash引用为
 
     {
         type    =>  'cface',
@@ -379,6 +379,14 @@ $msg->{raw_content}中的每一个元素又是一个hash的引用
         name    =>  'xxxx.jpg',#文件名
         server  =>  'xxx.xxx.xxx.xxx:80', #图片存储服务器
         file_id =>  '图片文件id',
+    }
+
+好友自定义图片消息的hash引用为
+
+    {
+        type    =>  'offpic',
+        content =>  '[图片]',
+        file_path => '/xxxxxx-xxxx-xxxx-xxx' #图片路径，下载图片时需要用到
     }
 
 表情类消息的hash引用为
@@ -507,6 +515,20 @@ webqq是腾讯的老版本，smartqq是最新版本
 注意，如果发送消息失败，客户端默认会根据$msg->{ttl}重试多次，
 
 因此你不需要再根据$is_success自己再进行重试
+
+=item on_receive_offpic() :lvalue
+
+成功下载到好友发送的图片文件时的回调函数
+
+    $client->on_receive_offpic = sub{
+        my($fh,$filename) = @_;
+        #$fh为下载到的好友图片文件的文件句柄(只读模式),该句柄会在回调结束后自动被close
+        #$filename为下载到的好友图片文件的本地临时存储路径，比如/tmp/webqq_offpic_XXXX.png
+        #$filename所对应的本地临时文件会在回调执行后自动删除
+        ...; 
+    }
+
+注意，目前观察到，腾讯的好友图片下载速度不稳定，有时候会较慢
 
 =item on_receive_message() :lvalue
     
@@ -1037,6 +1059,10 @@ $clent->search_group()/$clent->search_member_in_group()会自动调用update_gro
 =item _get_vfwebqq()
 
 =item _report()
+
+=item _get_offpic()
+
+=item _cookie_proxy()
 
 =back
 

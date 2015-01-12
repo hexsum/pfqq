@@ -10,7 +10,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "6.9";
+our $VERSION = "7.0";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -42,6 +42,8 @@ use Webqq::Client::Method::get_qq_from_uin;
 use Webqq::Client::Method::get_single_long_nick;
 use Webqq::Client::Method::_report;
 use Webqq::Client::Method::get_dwz;
+use Webqq::Client::Method::_get_offpic;
+use Webqq::Client::Method::_cookie_proxy;
 
 
 sub new {
@@ -101,6 +103,7 @@ sub new {
         cache_for_group_member      => Webqq::Client::Cache->new,
         cache_for_metacpan          => Webqq::Client::Cache->new,
         on_receive_message          =>  undef,
+        on_receive_offpic           =>  undef,
         on_send_message             =>  undef,
         on_login                    =>  undef,
         on_new_friend               =>  undef,
@@ -163,6 +166,11 @@ sub on_receive_message :lvalue{
     $self->{on_receive_message};
 }
 
+sub on_receive_offpic :lvalue{
+    my $self = shift;
+    $self->{on_receive_offpic};
+}
+
 sub on_login :lvalue {
     my $self = shift;
     $self->{on_login};
@@ -219,7 +227,8 @@ sub login{
                    $self->_report()
                 && $self->_check_sig() 
                 && $self->_get_vfwebqq()
-                && $self->_login2();
+                && $self->_login2()
+                && $self->_cookie_proxy();
                 last;
             }
             else{
@@ -294,6 +303,8 @@ sub change_status;
 sub get_qq_from_uin;
 sub get_single_long_nick;
 sub _report;
+sub _cookie_proxy;
+sub _get_offpic;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -348,6 +359,13 @@ sub run {
     
         #触发on_new_friend/on_new_group_member回调
         if($msg->{type} eq 'message'){
+            if(ref $self->{on_receive_offpic} eq 'CODE'){
+                for(@{$msg->{raw_content}}){
+                    if($_->{type} eq 'offpic'){
+                        $self->_get_offpic($_->{file_path},$msg->{from_uin},$self->{on_receive_offpic});
+                    }   
+                }
+            }
             $self->_detect_new_friend($msg->{from_uin});
         }
         elsif($msg->{type} eq 'group_message'){
