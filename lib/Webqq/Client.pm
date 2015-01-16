@@ -109,7 +109,7 @@ sub new {
         on_new_friend               =>  undef,
         on_new_group                =>  undef,
         on_new_group_member         =>  undef,
-        on_loss_group_member         =>  undef,
+        on_loss_group_member        =>  undef,
         on_input_img_verifycode     =>  undef,
         on_run                      =>  undef,
         receive_message_queue       =>  Webqq::Message::Queue->new,
