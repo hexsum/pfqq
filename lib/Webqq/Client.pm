@@ -10,7 +10,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "7.0";
+our $VERSION = "7.1";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use AnyEvent::UserAgent;#异步HTTP请求客户端
@@ -109,6 +109,7 @@ sub new {
         on_new_friend               =>  undef,
         on_new_group                =>  undef,
         on_new_group_member         =>  undef,
+        on_loss_group_member         =>  undef,
         on_input_img_verifycode     =>  undef,
         on_run                      =>  undef,
         receive_message_queue       =>  Webqq::Message::Queue->new,
@@ -195,6 +196,11 @@ sub on_new_group_member :lvalue {
     $self->{on_new_group_member};
 }
 
+sub on_loss_group_member :lvalue {
+    my $self = shift;
+    $self->{on_loss_group_member};
+}
+
 sub on_input_img_verifycode :lvalue {
     my $self = shift;
     $self->{on_input_img_verifycode};
@@ -265,6 +271,7 @@ sub login{
 sub relogin{
     my $self = shift;   
     console "正在重新登录...\n";
+
     $self->logout();
     $self->{login_state} = 'relogin';
 
@@ -426,11 +433,10 @@ sub run {
     console "开始接收消息\n";
     $self->_recv_message();
     console "客户端运行中...\n";
-    #$self->{timer_user_info} = AE::timer 30 , 60 , sub{ $self->update_user_info()};
-    #$self->{timer_friends_info} = AE::timer 1800 , 1800 , sub{ $self->update_friends_info()};
-    #$self->{timer_group_info} = AE::timer 1800 , 1800 , sub{
-    #    $self->update_group_info();
-    #};
+
+    $self->{watchers}{timer_update_group_info} = AE::timer 600,600,sub{
+        $self->update_group_info();
+    };
 
     if(ref $self->{on_run} eq 'CODE'){
         eval{
@@ -653,6 +659,8 @@ sub update_group_info{
     if(defined $group){
         for( @{$self->{qq_database}{group}} ){
             if($_->{ginfo}{code} eq $group->{ginfo}{code} ){
+                $self->_detect_loss_group_member($_,$group);
+                $self->_detect_new_group_member2($_,$group);
                 $_ = $group;
                 return;
             }
@@ -672,7 +680,9 @@ sub update_group_info{
                 my $flag = 0;
                 for( @{$self->{qq_database}{group}} ){
                     if($_->{ginfo}{code} eq $group_info->{ginfo}{code} ){
-                        $_ = $group_info;
+                        $self->_detect_loss_group_member($_,$group_info);
+                        $self->_detect_new_group_member2($_,$group_info);
+                        $_ = $group_info if ref $group_info->{minfo} eq 'ARRAY';
                         $flag = 1;
                         last;
                     }
@@ -846,6 +856,47 @@ sub _detect_new_group_member{
     else{
         return;
     }
+}
+
+sub _detect_new_group_member2 {
+    my $self = shift;
+    my($group_old,$group_new) = @_;
+    return if ref $group_old->{minfo} ne 'ARRAY';
+    return if ref $group_new->{minfo} ne 'ARRAY';
+    my %e = map {$_->{uin} => undef} @{$group_old->{minfo}};
+    for my $new (@{$group_new->{minfo}}){
+        #旧的有，新的没有，说明是已经退群的成员
+        unless(exists $e{$new->{uin}}){
+            if(ref $self->{on_new_group_member} eq 'CODE'){
+                eval{
+                    $self->{on_new_group_member}->(dclone($group_new),dclone($new));
+                };
+                console $@ . "\n" if $@;
+            };
+        }
+    }
+    
+}
+
+sub _detect_loss_group_member {
+    my $self = shift;
+    my($group_old,$group_new) = @_;
+    return if ref $group_old->{minfo} ne 'ARRAY';
+    return if ref $group_new->{minfo} ne 'ARRAY';
+    my %e = map {$_->{uin} => undef} @{$group_new->{minfo}};
+    for my $old (@{$group_old->{minfo}}){
+        #旧的有，新的没有，说明是已经退群的成员
+        unless(exists $e{$old->{uin}}){
+            if(ref $self->{on_loss_group_member} eq 'CODE'){
+                eval{
+                    $self->{on_loss_group_member}->(dclone($group_old),dclone($old));
+                };
+                console $@ . "\n" if $@;
+            };
+        }
+        $self->{cache_for_group_member}->delete($group_old->{ginfo}{code} . "|" . $old->{uin});
+    }
+
 }
 
 1;

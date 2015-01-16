@@ -668,6 +668,16 @@ smartqq则完全不会显示新成员发送的消息
         my $member_nick = defined $member->{nick}?$member->{nick}:"昵称未知";
     };
 
+=item on_loss_group_member() :lvalue
+
+客户端会定期更新群成员信息，当发现有群成员推出时，会执行该回调
+
+传递给该回调的参数分别是 群数据结构 和 离开的群成员 数据结构
+
+    $client->on_loss_group_member() = sub{
+        my($group,$loss_member) = @_;
+    };
+
 =item login(qq=>$qq,pwd=>$pwd)
 
 客户端登录，登录成功后才能够正常收发消息，登录失败该函数会die，登录成功返回true

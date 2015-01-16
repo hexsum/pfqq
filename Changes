@@ -1,5 +1,12 @@
 版本更新记录:
 
+2015-01-16 Webqq::Client v7.1
+1）Webqq::Client::Cache新增->delete()的方法
+2）新增_detect_new_group_member2方法，用于发现新增成员
+3）新增_detect_loss_group_member方法，用于发现退群成员
+4）客户端定时更新群信息
+5）新增on_loss_group_member回调
+
 2015-01-12 Webqq::Client v7.0
 1）新增cookie跨域私有方法$client->_cookie_proxy()
 2）新增下载好友自定义图片私有方法$client->_get_offpic()

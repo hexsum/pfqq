@@ -10,6 +10,11 @@ sub store {
     $self->{$data_key}{ctime} = time;
     
 }
+sub delete {
+    my $self= shift;
+    my $data_key = shift;
+    delete $self->{$data_key};
+}
 sub retrieve{
     my $self = shift;
     my $data_key = shift;

@@ -1,8 +1,13 @@
 use Webqq::Client::Util qw(console);
 sub Webqq::Client::logout { 
     my $self = shift;
-    return 1 if $self->{type} ne 'webqq';
     console "正在注销...\n";
+    if($self->{type} eq 'smartqq'){
+        $self->{cookie_jar}->set_cookie(0,"ptwebqq",undef,"/","qq.com",undef,undef,undef,-1);
+        $self->{cookie_jar}->set_cookie(0,"skey",undef,"/","qq.com",undef,undef,undef,-1);
+        console "注销完毕\n";
+        return 1;
+    }
     my $ua = $self->{ua};
     my $api_url = 'http://d.web2.qq.com/channel/logout2';
     my @query_string = (
