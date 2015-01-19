@@ -123,7 +123,7 @@ sub new {
         ua_retry_times              =>  5, 
         je                          =>  undef,
         last_dispatch_time          =>  undef,
-        send_interval               =>  2,
+        send_interval               =>  3,
         
     };
     $self->{ua} = LWP::UserAgent->new(
@@ -865,7 +865,7 @@ sub _detect_new_group_member2 {
     return if ref $group_new->{minfo} ne 'ARRAY';
     my %e = map {$_->{uin} => undef} @{$group_old->{minfo}};
     for my $new (@{$group_new->{minfo}}){
-        #旧的有，新的没有，说明是已经退群的成员
+        #旧的没有，新的有，说明是新增群成员
         unless(exists $e{$new->{uin}}){
             if(ref $self->{on_new_group_member} eq 'CODE'){
                 eval{
