@@ -687,7 +687,15 @@ sub update_group_info{
                         last;
                     }
                 }
-                push @{ $self->{qq_database}{group} }, $group_info if $flag == 0;
+                if($flag == 0){
+                    push @{ $self->{qq_database}{group} }, $group_info ;
+                    if(ref $self->{on_new_group} eq 'CODE'){
+                        eval {
+                            $self->{on_new_group}->(dclone($group_info));
+                        };
+                        console $@ . "\n" if $@;
+                    }
+                }
             }
             else{
                 push @{ $self->{qq_database}{group} }, $group_info;
