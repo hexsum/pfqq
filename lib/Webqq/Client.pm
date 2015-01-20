@@ -153,6 +153,7 @@ sub new {
         });
     }
     $self->{default_qq_param} =  dclone($self->{qq_param});
+    $self->{default_qq_database} = dclone($self->{qq_database});
     #全局变量，方便其他包引用$self
     $Webqq::Client::_CLIENT = $self;
     return bless $self;
@@ -280,7 +281,6 @@ sub relogin{
     $self->{ua}->cookie_jar($self->{cookie_jar});
     $self->{asyn_ua}->cookie_jar($self->{cookie_jar});
     #重新设置初始化参数
-    $self->{qq_param} = dclone($self->{default_qq_param});
     $self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
     $self->{cache_for_group_sig} = Webqq::Client::Cache->new;
     $self->{cache_for_group} = Webqq::Client::Cache->new;
@@ -288,6 +288,8 @@ sub relogin{
     $self->{cache_for_friend} = Webqq::Client::Cache->new;
     $self->{cache_for_stranger} = Webqq::Client::Cache->new;
     $self->{cache_for_single_long_nick} = Webqq::Client::Cache->new;
+    $self->{qq_param} = dclone($self->{default_qq_param});
+    $self->{qq_database} = dclone($self->{default_qq_database});
     $self->login(qq=>$self->{default_qq_param}{qq},pwd=>$self->{default_qq_param}{pwd});
 }
 sub _get_vfwebqq;
