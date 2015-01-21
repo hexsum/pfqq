@@ -30,7 +30,6 @@ sub call{
                 #my ($y1,$m1,$d1,$H1,$M1,$S1) = split /-|T|Z|:/,$item->{'dc:date'};
                 map {$_ = substr($_,0,1)} ($M1,$M2);
                 next if "$y2-$m2-$d2-$H2-$M2" ne "$y1-$m1-$d1-$H1-$M1";
-                my @tmp = split /-/,$item->{title};
                 my $link = $client->get_dwz($item->{'link'});
                 $link = $item->{'link'} unless defined $link;
                 push @module,{
