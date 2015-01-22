@@ -1,5 +1,9 @@
 版本更新记录:
 
+2015-01-22 Webqq::Client v7.2
+1）修复relogin时on_new_group回调存在的bug
+2）新增Webqq::UserAgent代替AnyEvent::UserAgent减少模块依赖
+
 2015-01-16 Webqq::Client v7.1
 1）Webqq::Client::Cache新增->delete()的方法
 2）新增_detect_new_group_member2方法，用于发现新增成员

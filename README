@@ -1,4 +1,4 @@
-Webqq-Client v7.1
+Webqq-Client v7.2
 ========================
 使用Perl语言编写的Webqq客户端
 
@@ -33,7 +33,7 @@ client
   JE
   JSON
   Digest::MD5
-  AnyEvent::UserAgent
+  AnyEvent::HTTP
   LWP::UserAgent
   LWP::Protocol::https
 

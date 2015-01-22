@@ -1080,6 +1080,14 @@ $clent->search_group()/$clent->search_member_in_group()会自动调用update_gro
 
 =over
 
+=item Webqq::UserAgent
+
+一个http异步请求客户端，原本使用AnyEvent::UserAgent
+
+但由于AnyEvent::UserAgent依赖的模块比较多
+
+故将AnyEvent::UserAgent的代码移植到Webqq，减少依赖模块，便于安装
+
 =item Webqq::Client::Cache
 
 一个简单的缓存模块，可以缓存任何内容，支持设置过期时间

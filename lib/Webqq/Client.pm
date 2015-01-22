@@ -10,10 +10,10 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "7.1";
+our $VERSION = "7.2";
 
 use LWP::UserAgent;#同步HTTP请求客户端
-use AnyEvent::UserAgent;#异步HTTP请求客户端
+use Webqq::UserAgent;#异步HTTP请求客户端
 
 use Webqq::Client::Util qw(console);
 
@@ -132,7 +132,7 @@ sub new {
                 timeout         =>  300,
                 ssl_opts        =>  {verify_hostname => 0},
     );
-    $self->{asyn_ua} = AnyEvent::UserAgent->new(
+    $self->{asyn_ua} = Webqq::UserAgent->new(
                 cookie_jar  =>  $self->{cookie_jar},
                 agent       =>  $agent,
                 request_timeout =>  300,
