@@ -2,14 +2,14 @@ package Webqq::Message;
 use Webqq::Message::Face;
 use JSON;
 use Encode;
-use Webqq::Client::Util qw(console_stderr console);
+use Webqq::Client::Util qw(console);
 use Scalar::Util qw(blessed);
 sub reply_message{
     my $client = shift;
     my $msg = shift;
     my $content = shift;
     unless(blessed($msg)){
-        console_stderr "输入的msg数据非法\n";
+        console "输入的msg数据非法\n";
         return 0;
     }
     if($msg->{type} eq 'message'){
@@ -286,7 +286,7 @@ sub parse_send_status_msg{
     my ($json_txt) = @_;
     my $json     = undef;
     eval{$json = JSON->new->utf8->decode($json_txt)};
-    console_stderr "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@ and $client->{debug};
+    console "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@ and $client->{debug};
     if(ref $json eq 'HASH' and $json->{retcode}==0){
         return {is_success=>1,status=>"发送成功"}; 
     }
@@ -370,7 +370,7 @@ sub parse_receive_msg{
     my ($json_txt) = @_;  
     my $json     = undef;
     eval{$json = JSON->new->utf8->decode($json_txt)};
-    console_stderr "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@ and $client->{debug};
+    console "解析消息失败: $@ 对应的消息内容为: $json_txt\n" if $@ and $client->{debug};
     if($json){
         #一个普通的消息
         if($json->{retcode}==0){
@@ -453,17 +453,17 @@ sub parse_receive_msg{
         #更新客户端ptwebqq值
         elsif($json->{retcode} == 116){$client->{qq_param}{ptwebqq} = $json->{p};}
         #未重新登录
-        elsif($json->{retcode} ==100 or $json->{retcode} ==103){
-            console_stderr "需要重新登录\n";
+        elsif($json->{retcode} ==100){
+            console "因网络或其他原因与服务器失去联系，客户端需要重新登录...\n";
             $client->relogin();
         }
         #重新连接失败
         elsif($json->{retcode} ==120 or $json->{retcode} ==121 ){
-            console_stderr "重新连接失败\n";
-            $client->relogin();
+            console "因网络或其他原因与服务器失去联系，正在尝试重新连接...\n";
+            $client->_relink();
         }
         #其他未知消息
-        else{console_stderr "读取到未知消息: $json_txt\n";}
+        else{console "读取到未知消息: $json_txt\n";}
     } 
 }
 1;

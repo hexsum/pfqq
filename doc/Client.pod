@@ -47,11 +47,11 @@ Webqq::Client - A webqq client in Perl Language
         |->_recv_message()-[put]-> Webqq::Message::Queue -[get]-> on_receive_message()
         |
         |->send_message() -[put]--+                       +-[get]-> _send_message() ---+
-        |                           \                   /                              +
-        |->send_sess_message()-[put]-Webqq::Message::Queue-[get]->_send_sess_message()-+               
-        |                              /              \                                +
-        |->send_group_message()-[put]-+                +-[get]->_send_group_message()--+
-        |                                                                              +
+        |                           \                   /                              |
+        |->send_sess_message()-[put]-Webqq::Message::Queue-[get]->_send_sess_message()-|               
+        |                              /              \                                |
+        |->send_group_message()-[put]-+                +-[get]->_send_group_message()--|
+        |                                                                              |
         |                          on_send_message() ---<---- msg->{cb} -------<-------+
         +->run()
 
@@ -1047,6 +1047,8 @@ $clent->search_group()/$clent->search_member_in_group()会自动调用update_gro
 =item _login1()
 
 =item _login2()
+
+=item _relink()
 
 =item _get_user_info()
 

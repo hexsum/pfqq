@@ -1,7 +1,8 @@
-use JSON ;
+use JSON;
 use Webqq::Client::Util qw(console);
-sub Webqq::Client::_login2{
+sub Webqq::Client::_relink{
     my $self = shift;
+    $self->{login_state} = 'relink';
     console "尝试进行登录(阶段2)...\n";
     my $ua = $self->{ua};
     my $api_url = 'http://d.web2.qq.com/channel/login2';
@@ -10,6 +11,7 @@ sub Webqq::Client::_login2{
                 ;
     my %r = (
         status      =>  $self->{qq_param}{status},
+        key         =>  "",
         ptwebqq     =>  $self->{qq_param}{ptwebqq},
         clientid    =>  $self->{qq_param}{clientid},
         psessionid  =>  $self->{qq_param}{psessionid},
@@ -26,11 +28,26 @@ sub Webqq::Client::_login2{
             my $content = $response->content();
             my $data = JSON->new->utf8->decode($content);
             if($data->{retcode} ==0){
-                $self->{qq_param}{psessionid} = $data->{result}{psessionid};
-                $self->{qq_param}{vfwebqq} = $data->{result}{vfwebqq};
+                $self->{qq_param}{psessionid} = $data->{result}{psessionid} if $data->{result}{psessionid};
+                $self->{qq_param}{vfwebqq} = $data->{result}{vfwebqq} if $data->{result}{vfwebqq};
+                $self->{qq_param}{clientid} = $data->{result}{clientid} if $data->{result}{clientid};
+                $self->{qq_param}{ptwebqq} = $data->{result}{ptwebqq} if $data->{result}{ptwebqq};
+                $self->{qq_param}{skey} = $data->{result}{skey} if $data->{result}{skey};
+                $self->{cookie_jar}->set_cookie(0,"ptwebqq",$data->{result}{ptwebqq},"/","qq.com"); 
                 $self->_cookie_proxy();
                 $self->{login_state} = 'success';
                 return 1;
+            }
+            elsif($data->{retcode} == 103){
+                $self->relogin();
+                return 1;
+            }
+            elsif($data->{retcode} == 112){
+                $self->relogin();
+                return 1; 
+            }
+            else{
+                return 0;
             }
         }
     }

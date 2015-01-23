@@ -20,7 +20,6 @@ sub new {
 sub request {
         my $cb = pop();
         my ($self, $req, %opts) = @_;
- 
         $self->_request($req, \%opts, sub {
                 $self->_response($req, @_, $cb);
         });

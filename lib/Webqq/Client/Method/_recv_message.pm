@@ -1,13 +1,13 @@
+use JSON;
 sub Webqq::Client::_recv_message{
     my $self = shift;
     my $ua = $self->{asyn_ua};
-    my $callback = $self->{on_receive_message};
     my $api_url = 'http://d.web2.qq.com/channel/poll2';
-    $callback = sub {
+    my $callback = sub {
         my $response = shift;
         print $response->content() if $self->{debug};
         #分析接收到的消息，并把分析后的消息放到接收消息队列中
-        $self->parse_receive_msg($response->content());
+        $self->parse_receive_msg($response->content()) if $response->is_success;
         #重新开始接收消息
         my $rand_watcher_id = rand();
         $self->{watchers}{$rand_watcher_id} = AE::timer 2,0,sub{
@@ -19,14 +19,14 @@ sub Webqq::Client::_recv_message{
     my %r = (
         clientid    =>  $self->{qq_param}{clientid},
         psessionid  =>  $self->{qq_param}{psessionid},
-        key         =>  undef,
+        key         =>  "",
     );
     if($self->{type} eq 'webqq'){
         $r{key} = 0;
         $r{ids} = [];
     }
     my $post_content = [
-        r           =>  JSON->new->encode(\%r),
+        r           =>  JSON->new->utf8->encode(\%r),
     ];
     if($self->{type} eq 'webqq'){
         push @$post_content,(

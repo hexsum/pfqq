@@ -10,7 +10,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "7.2";
+our $VERSION = "7.3";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use Webqq::UserAgent;#异步HTTP请求客户端
@@ -44,6 +44,7 @@ use Webqq::Client::Method::_report;
 use Webqq::Client::Method::get_dwz;
 use Webqq::Client::Method::_get_offpic;
 use Webqq::Client::Method::_cookie_proxy;
+use Webqq::Client::Method::_relink;
 
 
 sub new {
@@ -154,9 +155,12 @@ sub new {
     }
     $self->{default_qq_param} =  dclone($self->{qq_param});
     $self->{default_qq_database} = dclone($self->{qq_database});
+
+    bless $self,$class;
+    $self->_prepare();
     #全局变量，方便其他包引用$self
     $Webqq::Client::_CLIENT = $self;
-    return bless $self;
+    return $self;
 }
 sub on_send_message :lvalue {
     my $self = shift;
@@ -234,8 +238,7 @@ sub login{
                    $self->_report()
                 && $self->_check_sig() 
                 && $self->_get_vfwebqq()
-                && $self->_login2()
-                && $self->_cookie_proxy();
+                && $self->_login2();
                 last;
             }
             else{
@@ -263,7 +266,7 @@ sub login{
     #执行on_login回调
     if(ref $self->{on_login} eq 'CODE'){
         eval{
-            $self->{on_login}->($self);
+            $self->{on_login}->();
         };
         console $@ . "\n" if $@;
     }
@@ -314,6 +317,7 @@ sub get_single_long_nick;
 sub _report;
 sub _cookie_proxy;
 sub _get_offpic;
+sub _relink;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -359,7 +363,7 @@ sub welcome{
     console "个性签名: " . ($w->{single_long_nick}?$w->{single_long_nick}:"（无）") . "\n"
 };
 sub logout;
-sub run {
+sub _prepare {
     my $self = shift;
     $self->_load_extra_accessor();
     #设置从接收消息队列中接收到消息后对应的处理函数
@@ -383,9 +387,9 @@ sub run {
         }
         
         #接收队列中接收到消息后，调用相关的消息处理回调，如果未设置回调，消息将丢弃
-        if(ref $self->on_receive_message eq 'CODE'){
+        if(ref $self->{on_receive_message} eq 'CODE'){
             eval{
-                $self->on_receive_message->($msg); 
+                $self->{on_receive_message}->($msg); 
             };
             console $@ . "\n" if $@;
         }
@@ -431,25 +435,30 @@ sub run {
         
     });
 
+};
 
-    console "开始接收消息\n";
-    $self->_recv_message();
-    console "客户端运行中...\n";
+sub run{
+    my $self = shift;
 
-    $self->{watchers}{timer_update_group_info} = AE::timer 600,600,sub{
+    $self->{watchers}{rand()} = AE::timer 600,600,sub{
         $self->update_group_info();
     };
 
+    console "开始接收消息\n";
+    $self->_recv_message();
+
     if(ref $self->{on_run} eq 'CODE'){
         eval{
-            $self->{on_run}->($self);
+            $self->{on_run}->();
         };
         console "$@\n" if $@;
     }
 
+
+    console "客户端运行中...\n";
     $self->{cv} = AE::cv;
     $self->{cv}->recv;
-};
+}
 sub search_cookie{
     my($self,$cookie) = @_;
     my $result = undef;

@@ -1,5 +1,12 @@
 版本更新记录:
 
+2015-01-23 Webqq::Client v7.3
+1）新增$client->_relink()方法，区分重新登录、重新连接两种行为
+2）修复on_login回调在login之后不能马上发送消息的缺陷
+3）完善$client->_recv_message()对异常响应的处理
+4）$client->_cookie_proxy()方法嵌入到$client->_login2()中执行
+5）修复$client->_login2()请求参数错误
+
 2015-01-22 Webqq::Client v7.2
 1）修复relogin时on_new_group回调存在的bug
 2）新增Webqq::UserAgent代替AnyEvent::UserAgent减少模块依赖
