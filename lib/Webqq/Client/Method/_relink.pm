@@ -3,7 +3,7 @@ use Webqq::Client::Util qw(console);
 sub Webqq::Client::_relink{
     my $self = shift;
     $self->{login_state} = 'relink';
-    console "尝试进行登录(阶段2)...\n";
+    console "正在进行重新连接...\n";
     my $ua = $self->{ua};
     my $api_url = 'http://d.web2.qq.com/channel/login2';
     my @headers = $self->{type} eq 'webqq'? (Referer=>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3')
@@ -38,19 +38,13 @@ sub Webqq::Client::_relink{
                 $self->{login_state} = 'success';
                 return 1;
             }
-            elsif($data->{retcode} == 103){
-                $self->relogin();
-                return 1;
-            }
-            elsif($data->{retcode} == 112){
-                $self->relogin();
-                return 1; 
-            }
             else{
+                $self->relogin();
                 return 0;
             }
         }
     }
+    $self->relogin();
     return 0;
 }
 1;

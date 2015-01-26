@@ -374,6 +374,7 @@ sub parse_receive_msg{
     if($json){
         #一个普通的消息
         if($json->{retcode}==0){
+            $client->{poll_failure_count} = 0;
             for my $m (@{ $json->{result} }){
                 #收到群临时消息
                 if($m->{poll_type} eq 'sess_message'){
@@ -430,7 +431,14 @@ sub parse_receive_msg{
                 }
                 #收到系统消息
                 elsif($m->{poll_type} eq 'sys_g_msg'){
-                    
+                    #my $msg = {
+                    #    type        =>  'sys_g_msg',
+                    #    msg_id      =>  $m->{value}{msg_id},
+                    #    from_uin    =>  $m->{value}{from_uin},
+                    #    to_uin      =>  $m->{value}{to_uin},
+                    #     
+                    #};
+                    #$client->msg_put($msg);
                 }
                 #收到强制下线消息
                 elsif($m->{poll_type} eq 'kick_message'){
@@ -449,7 +457,9 @@ sub parse_receive_msg{
             }
         }
         #可以忽略的消息，暂时不做任何处理
-        elsif($json->{retcode} == 102){}
+        elsif($json->{retcode} == 102 or $json->{retcode} == 109 or $json->{retcode} == 110 ){
+            $client->{poll_failure_count} = 0;
+        }
         #更新客户端ptwebqq值
         elsif($json->{retcode} == 116){$client->{qq_param}{ptwebqq} = $json->{p};}
         #未重新登录
@@ -459,11 +469,19 @@ sub parse_receive_msg{
         }
         #重新连接失败
         elsif($json->{retcode} ==120 or $json->{retcode} ==121 ){
-            console "因网络或其他原因与服务器失去联系，正在尝试重新连接...\n";
+            console "因网络或其他原因与服务器失去联系，客户端需要重新连接...\n";
             $client->_relink();
         }
         #其他未知消息
-        else{console "读取到未知消息: $json_txt\n";}
+        else{
+            $client->{poll_failure_count}++;
+            console "获取消息失败，当前失败次数: $client->{poll_failure_count}\n";
+            if($client->{poll_failure_count} > $client->{poll_failure_count_max}){
+                console "接收消息失败次数超过最大值，尝试进行重新连接...\n";
+                $client->{poll_failure_count}   =  0;
+                $client->_relink();
+            }
+        }
     } 
 }
 1;

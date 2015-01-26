@@ -1,5 +1,12 @@
 版本更新记录:
 
+2015-01-26 Webqq::Client v7.4
+1）新增$client->{is_first_login}属性，用于识别是否是首次登录
+2）修复relogin清空cookie时严重错误，该错误可能会导致程序异常退出
+3）修复on_new_group在错误的时机被执行的bug
+4）新增客户端接收消息失败次数限制，超过失败次数自动重连
+5）$client->_relink()方法重新连接失败后会改为重新登录
+
 2015-01-23 Webqq::Client v7.3
 1）新增$client->_relink()方法，区分重新登录、重新连接两种行为
 2）修复on_login回调在login之后不能马上发送消息的缺陷

@@ -10,7 +10,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "7.3";
+our $VERSION = "7.4";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use Webqq::UserAgent;#异步HTTP请求客户端
@@ -95,6 +95,7 @@ sub new {
             group       =>  [],
             discuss     =>  [],
         },
+        is_first_login              =>  -1,
         cache_for_uin_to_qq         => Webqq::Client::Cache->new,
         cache_for_group_sig         => Webqq::Client::Cache->new,
         cache_for_stranger          => Webqq::Client::Cache->new,
@@ -125,6 +126,8 @@ sub new {
         je                          =>  undef,
         last_dispatch_time          =>  undef,
         send_interval               =>  3,
+        poll_failure_count_max      =>  3,
+        poll_failure_count          =>  0,
         
     };
     $self->{ua} = LWP::UserAgent->new(
@@ -214,6 +217,14 @@ sub on_input_img_verifycode :lvalue {
 sub login{
     my $self = shift;
     my %p = @_;
+      
+    if($self->{is_first_login} == -1){
+        $self->{is_first_login} = 1;
+    }     
+    elsif($self->{is_first_login} == 1){
+        $self->{is_first_login} = 0;
+    }
+
     @{$self->{default_qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
     @{$self->{qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
     console "QQ账号: $self->{default_qq_param}{qq} 密码: $self->{default_qq_param}{pwd}\n";
@@ -282,7 +293,7 @@ sub relogin{
     #清空cookie
     $self->{cookie_jar} = HTTP::Cookies->new(hide_cookie2=>1);
     $self->{ua}->cookie_jar($self->{cookie_jar});
-    $self->{asyn_ua}->cookie_jar($self->{cookie_jar});
+    $self->{asyn_ua}->{cookie_jar} = $self->{cookie_jar};
     #重新设置初始化参数
     $self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
     $self->{cache_for_group_sig} = Webqq::Client::Cache->new;
@@ -667,6 +678,7 @@ sub update_friends_info{
 sub update_group_info{
     my $self = shift;
     my $group = shift;
+    my $is_init = 1 if @{$self->{qq_database}{group}}  == 0;
     if(defined $group){
         for( @{$self->{qq_database}{group}} ){
             if($_->{ginfo}{code} eq $group->{ginfo}{code} ){
@@ -677,6 +689,12 @@ sub update_group_info{
             }
         } 
         push @{$self->{qq_database}{group}},$group;
+        if(!$is_init and ref $self->{on_new_group} eq 'CODE'){
+            eval {
+                $self->{on_new_group}->(dclone($group));
+            };
+            console $@ . "\n" if $@;
+        }
         return;
     }
     $self->update_group_list_info();
@@ -687,29 +705,24 @@ sub update_group_info{
             if(ref $group_info->{minfo} ne 'ARRAY'){
                 console "更新[ $gl->{name} ]成功，但暂时没有获取到群成员信息...\n";
             }
-            if( @{$self->{qq_database}{group}} > 0 ){
-                my $flag = 0;
-                for( @{$self->{qq_database}{group}} ){
-                    if($_->{ginfo}{code} eq $group_info->{ginfo}{code} ){
-                        $self->_detect_loss_group_member($_,$group_info);
-                        $self->_detect_new_group_member2($_,$group_info);
-                        $_ = $group_info if ref $group_info->{minfo} eq 'ARRAY';
-                        $flag = 1;
-                        last;
-                    }
-                }
-                if($flag == 0){
-                    push @{ $self->{qq_database}{group} }, $group_info ;
-                    if(ref $self->{on_new_group} eq 'CODE'){
-                        eval {
-                            $self->{on_new_group}->(dclone($group_info));
-                        };
-                        console $@ . "\n" if $@;
-                    }
+            my $flag = 0;
+            for( @{$self->{qq_database}{group}} ){
+                if($_->{ginfo}{code} eq $group_info->{ginfo}{code} ){
+                    $self->_detect_loss_group_member($_,$group_info);
+                    $self->_detect_new_group_member2($_,$group_info);
+                    $_ = $group_info if ref $group_info->{minfo} eq 'ARRAY';
+                    $flag = 1;
+                    last;
                 }
             }
-            else{
+            if($flag == 0){
                 push @{ $self->{qq_database}{group} }, $group_info;
+                if( !$is_init and ref $self->{on_new_group} eq 'CODE'){
+                    eval {
+                        $self->{on_new_group}->(dclone($group_info));
+                    };
+                    console $@ . "\n" if $@;
+                }
             }
         }
         else{console "更新[ $gl->{name} ]群信息失败\n";}
