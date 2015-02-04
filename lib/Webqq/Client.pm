@@ -10,7 +10,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "7.4";
+our $VERSION = "7.5";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use Webqq::UserAgent;#异步HTTP请求客户端
@@ -45,6 +45,10 @@ use Webqq::Client::Method::get_dwz;
 use Webqq::Client::Method::_get_offpic;
 use Webqq::Client::Method::_cookie_proxy;
 use Webqq::Client::Method::_relink;
+use Webqq::Client::Method::_get_discuss_list_info;
+use Webqq::Client::Method::_get_discuss_info;
+use Webqq::Client::Method::change_status;
+use Webqq::Client::Method::_send_discuss_message;
 
 
 sub new {
@@ -69,7 +73,7 @@ sub new {
             psessionid              =>  'null',
             vfwebqq                 =>  undef,
             ptwebqq                 =>  undef,
-            status                  =>  'online',
+            status                  =>  $p{status} || 'online', #online|away|busy|silent|hidden|offline,
             passwd_sig              =>  '',
             verifycode              =>  undef,
             verifysession           =>  undef,
@@ -92,6 +96,7 @@ sub new {
             user        =>  {},
             friends     =>  [],
             group_list  =>  [],
+            discuss_list  =>  [],
             group       =>  [],
             discuss     =>  [],
         },
@@ -103,6 +108,8 @@ sub new {
         cache_for_single_long_nick  => Webqq::Client::Cache->new,
         cache_for_group             => Webqq::Client::Cache->new,
         cache_for_group_member      => Webqq::Client::Cache->new,
+        cache_for_discuss           => Webqq::Client::Cache->new,
+        cache_for_discuss_member    => Webqq::Client::Cache->new,
         cache_for_metacpan          => Webqq::Client::Cache->new,
         on_receive_message          =>  undef,
         on_receive_offpic           =>  undef,
@@ -110,8 +117,11 @@ sub new {
         on_login                    =>  undef,
         on_new_friend               =>  undef,
         on_new_group                =>  undef,
+        on_new_discuss              =>  undef,
         on_new_group_member         =>  undef,
         on_loss_group_member        =>  undef,
+        on_new_discuss_member       =>  undef,
+        on_loss_discuss_member      =>  undef,
         on_input_img_verifycode     =>  undef,
         on_run                      =>  undef,
         receive_message_queue       =>  Webqq::Message::Queue->new,
@@ -209,6 +219,19 @@ sub on_loss_group_member :lvalue {
     $self->{on_loss_group_member};
 }
 
+sub on_new_discuss :lvalue {
+    my $self = shift;
+    $self->{on_new_discuss};
+}
+sub on_new_discuss_member :lvalue {
+    my $self = shift;
+    $self->{on_new_discuss_member};
+}
+sub on_loss_discuss_member :lvalue {
+    my $self = shift;
+    $self->{on_loss_discuss_member};
+}
+
 sub on_input_img_verifycode :lvalue {
     my $self = shift;
     $self->{on_input_img_verifycode};
@@ -227,6 +250,8 @@ sub login{
 
     @{$self->{default_qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
     @{$self->{qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
+    $self->{qq_param}{status} = $p{status} 
+        if defined $p{status} and grep {$_ eq $p{status}} qw(online away busy silent hidden offline);
     console "QQ账号: $self->{default_qq_param}{qq} 密码: $self->{default_qq_param}{pwd}\n";
     #my $is_big_endian = unpack( 'xc', pack( 's', 1 ) ); 
     $self->{qq_param}{qq} = $self->{default_qq_param}{qq};
@@ -274,6 +299,8 @@ sub login{
     $self->update_friends_info();
     #更新群信息
     $self->update_group_info();
+    #更新讨论组信息
+    $self->update_discuss_info();
     #执行on_login回调
     if(ref $self->{on_login} eq 'CODE'){
         eval{
@@ -295,13 +322,16 @@ sub relogin{
     $self->{ua}->cookie_jar($self->{cookie_jar});
     $self->{asyn_ua}->{cookie_jar} = $self->{cookie_jar};
     #重新设置初始化参数
-    $self->{cache_for_uin_to_qq} = Webqq::Client::Cache->new;
-    $self->{cache_for_group_sig} = Webqq::Client::Cache->new;
-    $self->{cache_for_group} = Webqq::Client::Cache->new;
-    $self->{cache_for_group_member} = Webqq::Client::Cache->new;
-    $self->{cache_for_friend} = Webqq::Client::Cache->new;
-    $self->{cache_for_stranger} = Webqq::Client::Cache->new;
+    $self->{cache_for_uin_to_qq}        = Webqq::Client::Cache->new;
+    $self->{cache_for_group_sig}        = Webqq::Client::Cache->new;
+    $self->{cache_for_group}            = Webqq::Client::Cache->new;
+    $self->{cache_for_group_member}     = Webqq::Client::Cache->new;
+    $self->{cache_for_discuss}          = Webqq::Client::Cache->new;
+    $self->{cache_for_discuss_member}   = Webqq::Client::Cache->new;
+    $self->{cache_for_friend}           = Webqq::Client::Cache->new;
+    $self->{cache_for_stranger}         = Webqq::Client::Cache->new;
     $self->{cache_for_single_long_nick} = Webqq::Client::Cache->new;
+
     $self->{qq_param} = dclone($self->{default_qq_param});
     $self->{qq_database} = dclone($self->{default_qq_database});
     $self->login(qq=>$self->{default_qq_param}{qq},pwd=>$self->{default_qq_param}{pwd});
@@ -329,6 +359,9 @@ sub _report;
 sub _cookie_proxy;
 sub _get_offpic;
 sub _relink;
+sub _get_discuss_list_info;
+sub _get_discuss_info;
+sub change_status;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -354,6 +387,18 @@ sub send_sess_message{
         $self->{send_message_queue}->put($msg);
     }
 }
+
+sub send_discuss_message {
+    my $self = shift;
+    if(@_ == 1 and ref $_[0] eq 'Webqq::Message::DiscussMessage::Send'){
+        my $msg = shift;
+        $self->{send_message_queue}->put($msg);
+    }   
+    else{
+        my $msg = $self->_create_msg(@_,type=>'discuss_message');
+        $self->{send_message_queue}->put($msg);
+    }
+};
 
 #接受一个群消息，将它放到发送消息队列中
 sub send_group_message{
@@ -396,6 +441,10 @@ sub _prepare {
             $self->_detect_new_group($msg->{group_code});
             $self->_detect_new_group_member($msg->{group_code},$msg->{send_uin});
         }
+        elsif($msg->{type} eq 'discuss_message'){
+            $self->_detect_new_discuss($msg->{did});
+            $self->_detect_new_discuss_member($msg->{did},$msg->{send_uin});
+        }
         
         #接收队列中接收到消息后，调用相关的消息处理回调，如果未设置回调，消息将丢弃
         if(ref $self->{on_receive_message} eq 'CODE'){
@@ -436,10 +485,11 @@ sub _prepare {
         $self->{watchers}{$rand_watcher_id} = AE::timer $delay,0,sub{
             delete $self->{watchers}{$rand_watcher_id};
             $msg->{msg_time} = time;
-                $msg->{type} eq 'message'       ?   $self->_send_message($msg)
-            :   $msg->{type} eq 'group_message' ?   $self->_send_group_message($msg)
-            :   $msg->{type} eq 'sess_message'  ?   $self->_send_sess_message($msg)
-            :                                       undef
+                $msg->{type} eq 'message'           ?   $self->_send_message($msg)
+            :   $msg->{type} eq 'group_message'     ?   $self->_send_group_message($msg)
+            :   $msg->{type} eq 'sess_message'      ?   $self->_send_sess_message($msg)
+            :   $msg->{type} eq 'discuss_message'   ?   $self->_send_discuss_message($msg)
+            :                                           undef
             ;
         };
         $self->{last_dispatch_time} = $now+$delay;
@@ -453,6 +503,10 @@ sub run{
 
     $self->{watchers}{rand()} = AE::timer 600,600,sub{
         $self->update_group_info();
+    };
+
+    $self->{watchers}{rand()} = AE::timer 600*2,600,sub{
+        $self->update_discuss_info();
     };
 
     console "开始接收消息\n";
@@ -573,6 +627,73 @@ sub search_member_in_group{
     return undef;
 }
 
+sub search_member_in_discuss {
+    my ($self,$did,$member_uin) = @_;
+    my $cache_data =  $self->{cache_for_discuss_member}->retrieve("$did|$member_uin");
+    return $cache_data if defined $cache_data;
+    #在现有的讨论组中查找
+    for my $d (@{$self->{qq_database}{discuss}}){ 
+        #如果讨论组是存在的
+        if($d->{dinfo}{did} eq $did){    
+            #在讨论组中查找指定的成员
+            #如果讨论组数据库中包含讨论组成员数据
+            if(exists $d->{minfo} and ref $d->{minfo} eq 'ARRAY'){
+                for my $m(@{$d->{minfo} }){ 
+                    #查到成员信息并返回
+                    if($m->{uin} eq $member_uin){
+                        my $m_clone = dclone($m);
+                        $self->{cache_for_discuss_member}->store("$did|$member_uin",$m_clone);
+                        return $m_clone; 
+                    }
+                }
+                return undef;
+                
+            }
+            #群数据中只有dinfo，没有minfo
+            else{
+                #尝试重新更新一下讨论组信息，希望可以拿到minfo
+                my $discuss_info = $self->_get_discuss_info($d->{dinfo}{did});         
+                if(defined $discuss_info and ref $discuss_info->{minfo} eq 'ARRAY'){
+                    #终于拿到minfo了 赶紧存起来 以备下次使用
+                    $self->update_discuss_info($discuss_info);
+                    #在minfo里找讨论组成员
+                    for my $m (@{$discuss_info->{minfo}}){
+                        if($m->{uin} eq $member_uin){
+                            #找到了赶紧返回
+                            my $m_clone = dclone($m);
+                            $self->{cache_for_discuss_member}->store("$did|$member_uin",$m_clone);
+                            return $m_clone;
+                        }
+                    } 
+                    #靠 还是没找到
+                    return undef;
+                }
+                #很可惜，还是拿不到minfo
+                else{
+                    return undef;
+                }
+            }
+        }
+    }
+    #遍历所有的群也找不到，返回undef
+    return undef;
+}
+
+sub search_discuss{
+    my $self = shift;
+    my $did = shift;
+    my $cache_data = $self->{cache_for_discuss}->retrieve($did);
+    return $cache_data if defined $cache_data;
+    for(@{ $self->{qq_database}{discuss} }){
+        if($_->{dinfo}{did} eq $did){
+            my $clone = dclone($_->{dinfo});
+            $self->{cache_for_discuss}->store($did,$clone);
+            return $clone;
+        }
+    }
+    return undef;
+}
+
 sub search_stranger{
     my($self,$tuin) = @_;
     my $cache_data =  $self->{cache_for_stranger}->retrieve($tuin);
@@ -672,6 +793,83 @@ sub update_friends_info{
         }
     }
     else{console "更新好友信息失败\n";}
+    
+}
+
+sub update_discuss_info {
+    my $self = shift;
+    my $discuss = shift;
+    my $is_init = 1 if @{$self->{qq_database}{discuss}}  == 0;
+    if(defined $discuss){
+        for( @{$self->{qq_database}{discuss}} ){
+            if($_->{dinfo}{did} eq $discuss->{dinfo}{did} ){
+                $self->_detect_loss_discuss_member($_,$discuss);
+                $self->_detect_new_discuss_member2($_,$discuss);
+                $_ = $discuss;
+                return;
+            }
+        } 
+        push @{$self->{qq_database}{discuss}},$discuss;
+        if(!$is_init and ref $self->{on_new_discuss} eq 'CODE'){
+            eval {
+                $self->{on_new_discuss}->(dclone($discuss));
+            };
+            console $@ . "\n" if $@;
+        }
+        return;        
+    }
+    $self->update_discuss_list_info();
+    for my $dl (@{ $self->{qq_database}{discuss_list} }){
+        console "更新[ $dl->{name} ]讨论组信息...\n";
+        my $discuss_info = $self->_get_discuss_info($dl->{did});
+        if(defined $discuss_info){
+            if(ref $discuss_info->{minfo} ne 'ARRAY'){
+                console "更新[ $dl->{name} ]讨论组成功，但暂时没有获取到讨论组成员信息...\n";
+            } 
+            my $flag = 0;
+            for( @{$self->{qq_database}{discuss}} ){
+                if($_->{dinfo}{did} eq $discuss_info->{dinfo}{did} ){
+                    $self->_detect_loss_discuss_member($_,$discuss_info);
+                    $self->_detect_new_discuss_member2($_,$discuss_info);
+                    $_ = $discuss_info if ref $discuss_info->{minfo} eq 'ARRAY';
+                    $flag = 1;
+                    last;
+                }
+            }
+            if($flag == 0){
+                push @{ $self->{qq_database}{discuss} }, $discuss_info;
+                if( !$is_init and ref $self->{on_new_discuss} eq 'CODE'){
+                    eval {
+                        $self->{on_new_discuss}->(dclone($discuss_info));
+                    };
+                    console $@ . "\n" if $@;
+                }
+            } 
+            
+        }
+        else{console "更新[ $dl->{name} ]讨论组信息失败\n";}
+    }
+}
+
+sub update_discuss_list_info {
+    my $self = shift;
+    my $discuss  = shift;
+    if(defined $discuss ){
+        for(@{ $self->{qq_database}{discuss_list} }){
+            if($_->{did} eq $discuss->{did}){
+                $_ = $discuss;
+                return;        
+            }
+        }
+        push @{ $self->{qq_database}{discuss_list} }, $discuss;
+        return;
+    }
+    console "更新讨论组列表信息...\n";
+    my $discuss_list_info = $self->_get_discuss_list_info();
+    if(defined $discuss_list_info){
+        $self->{qq_database}{discuss_list} =  $discuss_list_info;
+    }
+    else{console "更新讨论组列表信息失败\n";}
     
 }
 
@@ -812,12 +1010,10 @@ sub _detect_new_group{
             gid     =>  $group_info->{ginfo}{gid},
             code    =>  $group_info->{ginfo}{code},
         });
-        $self->update_group_info($group_info);
-        my $clone = dclone($group_info);
-        $self->{cache_for_group}->store($gcode,$clone);
+        push @{$self->{qq_database}{group}},$group_info;
         if(ref $self->{on_new_group} eq 'CODE'){
             eval{
-                $self->{on_new_group}->($clone);
+                $self->{on_new_group}->(dclone($group_info));
             };  
             console $@ . "\n" if  $@;
         }
@@ -930,6 +1126,124 @@ sub _detect_loss_group_member {
     }
 
 }
+
+sub _detect_new_discuss{
+    my $self = shift;
+    my $did = shift;
+    return if defined $self->search_discuss($did);
+    my $discuss_info = $self->_get_discuss_info($did);
+    if(defined $discuss_info ){
+        $self->update_discuss_list_info({
+            name    =>  $discuss_info->{dinfo}{name},
+            did     =>  $discuss_info->{dinfo}{did},
+        });
+        push @{$self->{qq_database}{discuss}},$discuss_info;
+        if(ref $self->{on_new_discuss} eq 'CODE'){
+            eval{
+                $self->{on_new_discuss}->(dclone($discuss_info));
+            };  
+            console $@ . "\n" if  $@;
+        }
+        return ;    
+    }
+    else{
+        return ;
+    }
+}
+sub _detect_loss_discuss_member {
+    my $self = shift;
+    my($discuss_old,$discuss_new) = @_;
+    return if ref $discuss_old->{minfo} ne 'ARRAY';
+    return if ref $discuss_new->{minfo} ne 'ARRAY';
+    my %e = map {$_->{uin} => undef} @{$discuss_new->{minfo}};
+    for my $old (@{$discuss_old->{minfo}}){
+        #旧的有，新的没有，说明是已经退群的成员
+        unless(exists $e{$old->{uin}}){
+            if(ref $self->{on_loss_discuss_member} eq 'CODE'){
+                eval{
+                    $self->{on_loss_discuss_member}->(dclone($discuss_old),dclone($old));
+                };
+                console $@ . "\n" if $@;
+            };
+        }
+        $self->{cache_for_discuss_member}->delete($discuss_old->{dinfo}{did} . "|" . $old->{uin});
+    }    
+}
+sub _detect_new_discuss_member {
+    my $self = shift;
+    my ($did,$member_uin) = @_;
+    my $default_member = {
+        nick     =>  undef,
+        uin      =>  $member_uin,
+    };
+
+    my $discuss;
+    for my $d (@{$self->{qq_database}{discuss}}){
+        if($d->{dinfo}{did} eq $did){
+            $discuss = $d;
+            last;
+        }
+    }
+    #群至少得存在
+    return unless defined $discuss;
+    #如果包含成员信息
+    if(exists $discuss->{minfo}){
+        return if defined $self->search_member_in_discuss($did,$member_uin);
+        #查不到成员信息，说明是新增的成员，重新更新一次群信息
+        my $new_discuss_member = {};
+        my $discuss_info = $self->_get_discuss_info($did);
+        #更新群信息成功
+        if(defined $discuss_info and ref $discuss_info->{minfo} eq 'ARRAY'){
+            #再次查找新增的成员
+            my $flag = 0;
+            for my $m (@{$discuss_info->{minfo}}){ 
+                if($m->{uin} eq $member_uin){
+                    $self->{cache_for_discuss_member}->store("$did|$member_uin",dclone($m));
+                    $new_discuss_member = $m;
+                    $flag=1;
+                    last;
+                }
+            }
+            #仍然找不到信息，只好直接返回空了
+            $new_discuss_member = $default_member if $flag==0;
+        }
+        #成员信息更新失败
+        else{
+            $new_discuss_member = $default_member;    
+        }
+
+        push @{$discuss->{minfo}},$new_discuss_member;
+        if(ref $self->{on_new_discuss_member} eq 'CODE'){
+            eval{
+                $self->{on_new_discuss_member}->(dclone($discuss),dclone($new_discuss_member));
+            };
+            console $@ . "\n" if $@;
+        }
+        return;
+    }
+    else{
+        return;
+    }
+}
+sub _detect_new_discuss_member2 {
+    my $self = shift;
+    my($discuss_old,$discuss_new) = @_;
+    return if ref $discuss_old->{minfo} ne 'ARRAY';
+    return if ref $discuss_new->{minfo} ne 'ARRAY';
+    my %e = map {$_->{uin} => undef} @{$discuss_old->{minfo}};
+    for my $new (@{$discuss_new->{minfo}}){
+        #旧的没有，新的有，说明是新增群成员
+        unless(exists $e{$new->{uin}}){
+            if(ref $self->{on_new_discuss_member} eq 'CODE'){
+                eval{
+                    $self->{on_new_discuss_member}->(dclone($discuss_new),dclone($new));
+                };
+                console $@ . "\n" if $@;
+            };
+        }
+    }
+}
+
 
 1;
 __END__

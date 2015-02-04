@@ -26,16 +26,36 @@ sub reply_message{
             )  
         ); 
     }
-    elsif($msg->{type} eq 'sess_message'){
-        $client->send_sess_message(
-            $client->create_sess_msg(
-                group_sig   =>  $client->_get_group_sig($msg->{gid},$msg->{from_uin},$msg->{service_type}),
-                to_uin      =>  $msg->{from_uin},
-                content     =>  $content,
-                service_type =>  $msg->{service_type},
-                group_code  => $msg->{group_code},
-            )
+    elsif($msg->{type} eq 'discuss_message'){
+        $client->send_discuss_message(
+            $client->create_discuss_msg(
+                to_uin =>$msg->{did} || $msg->{from_uin},
+                content =>$content,
+            )   
         );
+    }
+    elsif($msg->{type} eq 'sess_message'){
+        #群临时消息
+        if($msg->{via} eq 'group'){
+            $client->send_sess_message(
+                $client->create_sess_msg(
+                    to_uin          =>  $msg->{from_uin},
+                    content         =>  $content,
+                    group_code      =>  $msg->{group_code},
+                    gid             =>  $msg->{gid},
+                )
+            );
+        }
+        #讨论组临时消息
+        elsif($msg->{via} eq 'discuss'){
+            $client->send_sess_message(
+                $client->create_sess_msg(
+                    to_uin          =>  $msg->{from_uin},
+                    content         =>  $content,
+                    did             =>  $msg->{did},           
+                )
+            );
+        }
     }
     
 }
@@ -50,6 +70,10 @@ sub create_group_msg{
 sub create_msg{
     my $client = shift;
     return $client->_create_msg(@_,type=>'message');
+}
+sub create_discuss_msg{
+    my $client = shift;
+    return $client->_create_msg(@_,type=>'discuss_message');
 }
 sub _create_msg {
     my $client = shift;
@@ -68,22 +92,21 @@ sub _create_msg {
         allow_plugin => 1,
     );
     if($p{type} eq 'sess_message'){
-        if(defined $p{service_type} and defined $p{group_sig}){
-            $msg{service_type} = $p{service_type};
-            $msg{group_sig} = $p{group_sig};
+        if(defined $p{group_code}){
             $msg{group_code} = $p{group_code};
-        }
-        elsif($p{group_code}){
-            $msg{group_code} = $p{group_code};
-            $msg{group_sig} = $client->_get_group_sig(
-                $client->search_group($p{group_code})->{gid},
-                $p{to_uin},
-                0,   
-            );
             $msg{service_type} = 0;
+            $msg{via} = 'group';
+            my $id = defined $p{gid}?$p{gid}:$client->search_group($p{group_code})->{gid};
+            $msg{group_sig} = $client->_get_group_sig($id,$p{to_uin},$msg{service_type});
+        }
+        elsif(defined $p{did}){
+            $msg{did} = $p{did};
+            $msg{service_type} = 1;
+            $msg{via} = 'discuss';
+            $msg{group_sig} = $client->_get_group_sig($p{did},$p{to_uin},$msg{service_type});
         }
         else{
-            console "create_sess_msg()必须设置group_code参数\n";
+            console "create_sess_msg()必须设置group_code或者did\n";
             return ;
         }
     }
@@ -91,6 +114,10 @@ sub _create_msg {
         $msg{group_code} = $p{group_code}||$client->get_group_code_from_gid($p{to_uin});
         $msg{send_uin} = $msg{from_uin};
     }   
+    elsif($p{type} eq 'discuss_message'){
+        $msg{did} = $p{did} || $p{to_uin};
+        $msg{send_uin} = $msg{from_uin};
+    }
     my $msg_pkg = "\u$p{type}::Send"; 
     $msg_pkg=~s/_(.)/\u$1/g;
     return $client->_mk_ro_accessors(\%msg,$msg_pkg);
@@ -99,6 +126,44 @@ sub _create_msg {
 
 sub _load_extra_accessor {
     my $client = shift;
+    *Webqq::Message::DiscussMessage::Recv::discuss_name = sub{
+        my $msg = shift;
+        my $d = $client->search_discuss($msg->{did});
+        return defined $d?$d->{name}:undef ;
+    };
+    *Webqq::Message::DiscussMessage::Recv::from_dname = sub{
+        my $msg = shift;
+        my $d = $client->search_discuss($msg->{did});
+        return defined $d?$d->{name}:undef ;
+    };    
+    *Webqq::Message::DiscussMessage::Recv::from_qq = sub{
+        my $msg = shift;
+        my $m = $client->search_member_in_discuss($msg->{did},$msg->{send_uin});
+        return defined $m?$m->{ruin}:$client->get_qq_from_uin($msg->{send_uin});
+    }; 
+    *Webqq::Message::DiscussMessage::Recv::from_nick = sub{
+        my $msg = shift;
+        my $m = $client->search_member_in_discuss($msg->{did},$msg->{send_uin});
+        return defined $m?$m->{nick}:undef;
+    };    
+    
+    *Webqq::Message::DiscussMessage::Send::discuss_name = sub{
+        my $msg = shift;
+        my $d  = $client->search_discuss($msg->{did});
+        return defined $d?$d->{name}:undef;
+    };
+    *Webqq::Message::DiscussMessage::Send::to_dname = sub{
+        my $msg = shift;
+        my $d  = $client->search_discuss($msg->{did});
+        return defined $d?$d->{name}:undef;
+    };
+    *Webqq::Message::DiscussMessage::Send::from_qq = sub{
+        return $client->{qq_param}{qq};
+    };
+    *Webqq::Message::DiscussMessage::Send::from_nick = sub{
+        return "我";
+    }; 
+
     *Webqq::Message::GroupMessage::Recv::group_name = sub{
         my $msg = shift;
         my $g = $client->search_group($msg->{group_code});
@@ -149,8 +214,15 @@ sub _load_extra_accessor {
 
     *Webqq::Message::SessMessage::Recv::from_nick = sub{
         my $msg = shift;
-        my $m = $client->search_member_in_group($msg->{group_code},$msg->{from_uin});
-        return defined $m?$m->{nick}:undef;
+        if($msg->{via} eq 'group'){
+            my $m = $client->search_member_in_group($msg->{group_code},$msg->{from_uin});
+            return defined $m?$m->{nick}:undef;
+        }
+        elsif($msg->{via} eq 'discuss'){
+            my $m = $client->search_member_in_discuss($msg->{did},$msg->{from_uin});
+            return defined $m?$m->{nick}:undef;
+        }   
+        else{return undef}
     };
     *Webqq::Message::SessMessage::Recv::from_qq = sub {
         my $msg = shift;
@@ -163,16 +235,26 @@ sub _load_extra_accessor {
         return $client->{qq_param}{qq};
     };
 
-    *Webqq::Message::SessMessage::Recv::group_name = sub {
+    *Webqq::Message::SessMessage::Recv::via_type = sub {
         my $msg = shift;
-        my $g = $client->search_group($msg->{group_code});
-        return defined $g?$g->{name}:undef;
-    };
-    *Webqq::Message::SessMessage::Recv::from_group = sub {
+        return      $msg->{via} eq 'group'      ?       "群" 
+                :   $msg->{via} eq 'discuss'    ?       "讨论组"
+                :                                       undef
+                ;
+    }; 
+    *Webqq::Message::SessMessage::Recv::via_name = sub {
         my $msg = shift;
-        my $g = $client->search_group($msg->{group_code});
-        return defined $g?$g->{name}:undef;
+        if($msg->{via} eq 'group'){
+            my $g = $client->search_group($msg->{group_code});
+            return defined $g?$g->{name}:undef;
+        }
+        elsif($msg->{via} eq 'discuss'){
+            my $d = $client->search_discuss($msg->{did});
+            return defined $d?$d->{name}:undef;
+        }
+        else{return }
     };
+
 
     *Webqq::Message::SessMessage::Send::from_nick = sub{
         return "我";
@@ -182,25 +264,40 @@ sub _load_extra_accessor {
     };
     *Webqq::Message::SessMessage::Send::to_nick = sub{
         my $msg = shift;
-        my $m = $client->search_member_in_group($msg->{group_code},$msg->{to_uin});
-        return defined $m?$m->{nick}:undef;
+        if($msg->{via} eq 'group'){
+            my $m = $client->search_member_in_group($msg->{group_code},$msg->{to_uin});
+            return defined $m?$m->{nick}:undef;
+        }
+        elsif($msg->{via} eq 'discuss'){
+            my $m = $client->search_member_in_discuss($msg->{did},$msg->{to_uin});
+            return defined $m?$m->{nick}:undef;
+        }
+        else{return }
     };
     *Webqq::Message::SessMessage::Send::to_qq = sub{
         my $msg = shift;
         return $client->get_qq_from_uin($msg->{to_uin});
     };
-    *Webqq::Message::SessMessage::Send::group_name = sub{
+    *Webqq::Message::SessMessage::Send::via_name = sub{
         my $msg = shift;
-        my $g = $client->search_group($msg->{group_code});
-        return defined $g?$g->{name}:undef;
+        if($msg->{via} eq 'group'){
+            my $g = $client->search_group($msg->{group_code});
+            return defined $g?$g->{name}:undef; 
+        }
+        elsif($msg->{via} eq 'discuss'){
+            my $d = $client->search_discuss($msg->{did});
+            return defined $d?$d->{name}:undef;
+        }
+        else{return}
     };
-    *Webqq::Message::SessMessage::Send::to_group = sub{
+
+    *Webqq::Message::SessMessage::Send::via_type = sub {
         my $msg = shift;
-        my $g = $client->search_group($msg->{group_code});
-        return defined $g?$g->{name}:undef;
-    }; 
-
-
+        return      $msg->{via} eq 'group'      ?       "群"
+                :   $msg->{via} eq 'discuss'    ?       "讨论组"
+                :                                       undef
+                ;
+    };
     *Webqq::Message::Message::Recv::from_nick = sub{
         my $msg = shift;
         my $f = $client->search_friend($msg->{from_uin});
@@ -301,6 +398,7 @@ sub msg_put{
     $msg->{raw_content} = [];
     my $msg_content;
     shift @{ $msg->{content} };
+    $_ = encode("utf8",$_) for @{ $msg->{content} };
     for my $c (@{ $msg->{content} }){
         if(ref $c eq 'ARRAY'){
             if($c->[0] eq 'cface'){
@@ -312,7 +410,7 @@ sub msg_put{
                     key     =>  $c->[1]{key},
                     server  =>  $c->[1]{server},
                 };
-                $c=decode("utf8","[图片]");
+                $c="[图片]";
             }
             elsif($c->[0] eq 'offpic'){
                 push @{$msg->{raw_content}},{
@@ -320,7 +418,7 @@ sub msg_put{
                     content     =>  '[图片]',
                     file_path   =>  $c->[1]{file_path},
                 };
-                $c=decode("utf8","[图片]");
+                $c="[图片]";
             }
             elsif($c->[0] eq 'face'){
                 push @{$msg->{raw_content}},{
@@ -328,14 +426,14 @@ sub msg_put{
                     content =>  face_to_txt($c),
                     id      =>  $c->[1],
                 }; 
-                $c=decode("utf8",face_to_txt($c));
+                $c=face_to_txt($c);
             }
             else{
                 push @{$msg->{raw_content}},{
                     type    =>  'unknown',
                     content =>  '[未识别内容]',
                 };
-                $c = decode("utf8","[未识别内容]");
+                $c = "[未识别内容]";
             }
         }
         elsif($c eq " "){
@@ -343,19 +441,20 @@ sub msg_put{
         }
         else{
             $c=~s/ $//;   
+            $c=~s/\r|\n/\n/g;
             #{"retcode":0,"result":[{"poll_type":"group_message","value":{"msg_id":538,"from_uin":2859929324,"to_uin":3072574066,"msg_id2":545490,"msg_type":43,"reply_ip":182424361,"group_code":2904892801,"send_uin":1951767953,"seq":3024,"time":1418955773,"info_seq":390179723,"content":[["font",{"size":12,"color":"000000","style":[0,0,0],"name":"\u5FAE\u8F6F\u96C5\u9ED1"}],"[\u50BB\u7B11]\u0001 "]}}]}
             #if($c=~/\[[^\[\]]+?\]\x{01}/)
             push @{$msg->{raw_content}},{
                 type    =>  'txt',
-                content =>  encode("utf8",$c),
+                content =>  $c,
             };
         }
         $msg_content .= $c;
     }
     $msg->{content} = $msg_content;
     #将整个hash从unicode转为UTF8编码
-    $msg->{$_} = encode("utf8",$msg->{$_} ) for grep {$_ ne 'raw_content'}  keys %$msg;
-    $msg->{content}=~s/\r|\n/\n/g;
+    #$msg->{$_} = encode("utf8",$msg->{$_} ) for grep {$_ ne 'raw_content'}  keys %$msg;
+    #$msg->{content}=~s/\r|\n/\n/g;
     if($msg->{content}=~/\(\d+\) 被管理员禁言\d+(分钟|小时|天)$/ or $msg->{content}=~/\(\d+\) 被管理员解除禁言$/){
         $msg->{type} = "sys_g_msg";
         return;
@@ -378,8 +477,6 @@ sub parse_receive_msg{
             for my $m (@{ $json->{result} }){
                 #收到群临时消息
                 if($m->{poll_type} eq 'sess_message'){
-                    #service_type =0 表示群临时消息，1 表示讨论组临时消息
-                    return if $m->{value}{service_type} != 0;
                     my $msg = {
                         type        =>  'sess_message',
                         msg_id      =>  $m->{value}{msg_id},
@@ -389,12 +486,21 @@ sub parse_receive_msg{
                         content     =>  $m->{value}{content},
                         service_type=>  $m->{value}{service_type},
                         ruin        =>  $m->{value}{ruin},
-                        gid         =>  $m->{value}{id},
-                        group_code  =>  $client->get_group_code_from_gid($m->{value}{id}),
                         msg_class   =>  "recv",
                         ttl         =>  5,  
                         allow_plugin => 1,
                     };
+                    #service_type =0 表示群临时消息，1 表示讨论组临时消息
+                    if($m->{value}{service_type} == 0){
+                        $msg->{gid} = $m->{value}{id};
+                        $msg->{group_code}  =  $client->get_group_code_from_gid($m->{value}{id}),
+                        $msg->{via}  = 'group';
+                    }
+                    elsif($m->{value}{service_type} == 1){
+                        $msg->{did} = $m->{value}{id};
+                        $msg->{via}  = 'discuss';    
+                    }
+                    else{return}
                     $client->msg_put($msg);
                 }
                 #收到的消息是普通消息
@@ -423,6 +529,23 @@ sub parse_receive_msg{
                         content     =>  $m->{value}{content},
                         send_uin    =>  $m->{value}{send_uin},
                         group_code  =>  $m->{value}{group_code}, 
+                        msg_class   =>  "recv",
+                        ttl         =>  5,
+                        allow_plugin => 1,
+                    };
+                    $client->msg_put($msg);
+                }
+                #收到讨论组消息
+                elsif($m->{poll_type} eq 'discu_message'){
+                    my $msg = {
+                        type        =>  'discuss_message',
+                        did         =>  $m->{value}{did},
+                        from_uin    =>  $m->{value}{from_uin},
+                        msg_id      =>  $m->{value}{msg_id},
+                        send_uin    =>  $m->{value}{send_uin},
+                        msg_time    =>  $m->{value}{'time'},
+                        to_uin      =>  $m->{value}{'to_uin'},
+                        content     =>  $m->{value}{content},
                         msg_class   =>  "recv",
                         ttl         =>  5,
                         allow_plugin => 1,

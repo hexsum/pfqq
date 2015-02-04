@@ -26,6 +26,7 @@ sub Webqq::Client::_get_group_sig {
         print $response->content() if $self->{debug};
         my $json = JSON->new->utf8->decode($response->content()); 
         return undef if $json->{retcode}!=0;
+        return undef if $json->{result}{value} eq "";
         $self->{cache_for_group_sig}->store("$id|$to_uin|$service_type",$json->{result}{value},300);
         return $json->{result}{value} ;
     }

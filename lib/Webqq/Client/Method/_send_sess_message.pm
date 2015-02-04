@@ -3,8 +3,8 @@ use Encode;
 use Storable qw(dclone);
 sub Webqq::Client::_send_sess_message{
     my($self,$msg) = @_;
-    my $msg_origin = dclone($msg);
-    $msg->{$_} = decode("utf8",$msg->{$_} )  for grep {$_ ne 'raw_content'} keys %$msg;
+    return unless defined $msg->{group_sig};
+    my $msg_clone = dclone($msg);
     my $ua = $self->{asyn_ua};
     my $send_message_callback = $msg->{cb} || $self->{on_send_message};
     my $callback = sub{
@@ -12,12 +12,12 @@ sub Webqq::Client::_send_sess_message{
         print $response->content() if $self->{debug};
         my $status = $self->parse_send_status_msg( $response->content() );
         if(defined $status and $status->{is_success}==0){
-            $self->send_sess_message($msg_origin);
+            $self->send_sess_message($msg);
             return;
         } 
         elsif(defined $status and ref $send_message_callback eq 'CODE'){
             $send_message_callback->(
-                $msg_origin,                   #msg
+                $msg,                   #msg
                 $status->{is_success},  #is_success
                 $status->{status}       #status
             );
@@ -28,14 +28,14 @@ sub Webqq::Client::_send_sess_message{
     my @headers = $self->{type} eq 'webqq'? (Referer =>  'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3')
                 :                           (Referer =>  'http://d.web2.qq.com/proxy.html?v=20130916001&callback=1&id=2')
                 ;
-    my $content = [$msg->{content},[]];
+    my $content = [decode("utf8",$msg_clone->{content}),[]];
     my %r = (
-        to              => $msg->{to_uin}, 
-        group_sig       => $msg->{group_sig}, 
+        to              => $msg_clone->{to_uin}, 
+        group_sig       => $msg_clone->{group_sig}, 
         face            => $self->{qq_database}{user}{face} || 591,
         content         => JSON->new->utf8->encode($content),
-        msg_id          => $msg->{msg_id},
-        service_type    => $msg->{service_type},
+        msg_id          => $msg_clone->{msg_id},
+        service_type    => $msg_clone->{service_type},
         clientid        => $self->{qq_param}{clientid},
         psessionid      => $self->{qq_param}{psessionid},
     );

@@ -4,8 +4,7 @@ use Storable qw(dclone);
 sub Webqq::Client::_send_group_message{
     my($self,$msg) = @_;
     #将整个hash从UTF8还原回uincode编码
-    my $msg_origin = dclone($msg);
-    $msg->{$_} = decode("utf8",$msg->{$_} )  for grep {$_ ne 'raw_content'} keys %$msg;
+    my $msg_clone = dclone($msg);
     my $ua = $self->{asyn_ua};
 
     my $send_message_callback = $msg->{cb}||$self->{on_send_message};
@@ -14,12 +13,12 @@ sub Webqq::Client::_send_group_message{
         print $response->content() if $self->{debug};
         my $status = $self->parse_send_status_msg( $response->content() );
         if(defined $status and $status->{is_success} ==0){
-            $self->send_group_message($msg_origin);
+            $self->send_group_message($msg);
             return;
         }
         elsif(defined $status and ref $send_message_callback eq 'CODE'){
             $send_message_callback->(
-                $msg_origin,
+                $msg,
                 $status->{is_success},
                 $status->{status},
             );
@@ -30,17 +29,17 @@ sub Webqq::Client::_send_group_message{
     my @headers = $self->{type} eq 'webqq'? (Referer =>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3')
                 :                           (Referer =>'http://d.web2.qq.com/proxy.html?v=20130916001&callback=1&id=2')
                 ;
-    my $content = [$msg->{content},[]];
+    my $content = [decode("utf8",$msg_clone->{content}),[]];
     my %s = (
-        group_uin   => $msg->{to_uin},
+        group_uin   => $msg_clone->{to_uin},
         content     => JSON->new->utf8->encode($content),
-        msg_id      => $msg->{msg_id},
+        msg_id      => $msg_clone->{msg_id},
         clientid    => $self->{qq_param}{clientid},
         psessionid  => $self->{qq_param}{psessionid},
     );
        
     if($self->{type} eq 'smartqq'){
-        $s{face} = "591";
+        $s{face} = $self->{qq_database}{user}{face} || "591";
     }
     my $post_content = [
         r           =>  decode("utf8",JSON->new->encode(\%s)),

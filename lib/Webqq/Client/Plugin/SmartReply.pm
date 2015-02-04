@@ -18,6 +18,7 @@ my $once = 1;
 sub call{
     my $client = shift;
     my $msg = shift;
+    return if $msg->{type} !~ /^message|group_message|sess_message$/;
     my $self_nick = $client->{qq_database}{user}{nick};
     return if $msg->{allow_plugin} == 0;
     my $msg_type = $msg->{type};    
@@ -28,7 +29,7 @@ sub call{
     return 1 if exists $ban{$userid};
 
     my $from_nick;
-    my $from_city = $msg->from_city if $msg->{type} ne 'sess_message';
+    my $from_city = $msg->from_city if ($msg->{type} eq 'group_message' or $msg->{type} eq 'message');
     if($msg->{type} eq 'group_message'){
         $from_nick = $msg->from_card || $msg->from_nick;
     }

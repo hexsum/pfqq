@@ -68,23 +68,37 @@ sub call{
     elsif($msg->{type} eq 'sess_message'){
         my $msg_sender_nick = $msg->from_nick;
         my $msg_receiever_nick = $msg->to_nick;
-        my $group_name = $msg->group_name;
+        my $via_name = $msg->via_name;
+        my $via_type = $msg->via_type;
         $msg_sender_nick = "昵称未知" unless defined $msg_sender_nick;
         $msg_receiever_nick= "昵称未知" unless defined $msg_receiever_nick;
         if($msg->{msg_class} eq 'recv'){
             format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
-                .   "\@$msg_sender_nick(来自群:$group_name 对:\@$msg_receiever_nick) 说: ",
+                .   "\@$msg_sender_nick(来自$via_type:$via_name 对:\@$msg_receiever_nick) 说: ",
                 $msg->{content} . $attach
             );
         }
         elsif($msg->{msg_class} eq 'send'){
             format_msg(
                 strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
-                .   "\@$msg_sender_nick(对:\@$msg_receiever_nick 来自群:$group_name) 说: ",
+                .   "\@$msg_sender_nick(对:\@$msg_receiever_nick 来自$via_type:$via_name) 说: ",
                 $msg->{content} . $attach
             );
         }
+    }
+
+    elsif($msg->{type} eq 'discuss_message'){
+        my $discuss_name = $msg->discuss_name;
+        my $msg_sender = $msg->from_nick;
+        $msg_sender = "昵称未知" unless defined $msg_sender;
+        #my $msg_sender_qq  = $msg->from_qq;
+        format_msg(
+                strftime("[%y/%m/%d %H:%M:%S]",localtime($msg->{msg_time}))
+            .   "\@$msg_sender(在讨论组:$discuss_name) 说: ",
+                $msg->{content} . $attach
+        );
+        
     }
 
     return 1;
