@@ -398,7 +398,6 @@ sub msg_put{
     $msg->{raw_content} = [];
     my $msg_content;
     shift @{ $msg->{content} };
-    $_ = encode("utf8",$_) for @{ $msg->{content} };
     for my $c (@{ $msg->{content} }){
         if(ref $c eq 'ARRAY'){
             if($c->[0] eq 'cface'){
@@ -440,6 +439,7 @@ sub msg_put{
             next;
         }
         else{
+            $c=encode("utf8",$c);
             $c=~s/ $//;   
             $c=~s/\r|\n/\n/g;
             #{"retcode":0,"result":[{"poll_type":"group_message","value":{"msg_id":538,"from_uin":2859929324,"to_uin":3072574066,"msg_id2":545490,"msg_type":43,"reply_ip":182424361,"group_code":2904892801,"send_uin":1951767953,"seq":3024,"time":1418955773,"info_seq":390179723,"content":[["font",{"size":12,"color":"000000","style":[0,0,0],"name":"\u5FAE\u8F6F\u96C5\u9ED1"}],"[\u50BB\u7B11]\u0001 "]}}]}
