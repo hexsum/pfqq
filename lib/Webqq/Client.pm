@@ -5,6 +5,7 @@ use Encode;
 use Time::HiRes qw(gettimeofday);
 use LWP::Protocol::https;
 use Storable qw(dclone);
+use List::Util qw(first);
 use base qw(Webqq::Message Webqq::Client::Cron Webqq::Client::Plugin);
 use Webqq::Client::Cache;
 use Webqq::Message::Queue;
@@ -252,7 +253,7 @@ sub login{
     @{$self->{qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
     $self->{qq_param}{status} = $p{status} 
         if defined $p{status} and grep {$_ eq $p{status}} qw(online away busy silent hidden offline);
-    console "QQ账号: $self->{default_qq_param}{qq} 密码: $self->{default_qq_param}{pwd}\n";
+    console "QQ账号: $self->{default_qq_param}{qq}\n";
     #my $is_big_endian = unpack( 'xc', pack( 's', 1 ) ); 
     $self->{qq_param}{qq} = $self->{default_qq_param}{qq};
     $self->{default_qq_param}{pwd} = lc $self->{default_qq_param}{pwd};
@@ -553,15 +554,13 @@ sub search_friend {
     my ($self,$uin) = @_;
     my $cache_data = $self->{cache_for_friend}->retrieve($uin);
     return $cache_data if defined $cache_data; 
-    
-    for my $f( @{ $self->{qq_database}{friends} }){
-        if($f->{uin} eq $uin ){
-            my $f_clone = dclone($f);
-            $self->{cache_for_friend}->store($uin,$f_clone);
-            return $f_clone;
-        }
-    } 
-    
+   
+    my $f = first {$_->{uin} eq $uin} @{ $self->{qq_database}{friends} };
+    if(defined $f){
+        my $f_clone = dclone($f);
+        $self->{cache_for_friend}->store($uin,$f_clone);
+        return $f_clone;
+    }
     return undef;
 }
 
@@ -586,13 +585,11 @@ sub search_member_in_group{
             #在群中查找指定的成员
             #如果群数据库中包含群成员数据
             if(exists $g->{minfo} and ref $g->{minfo} eq 'ARRAY'){
-                for my $m(@{$g->{minfo} }){ 
-                    #查到成员信息并返回
-                    if($m->{uin} eq $member_uin){
-                        my $m_clone = dclone($m);
-                        $self->{cache_for_group_member}->store("$gcode|$member_uin",$m_clone);
-                        return $m_clone; 
-                    }
+                my $m = first {$_->{uin} eq $member_uin} @{$g->{minfo} };
+                if(defined $m){
+                    my $m_clone = dclone($m);
+                    $self->{cache_for_group_member}->store("$gcode|$member_uin",$m_clone);
+                    return $m_clone;
                 }
                 return undef;
                 
@@ -605,14 +602,12 @@ sub search_member_in_group{
                     #终于拿到minfo了 赶紧存起来 以备下次使用
                     $self->update_group_info($group_info);
                     #在minfo里找群成员
-                    for my $m (@{$group_info->{minfo}}){
-                        if($m->{uin} eq $member_uin){
-                            #找到了赶紧返回
-                            my $m_clone = dclone($m);
-                            $self->{cache_for_group_member}->store("$gcode|$member_uin",$m_clone);
-                            return $m_clone;
-                        }
-                    } 
+                    my $m = first {$_->{uin} eq $member_uin} @{$group_info->{minfo}};
+                    if(defined $m){
+                        my $m_clone = dclone($m);
+                        $self->{cache_for_group_member}->store("$gcode|$member_uin",$m_clone);
+                        return $m_clone;
+                    }
                     #靠 还是没找到
                     return undef;
                 }
@@ -638,13 +633,11 @@ sub search_member_in_discuss {
             #在讨论组中查找指定的成员
             #如果讨论组数据库中包含讨论组成员数据
             if(exists $d->{minfo} and ref $d->{minfo} eq 'ARRAY'){
-                for my $m(@{$d->{minfo} }){ 
-                    #查到成员信息并返回
-                    if($m->{uin} eq $member_uin){
-                        my $m_clone = dclone($m);
-                        $self->{cache_for_discuss_member}->store("$did|$member_uin",$m_clone);
-                        return $m_clone; 
-                    }
+                my $m = first {$_->{uin} eq $member_uin} @{$d->{minfo} };
+                if(defined $m){
+                    my $m_clone = dclone($m);
+                    $self->{cache_for_discuss_member}->store("$did|$member_uin",$m_clone);
+                    return $m_clone;
                 }
                 return undef;
                 
@@ -652,19 +645,17 @@ sub search_member_in_discuss {
             #群数据中只有dinfo，没有minfo
             else{
                 #尝试重新更新一下讨论组信息，希望可以拿到minfo
-                my $discuss_info = $self->_get_discuss_info($d->{dinfo}{did});         
+                my $discuss_info = $self->_get_discuss_info($did);         
                 if(defined $discuss_info and ref $discuss_info->{minfo} eq 'ARRAY'){
                     #终于拿到minfo了 赶紧存起来 以备下次使用
                     $self->update_discuss_info($discuss_info);
                     #在minfo里找讨论组成员
-                    for my $m (@{$discuss_info->{minfo}}){
-                        if($m->{uin} eq $member_uin){
-                            #找到了赶紧返回
-                            my $m_clone = dclone($m);
-                            $self->{cache_for_discuss_member}->store("$did|$member_uin",$m_clone);
-                            return $m_clone;
-                        }
-                    } 
+                    my $m = first {$_->{uin} eq $member_uin} @{$discuss_info->{minfo}};
+                    if(defined $m){
+                        my $m_clone = dclone($m);
+                        $self->{cache_for_discuss_member}->store("$did|$member_uin",$m_clone);
+                        return $m_clone;
+                    }   
                     #靠 还是没找到
                     return undef;
                 }
@@ -684,12 +675,11 @@ sub search_discuss{
     my $did = shift;
     my $cache_data = $self->{cache_for_discuss}->retrieve($did);
     return $cache_data if defined $cache_data;
-    for(@{ $self->{qq_database}{discuss} }){
-        if($_->{dinfo}{did} eq $did){
-            my $clone = dclone($_->{dinfo});
-            $self->{cache_for_discuss}->store($did,$clone);
-            return $clone;
-        }
+    my $d = first {$_->{dinfo}{did} eq $did} @{ $self->{qq_database}{discuss} };
+    if(defined $d){
+        my $clone = dclone($d->{dinfo});
+        $self->{cache_for_discuss}->store($did,$clone);
+        return $clone;
     }
     return undef;
 }
@@ -716,14 +706,13 @@ sub search_group{
     my $cache_data = $self->{cache_for_group}->retrieve($gcode);
     return $cache_data if defined $cache_data;
 
-    for(@{ $self->{qq_database}{group} }){
-        if($_->{ginfo}{code} eq $gcode){
-            my $clone = dclone($_->{ginfo});
-            $self->{cache_for_group}->store($gcode,$clone);
-            return $clone;
-        }
+    my $g = first {$_->{ginfo}{code} eq $gcode} @{ $self->{qq_database}{group} };
+    if(defined $g){
+        my $clone = dclone($g->{ginfo});
+        $self->{cache_for_group}->store($gcode,$clone);
+        return $clone;
     }
-    return undef;
+    return undef ;
 }
 
 sub update_user_info{
@@ -959,14 +948,8 @@ sub update_group_list_info{
 sub get_group_code_from_gid {
     my $self = shift;
     my $gid = shift;
-    my $group_code = undef;
-    for my $g (@{ $self->{qq_database}{group_list} }){
-        if($g->{gid} eq $gid){
-            $group_code = $g->{code};
-            last;
-        }
-    }
-    return $group_code;
+    my $group = first {$_->{gid} eq $gid} @{ $self->{qq_database}{group_list} };
+    return defined $group?$group->{code}:undef;
 }
 
 sub _detect_new_friend{
@@ -1037,13 +1020,7 @@ sub _detect_new_group_member{
         card     =>  undef,
     };
 
-    my $group;
-    for my $g (@{$self->{qq_database}{group}}){
-        if($g->{ginfo}{code} eq $gcode){
-            $group = $g;
-            last;
-        }
-    }
+    my $group = first {$_->{ginfo}{code} eq $gcode} @{$self->{qq_database}{group}};
     #群至少得存在
     return unless defined $group;
     #如果包含群成员信息
@@ -1055,17 +1032,14 @@ sub _detect_new_group_member{
         #更新群信息成功
         if(defined $group_info and ref $group_info->{minfo} eq 'ARRAY'){
             #再次查找新增的成员
-            my $flag = 0;
-            for my $m (@{$group_info->{minfo}}){ 
-                if($m->{uin} eq $member_uin){
-                    $self->{cache_for_group_member}->store("$gcode|$member_uin",dclone($m));
-                    $new_group_member = $m;
-                    $flag=1;
-                    last;
-                }
+            my $m = first {$_->{uin} eq $member_uin} @{$group_info->{minfo}};
+            if(defined $m){
+                $self->{cache_for_group_member}->store("$gcode|$member_uin",dclone($m));
+                $new_group_member = $m;
             }
-            #仍然找不到信息，只好直接返回空了
-            $new_group_member = $default_member if $flag==0;
+            else{
+                $new_group_member = $default_member;
+            }
         }
         #群成员信息更新失败
         else{
@@ -1177,13 +1151,7 @@ sub _detect_new_discuss_member {
         uin      =>  $member_uin,
     };
 
-    my $discuss;
-    for my $d (@{$self->{qq_database}{discuss}}){
-        if($d->{dinfo}{did} eq $did){
-            $discuss = $d;
-            last;
-        }
-    }
+    my $discuss = first {$_->{dinfo}{did} eq $did} @{$self->{qq_database}{discuss} };
     #群至少得存在
     return unless defined $discuss;
     #如果包含成员信息
@@ -1195,17 +1163,15 @@ sub _detect_new_discuss_member {
         #更新群信息成功
         if(defined $discuss_info and ref $discuss_info->{minfo} eq 'ARRAY'){
             #再次查找新增的成员
-            my $flag = 0;
-            for my $m (@{$discuss_info->{minfo}}){ 
-                if($m->{uin} eq $member_uin){
-                    $self->{cache_for_discuss_member}->store("$did|$member_uin",dclone($m));
-                    $new_discuss_member = $m;
-                    $flag=1;
-                    last;
-                }
+            my $m = first {$_->{uin} eq $member_uin} @{$discuss_info->{minfo}};
+            if(defined $m){
+                $self->{cache_for_discuss_member}->store("$did|$member_uin",dclone($m));
+                $new_discuss_member = $m;
+            } 
+            else{
+                #仍然找不到信息，只好直接返回空了
+                $new_discuss_member = $default_member;
             }
-            #仍然找不到信息，只好直接返回空了
-            $new_discuss_member = $default_member if $flag==0;
         }
         #成员信息更新失败
         else{

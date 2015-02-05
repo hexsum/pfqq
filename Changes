@@ -2,6 +2,7 @@
 
 2015-02-04 Webqq::Client v7.6
 1）修复表情消息处理错误
+2）使用List::Util 提供的first函数优化代码逻辑
 
 2015-02-04 Webqq::Client v7.5
 1）大量bug修复和代码逻辑优化

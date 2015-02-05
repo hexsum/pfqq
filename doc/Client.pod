@@ -74,7 +74,8 @@ Webqq::Client - A webqq client in Perl Language
         friends     => [], #好友信息存储在 @{ $client->{qq_database}{friends} }中
         group_list  => [], #群列表信息（不含群成员）存储在@{$client->{qq_database}{group_list}}中
         group       => [], #群信息（包含群成员）存储在 @{ $client->{qq_database}{group} } 中
-        discuss     => []  #讨论组信息，暂未实现，仅保留
+        discuss     => [], #讨论组信息
+        discuss_list=> [], #讨论组列表信息
     }
 
 =over
