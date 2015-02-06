@@ -552,6 +552,15 @@ sub parse_receive_msg{
                     };
                     $client->msg_put($msg);
                 }
+                elsif($m->{poll_type} eq 'buddies_status_change'){
+                    my $msg = {
+                        type        =>  'buddies_status_change',
+                        uin         =>  $m->{value}{uin},
+                        state       =>  $m->{value}{status},
+                        client_type =>  $m->{value}{client_type},
+                    };
+                    $client->msg_put($msg); 
+                }   
                 #收到系统消息
                 elsif($m->{poll_type} eq 'sys_g_msg'){
                     #my $msg = {

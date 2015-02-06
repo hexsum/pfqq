@@ -2,7 +2,7 @@ package Webqq::Client::Util;
 use Exporter 'import';
 use Encode;
 use Encode::Locale;
-our @EXPORT_OK = qw(console console_stderr hash truncate) ;
+our @EXPORT_OK = qw(console console_stderr hash truncate code2state) ;
 sub console{
     my $bytes = join "",@_;
     print encode("locale",decode("utf8",$bytes));
@@ -60,4 +60,17 @@ sub truncate {
     }
     return $out_and_err. ($is_truncated?"\n(已截断)":"");
 }
+sub code2state {
+    my %c = qw(
+        10  online
+        20  offline
+        30  away
+        40  hidden
+        50  busy
+        60  callme
+        70  silent
+    );
+    return $c{$_[0]} || "online";
+}
+
 1;

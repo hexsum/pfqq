@@ -1,4 +1,5 @@
 use JSON;
+use Webqq::Client::Util qw(code2state);
 sub Webqq::Client::_get_friend_info{
     my $self = shift;
     my $uin = shift;
@@ -37,10 +38,14 @@ sub Webqq::Client::_get_friend_info{
                 $user_info->{$key} = 
                     encode("utf8", join("-",@{ $user_info->{birthday}}{qw(year month day)}  )  );
             }
+            elsif($key eq 'stat'){
+                $user_info{state} = code2state($user_info->{'stat'});
+            }
             else{
                 $user_info->{$key} = encode("utf8",$user_info->{$key});
             }
         }
+        delete $user_info->{'stat'};
         return $user_info;
     }
     else{return undef}

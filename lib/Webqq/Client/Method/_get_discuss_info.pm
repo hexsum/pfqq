@@ -58,7 +58,7 @@ sub Webqq::Client::_get_discuss_info {
                 uin     => $_,  
                 nick    => $mem_info{$_}{nick},
                 ruin    => $mem_list{$_}{ruin},
-                status  => $mem_status{$_}{status},
+                state   => $mem_status{$_}{status},
                 client_type => $mem_status{$_}{client_type},
             };
         }

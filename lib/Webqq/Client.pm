@@ -11,7 +11,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "7.7";
+our $VERSION = "7.8";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use Webqq::UserAgent;#异步HTTP请求客户端
@@ -48,7 +48,7 @@ use Webqq::Client::Method::_cookie_proxy;
 use Webqq::Client::Method::_relink;
 use Webqq::Client::Method::_get_discuss_list_info;
 use Webqq::Client::Method::_get_discuss_info;
-use Webqq::Client::Method::change_status;
+use Webqq::Client::Method::change_state;
 use Webqq::Client::Method::_send_discuss_message;
 
 
@@ -74,7 +74,7 @@ sub new {
             psessionid              =>  'null',
             vfwebqq                 =>  undef,
             ptwebqq                 =>  undef,
-            status                  =>  $p{status} || 'online', #online|away|busy|silent|hidden|offline,
+            state                   =>  $p{state} || 'online', #online|away|busy|silent|hidden|offline,
             passwd_sig              =>  '',
             verifycode              =>  undef,
             verifysession           =>  undef,
@@ -124,6 +124,7 @@ sub new {
         on_new_discuss_member       =>  undef,
         on_loss_discuss_member      =>  undef,
         on_input_img_verifycode     =>  undef,
+        on_friend_change_state             =>  undef,
         on_run                      =>  undef,
         receive_message_queue       =>  Webqq::Message::Queue->new,
         send_message_queue          =>  Webqq::Message::Queue->new,
@@ -199,6 +200,10 @@ sub on_run :lvalue {
     my $self = shift;
     $self->{on_run};
 }
+sub on_friend_change_state :lvalue {
+    my $self = shift;
+    $self->{on_friend_change_state};
+}
 
 sub on_new_friend :lvalue {
     my $self = shift;
@@ -251,8 +256,8 @@ sub login{
 
     @{$self->{default_qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
     @{$self->{qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
-    $self->{qq_param}{status} = $p{status} 
-        if defined $p{status} and grep {$_ eq $p{status}} qw(online away busy silent hidden offline);
+    $self->{qq_param}{state} = $p{state} 
+        if defined $p{state} and grep {$_ eq $p{state}} qw(online away busy silent hidden offline);
     console "QQ账号: $self->{default_qq_param}{qq}\n";
     #my $is_big_endian = unpack( 'xc', pack( 's', 1 ) ); 
     $self->{qq_param}{qq} = $self->{default_qq_param}{qq};
@@ -353,7 +358,7 @@ sub _get_discuss_list_info;
 sub _send_message;
 sub _send_group_message;
 sub _get_msg_tip;
-sub change_status;
+sub change_state;
 sub get_qq_from_uin;
 sub get_single_long_nick;
 sub _report;
@@ -362,7 +367,6 @@ sub _get_offpic;
 sub _relink;
 sub _get_discuss_list_info;
 sub _get_discuss_info;
-sub change_status;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -445,6 +449,15 @@ sub _prepare {
         elsif($msg->{type} eq 'discuss_message'){
             $self->_detect_new_discuss($msg->{did});
             $self->_detect_new_discuss_member($msg->{did},$msg->{send_uin});
+        }
+        elsif($msg->{type} eq 'buddies_status_change'){
+            my $who = $self->update_state_info($msg->{uin},$msg->{state});
+            if(defined $who and ref $self->{on_friend_change_state} eq 'CODE'){
+                eval{
+                    $self->{on_friend_change_state}->($who);
+                };
+                console "$@\n" if $@; 
+            }
         }
         
         #接收队列中接收到消息后，调用相关的消息处理回调，如果未设置回调，消息将丢弃
@@ -767,7 +780,7 @@ sub update_friends_info{
             $marknames{$_->{uin}} = {markname=>encode("utf8",$_->{markname}),type=>$_->{type}};
         }
         for(@{ $friends_info->{vipinfo} }){
-            $vipinfo{$_->{u}} = {vip_level=>$_->{vip_level},is_vip=>$_->{is_vip}};
+            $vipinfo{$_->{uin}} = {vip_level=>$_->{vip_level},is_vip=>$_->{is_vip}};
         }
 
         $self->{qq_database}{friends} = $friends_info->{friends};
@@ -779,6 +792,7 @@ sub update_friends_info{
             $_->{markname} = $marknames{$uin}{markname};
             $_->{is_vip} = $vipinfo{$uin}{is_vip};
             $_->{vip_level} = $vipinfo{$uin}{vip_level};
+            delete $_->{categories};
         }
     }
     else{console "更新好友信息失败\n";}
@@ -943,6 +957,17 @@ sub update_group_list_info{
         }
     }
     else{console "更新群列表信息失败\n";}    
+}
+
+sub update_friend_state_info{
+    my $self = shift;
+    my ($uin,$state) = @_;
+    my $f = first {$_->{uin} eq $uin} @{$self->{qq_database}{friends}};
+    if(defined $f){
+        $f->{state} = $state;
+        return dclone($f);
+    }
+    return undef;
 }
 
 sub get_group_code_from_gid {

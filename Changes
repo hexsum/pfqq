@@ -1,5 +1,10 @@
 版本更新记录:
 
+2015-02-07 Webqq::Client v7.8
+1）个人、群、讨论组成员增加状态属性(state)
+2）新增对buddies_status_change消息类型的处理
+2）新增on_friend_change_state回调，好友状态变化实时提醒
+
 2015-02-06 Webqq::Client v7.7
 1）修复发送中文消息时严重bug导致发送消息为空
 

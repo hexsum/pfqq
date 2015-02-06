@@ -1,5 +1,5 @@
 use JSON;
-use Webqq::Client::Util qw(console);
+use Webqq::Client::Util qw(console code2state);
 sub Webqq::Client::_get_group_info {
     my $self = shift;
     my $gcode = shift;
@@ -46,8 +46,15 @@ sub Webqq::Client::_get_group_info {
             for  (@{ $json->{result}{cards} }){
                 $cards{$_->{muin}} = $_->{card};
             }
+            my %state;
+            for(@{ $json->{result}{stats} }){
+                $state{$_->{uin}}{client_type} = $_->{client_type};
+                $state{$_->{uin}}{state} = code2state($_->{'stat'});
+            }
             for my $m(@{ $json->{result}{minfo} }){
                 $m->{card} = $cards{$m->{uin}} if exists $cards{$m->{uin}} ; 
+                $m->{state} = $state{$m->{uin}}{state} if exists $state{$m->{uin}};
+                $m->{client_type} = $state{$m->{uin}}{client_type} if exists $state{$m->{uin}};
                 for(keys %$m){
                     $m->{$_} = encode("utf8",$m->{$_});
                 }

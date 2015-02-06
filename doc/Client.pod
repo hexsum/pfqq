@@ -98,7 +98,7 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
     blood       =>  #血型
     constel     =>  #星座
     homepage    =>  #主页
-    stat        =>  #状态
+    state        =>  #状态
     country     =>  #国家
     city        =>  #城市
     personal    =>  #个性签名
@@ -777,6 +777,24 @@ smartqq则完全不会显示新成员发送的消息
 
 和on_loss_group_member类似，这里不做展开
 
+=item on_friend_change_state() :lvalue
+
+好友状态变更时会执行该回调函数，传入状态变更的好友信息
+    
+    use Webqq::Client::Util qw(console);
+    $client->on_friend_change_state = sub{
+        my $who = shift;
+        my %s = qw(
+            online   上线
+            offline  离线(或隐身)
+            away     离开
+            slient   请勿打扰
+            busy     忙碌
+            callme   Q我吧 
+        );
+        console "好友 \@$who->{nick} 状态变更为：[$s{$who->{state}}]\n";
+    };
+
 =item login(qq=>$qq,pwd=>$pwd,status=>$status)
 
 客户端登录，登录成功后才能够正常收发消息，登录失败该函数会die，登录成功返回true
@@ -809,11 +827,11 @@ webqq中每个qq用户在每一次客户端登录后使用的是一个唯一的u
 
 $uin通常是包含在接收到的消息或者客户端自己的数据库中，可以参考客户端数据结构介绍部分
 
-=item change_status($status)
+=item change_state($state)
 
 客户端设置登录状态，支持的状态包括 online|away|busy|silent|hidden|offline
 
-    $client->change_status("online"); 
+    $client->change_state("online"); 
 
 =item send_message($msg)
 
