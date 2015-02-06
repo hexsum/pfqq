@@ -795,11 +795,11 @@ smartqq则完全不会显示新成员发送的消息
         console "好友 \@$who->{nick} 状态变更为：[$s{$who->{state}}]\n";
     };
 
-=item login(qq=>$qq,pwd=>$pwd,status=>$status)
+=item login(qq=>$qq,pwd=>$pwd,state=>$state)
 
 客户端登录，登录成功后才能够正常收发消息，登录失败该函数会die，登录成功返回true
 
-    $client->login(qq=>xxxx, pwd=> xxxx, status=>"online"); #pwd是经过md5加密后的，默认使用online状态登录
+    $client->login(qq=>xxxx, pwd=> xxxx, state=>"online"); #pwd是经过md5加密后的，默认使用online状态登录
 
 =item relogin()
 
