@@ -5,8 +5,6 @@ sub Webqq::Client::_send_discuss_message {
     my $self = shift;
     return if $self->{type} ne 'smartqq';
     my $msg = shift;
-    my $msg_clone = dclone($msg);  
-
     my $ua = $self->{asyn_ua};
     my $api_url = 'http://d.web2.qq.com/channel/send_discu_msg2';
 
@@ -31,18 +29,18 @@ sub Webqq::Client::_send_discuss_message {
     my @headers = (
         Referer => 'http://d.web2.qq.com/proxy.html?v=20130916001&callback=1&id=2',
     ); 
-
-    my $content = [decode("utf8",$msg_clone->{content}),"",[]];
+    my $content = [decode("utf8",$msg->{content}),"",[]];
     my %s = (
-        did         => $msg_clone->{did} || $msg_clone->{to_uin},
+        did         => $msg->{did} || $msg->{to_uin},
         face        => $self->{qq_database}{user}{face} || 591,
         content     => JSON->new->utf8->encode($content),
-        msg_id      => $msg_clone->{msg_id},
+        msg_id      => $msg->{msg_id},
         clientid    => $self->{qq_param}{clientid},
         psessionid  => $self->{qq_param}{psessionid},
     );
+    $s{content} = decode("utf8",$s{content});
     my $post_content = [
-        r           =>  decode("utf8",JSON->new->encode(\%s)),
+        r           =>  JSON->new->utf8->encode(\%s),
     ];
     
     if($self->{debug}){

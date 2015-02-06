@@ -4,7 +4,6 @@ use Storable qw(dclone);
 sub Webqq::Client::_send_group_message{
     my($self,$msg) = @_;
     #将整个hash从UTF8还原回uincode编码
-    my $msg_clone = dclone($msg);
     my $ua = $self->{asyn_ua};
 
     my $send_message_callback = $msg->{cb}||$self->{on_send_message};
@@ -29,20 +28,20 @@ sub Webqq::Client::_send_group_message{
     my @headers = $self->{type} eq 'webqq'? (Referer =>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3')
                 :                           (Referer =>'http://d.web2.qq.com/proxy.html?v=20130916001&callback=1&id=2')
                 ;
-    my $content = [decode("utf8",$msg_clone->{content}),[]];
+    my $content = [decode("utf8",$msg->{content}),[]];
     my %s = (
-        group_uin   => $msg_clone->{to_uin},
+        group_uin   => $msg->{to_uin},
         content     => JSON->new->utf8->encode($content),
-        msg_id      => $msg_clone->{msg_id},
+        msg_id      => $msg->{msg_id},
         clientid    => $self->{qq_param}{clientid},
         psessionid  => $self->{qq_param}{psessionid},
     );
-       
+    $s{content} = decode("utf8",$s{content});
     if($self->{type} eq 'smartqq'){
         $s{face} = $self->{qq_database}{user}{face} || "591";
     }
     my $post_content = [
-        r           =>  decode("utf8",JSON->new->encode(\%s)),
+        r           =>  JSON->new->utf8->encode(\%s),
     ]; 
     if($self->{type} eq 'webqq'){
         push @$post_content,(
