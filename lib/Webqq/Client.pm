@@ -50,6 +50,7 @@ use Webqq::Client::Method::_get_discuss_list_info;
 use Webqq::Client::Method::_get_discuss_info;
 use Webqq::Client::Method::change_state;
 use Webqq::Client::Method::_send_discuss_message;
+use Webqq::Client::Method::_get_online_list_info;
 
 
 sub new {
@@ -307,6 +308,8 @@ sub login{
     $self->update_group_info();
     #更新讨论组信息
     $self->update_discuss_info();
+    #更新用户在线状态信息
+    $self->update_online_info();
     #执行on_login回调
     if(ref $self->{on_login} eq 'CODE'){
         eval{
@@ -367,6 +370,7 @@ sub _get_offpic;
 sub _relink;
 sub _get_discuss_list_info;
 sub _get_discuss_info;
+sub _get_online_list_info;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -532,7 +536,6 @@ sub run{
         };
         console "$@\n" if $@;
     }
-
 
     console "客户端运行中...\n";
     $self->{cv} = AE::cv;
@@ -969,6 +972,20 @@ sub update_friend_state_info{
     }
     return undef;
 }
+
+sub update_online_info {
+  my $self = shift;
+  console "更新在线状态列表信息...\n";
+  my $online_list_info = $self->_get_online_list_info();
+  if(defined $online_list_info){
+    for(@{ $self->{qq_database}{friends} }){
+      my $uin = $_->{uin};
+      $_->{state}       = $online_list_info->{$uin}{state};
+      $_->{client_type} = $online_list_info->{$uin}{client_type};
+    }
+  }
+  else{console "更新在线状态列表信息失败\n";}
+} 
 
 sub get_group_code_from_gid {
     my $self = shift;
