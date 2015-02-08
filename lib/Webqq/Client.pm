@@ -51,6 +51,7 @@ use Webqq::Client::Method::_get_discuss_info;
 use Webqq::Client::Method::change_state;
 use Webqq::Client::Method::_send_discuss_message;
 use Webqq::Client::Method::_get_online_list_info;
+use Webqq::Client::Method::_get_recent_list;
 
 
 sub new {
@@ -101,6 +102,7 @@ sub new {
             discuss_list  =>  [],
             group       =>  [],
             discuss     =>  [],
+            recent_list =>  [],
         },
         is_first_login              =>  -1,
         cache_for_uin_to_qq         => Webqq::Client::Cache->new,
@@ -310,6 +312,8 @@ sub login{
     $self->update_discuss_info();
     #更新用户在线状态信息
     $self->update_online_info();
+    #更新最近对话列表信息
+    $self->update_recent_info();
     #执行on_login回调
     if(ref $self->{on_login} eq 'CODE'){
         eval{
@@ -371,6 +375,7 @@ sub _relink;
 sub _get_discuss_list_info;
 sub _get_discuss_info;
 sub _get_online_list_info;
+sub _get_recent_list;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -985,6 +990,16 @@ sub update_online_info {
     }
   }
   else{console "更新在线状态列表信息失败\n";}
+} 
+
+sub update_recent_info {
+  my $self = shift;
+  console "更新最近对话列表信息...\n";
+  my $recent_list = $self->_get_recent_list();
+  if(defined $recent_list){
+    $self->{qq_database}{recent_list} = $recent_list;
+  }
+  else{console "更新最近对话列表信息失败\n";}
 } 
 
 sub get_group_code_from_gid {
