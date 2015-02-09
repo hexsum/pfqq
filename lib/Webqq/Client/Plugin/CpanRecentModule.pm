@@ -43,6 +43,12 @@ sub call{
                         'link'      =>  $link,
                         desc        =>  $item->{description},
                     };
+                    $data{$item->{title}} = {
+                        author      =>  $item->{'dc:creator'},
+                        'link'      =>  $item->{'link'},
+                        desc        =>  $item->{'description'},
+                        date        =>  $item->{'dc:date'},  
+                    };
                 }
             
                 if(@module){

@@ -75,6 +75,7 @@ Webqq::Client - A webqq client in Perl Language
         group_list  => [], #群列表信息（不含群成员）存储在@{$client->{qq_database}{group_list}}中
         group       => [], #群信息（包含群成员）存储在 @{ $client->{qq_database}{group} } 中
         discuss     => [], #讨论组信息
+        recent      => [], #最近联系人/群/讨论组列表
         discuss_list=> [], #讨论组列表信息
     }
 
@@ -98,7 +99,7 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
     blood       =>  #血型
     constel     =>  #星座
     homepage    =>  #主页
-    state        =>  #状态
+    state       =>  #状态 online|away|busy|callme|silent|hidden
     country     =>  #国家
     city        =>  #城市
     personal    =>  #个性签名
@@ -106,7 +107,7 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
     shengxiao   =>  #生肖
     email       =>  #邮箱
     token       =>  #作用未知 
-    client_type =>  #客户端类型
+    client_type =>  #客户端类型 由于采用的是webqq协议，自身登录类型恒为"web"
     province    =>  #省份
     gender      =>  #性别
     mobile      =>  #手机
@@ -136,6 +137,8 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
             markname    =>   #好友备注
             is_vip      =>   #是否是vip
             vip_level   =>   #vip等级
+            state       =>   #好友状态 online|offline|away|busy|callme|silent
+            client_type =>   #好友的客户端类型 pc|mobile|iphone|web|unknown
          },
          {#数组中第2个元素-好友2
             flag        => 
@@ -146,6 +149,8 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
             markname    =>
             is_vip      =>
             vip_level   =>
+            state       =>
+            client_type =>
          },
         ...#依此类推
     ]
@@ -247,6 +252,8 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
                     country     =>  #该成员国家
                     city        =>  #该成员城市
                     card        =>  #群名片
+                    state       =>  #online|offline|away|busy|callme|silent
+                    client_type =>  #pc|mobile|iphone|web|known
                 },
                 {#群里第2个成员
 
@@ -312,6 +319,8 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
                 {#讨论组里第1个成员
                     nick        =>  #该成员昵称
                     uin         =>  #该成员uin
+                    state       =>  #online|offline|away|busy|callme|silent
+                    client_type =>  #pc|mobile|iphone|web|known
                 },
                 {#讨论组里第2个成员
 
@@ -327,6 +336,20 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
     ]
 
 讨论组 和 群 的概念和操作均极为相似，这里不做过多展开
+
+=item @{$client->{qq_database}{recent} } 最近联系列表
+
+    [
+        {
+            uin  => #联系对象uin, type是group，uin指gid，type是discuss，此uin指讨论组的did
+            type => #联系对象的类型 friend|group|discuss
+        },
+        {
+            uin  => 
+            type =>
+        }
+        ...,   
+    ]
 
 =back
 

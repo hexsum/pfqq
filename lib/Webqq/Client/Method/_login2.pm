@@ -9,7 +9,7 @@ sub Webqq::Client::_login2{
                 :                           (Referer=>'http://d.web2.qq.com/proxy.html?v=20130916001&callback=1&id=2')
                 ;
     my %r = (
-        status      =>  $self->{qq_param}{status},
+        status      =>  $self->{qq_param}{state},
         ptwebqq     =>  $self->{qq_param}{ptwebqq},
         clientid    =>  $self->{qq_param}{clientid},
         psessionid  =>  $self->{qq_param}{psessionid},

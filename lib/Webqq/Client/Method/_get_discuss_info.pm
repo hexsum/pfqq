@@ -1,5 +1,6 @@
 use JSON;
 use Encode;
+use Webqq::Client::Util qw(code2client);
 sub Webqq::Client::_get_discuss_info {
     my $self = shift;       
     my $ua = $self->{ua};
@@ -54,13 +55,20 @@ sub Webqq::Client::_get_discuss_info {
         }
 
         for(keys %mem_list){
-            push @{$minfo},{
-                uin     => $_,  
-                nick    => $mem_info{$_}{nick},
-                ruin    => $mem_list{$_}{ruin},
-                state   => $mem_status{$_}{status},
-                client_type => $mem_status{$_}{client_type},
+            my $m = {
+                uin         => $_,  
+                nick        => $mem_info{$_}{nick},
+                ruin        => $mem_list{$_}{ruin},
             };
+            if(exists $mem_status{$_}){
+                $m->{state} = $mem_status{$_}{status};
+                $m->{client_type} = code2client($mem_status{$_}{client_type});
+            }
+            else{
+                $m->{state} = 'offline';
+                $m->{client_type} = 'unknown';
+            }
+            push @{$minfo},$m;
         }
 
         my $discuss_info = {

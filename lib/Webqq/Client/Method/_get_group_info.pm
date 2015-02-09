@@ -1,5 +1,5 @@
 use JSON;
-use Webqq::Client::Util qw(console code2state);
+use Webqq::Client::Util qw(console code2state code2client);
 sub Webqq::Client::_get_group_info {
     my $self = shift;
     my $gcode = shift;
@@ -37,8 +37,10 @@ sub Webqq::Client::_get_group_info {
 
         return undef unless exists $json->{result}{ginfo};
         #return undef unless exists $json->{result}{minfo};
-        $json->{result}{ginfo}{name} = encode("utf8",$json->{result}{ginfo}{name});
         delete $json->{result}{ginfo}{members}; 
+        for(keys %{$json->{result}{ginfo}}){
+            $json->{result}{ginfo}{$_} = encode("utf8",$json->{result}{ginfo}{$_});
+        }
         #retcode等于0说明包含完整的ginfo和minfo
         if($json->{retcode}==0){
             return undef unless exists $json->{result}{minfo};
@@ -53,8 +55,14 @@ sub Webqq::Client::_get_group_info {
             }
             for my $m(@{ $json->{result}{minfo} }){
                 $m->{card} = $cards{$m->{uin}} if exists $cards{$m->{uin}} ; 
-                $m->{state} = $state{$m->{uin}}{state} if exists $state{$m->{uin}};
-                $m->{client_type} = $state{$m->{uin}}{client_type} if exists $state{$m->{uin}};
+                if(exists $state{$m->{uin}}){
+                    $m->{state} = $state{$m->{uin}}{state};
+                    $m->{client_type} = code2client($state{$m->{uin}}{client_type});
+                }
+                else{
+                    $m->{state} = 'offline';
+                    $m->{client_type} = 'unknown';
+                }
                 for(keys %$m){
                     $m->{$_} = encode("utf8",$m->{$_});
                 }

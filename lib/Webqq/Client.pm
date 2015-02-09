@@ -11,7 +11,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "7.8";
+our $VERSION = "7.9";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use Webqq::UserAgent;#异步HTTP请求客户端
@@ -50,7 +50,8 @@ use Webqq::Client::Method::_get_discuss_list_info;
 use Webqq::Client::Method::_get_discuss_info;
 use Webqq::Client::Method::change_state;
 use Webqq::Client::Method::_send_discuss_message;
-
+use Webqq::Client::Method::_get_friends_state;
+use Webqq::Client::Method::_get_recent_info;
 
 sub new {
     my $class = shift;
@@ -97,7 +98,8 @@ sub new {
             user        =>  {},
             friends     =>  [],
             group_list  =>  [],
-            discuss_list  =>  [],
+            discuss_list=>  [],
+            recent      =>  [],
             group       =>  [],
             discuss     =>  [],
         },
@@ -307,6 +309,8 @@ sub login{
     $self->update_group_info();
     #更新讨论组信息
     $self->update_discuss_info();
+    #更新最近联系人信息
+    $self->update_recent_info();
     #执行on_login回调
     if(ref $self->{on_login} eq 'CODE'){
         eval{
@@ -367,6 +371,8 @@ sub _get_offpic;
 sub _relink;
 sub _get_discuss_list_info;
 sub _get_discuss_info;
+sub _get_friends_state;
+sub _get_recent_info;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -451,7 +457,7 @@ sub _prepare {
             $self->_detect_new_discuss_member($msg->{did},$msg->{send_uin});
         }
         elsif($msg->{type} eq 'buddies_status_change'){
-            my $who = $self->update_state_info($msg->{uin},$msg->{state});
+            my $who = $self->update_friend_state_info($msg->{uin},$msg->{state},$msg->{client_type});
             if(defined $who and ref $self->{on_friend_change_state} eq 'CODE'){
                 eval{
                     $self->{on_friend_change_state}->($who);
@@ -765,35 +771,7 @@ sub update_friends_info{
     console "更新好友信息...\n";
     my $friends_info = $self->_get_user_friends();
     if(defined $friends_info){
-        my %categories ;
-        my %info;
-        my %marknames;
-        my %vipinfo;
-        for(@{ $friends_info->{categories}}){
-            $categories{ $_->{'index'} } = {'sort'=>$_->{'sort'},name=>encode("utf8",$_->{name}) };
-        }
-        $categories{0} = {sort=>0,name=>'我的好友'};
-        for(@{ $friends_info->{info}}){
-            $info{$_->{uin}} = {face=>$_->{face},flag=>$_->{flag},nick=>encode("utf8",$_->{nick}),};
-        }
-        for(@{ $friends_info->{marknames} }){
-            $marknames{$_->{uin}} = {markname=>encode("utf8",$_->{markname}),type=>$_->{type}};
-        }
-        for(@{ $friends_info->{vipinfo} }){
-            $vipinfo{$_->{uin}} = {vip_level=>$_->{vip_level},is_vip=>$_->{is_vip}};
-        }
-
-        $self->{qq_database}{friends} = $friends_info->{friends};
-        for(@{ $self->{qq_database}{friends} }){
-            my $uin = $_->{uin};
-            $_->{categorie} = $categories{$_->{categories}}{name};
-            $_->{nick}  = $info{$uin}{nick};
-            $_->{face} = $info{$uin}{face};
-            $_->{markname} = $marknames{$uin}{markname};
-            $_->{is_vip} = $vipinfo{$uin}{is_vip};
-            $_->{vip_level} = $vipinfo{$uin}{vip_level};
-            delete $_->{categories};
-        }
+        $self->{qq_database}{friends} = $friends_info;
     }
     else{console "更新好友信息失败\n";}
     
@@ -930,6 +908,11 @@ sub update_group_info{
             
     }
 }
+sub update_recent_info {
+    my $self = shift;
+    my $recent = $self->_get_recent_info();
+    $self->{qq_database}{recent} = $recent;
+}
 sub update_group_list_info{
     my $self = shift;
     my $group = shift;
@@ -961,10 +944,11 @@ sub update_group_list_info{
 
 sub update_friend_state_info{
     my $self = shift;
-    my ($uin,$state) = @_;
+    my ($uin,$state,$client_type) = @_;
     my $f = first {$_->{uin} eq $uin} @{$self->{qq_database}{friends}};
     if(defined $f){
         $f->{state} = $state;
+        $f->{client_type} = $client_type;
         return dclone($f);
     }
     return undef;

@@ -1,5 +1,5 @@
 use JSON;
-use Webqq::Client::Util qw(code2state);
+use Webqq::Client::Util qw(code2state code2client);
 sub Webqq::Client::_get_user_info{
     my $self = shift;
     my $webqq_api_url   ='http://s.web2.qq.com/api/get_friend_info2';
@@ -31,8 +31,8 @@ sub Webqq::Client::_get_user_info{
         print $response->content(),"\n" if $self->{debug};
         my $json = JSON->new->utf8->decode( $response->content() );    
         return undef if $json->{retcode} !=0;
-        $json->{result}{state} = code2state($json->{result}{'stat'});
-        delete $json->{result}{'stat'};
+        $json->{result}{state} = $self->{qq_param}{state};
+        $json->{result}{client_type} = 'web';
         return $json->{result};
     }
     else{return undef}

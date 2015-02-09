@@ -2,7 +2,7 @@ package Webqq::Message;
 use Webqq::Message::Face;
 use JSON;
 use Encode;
-use Webqq::Client::Util qw(console);
+use Webqq::Client::Util qw(console code2client);
 use Scalar::Util qw(blessed);
 sub reply_message{
     my $client = shift;
@@ -557,7 +557,7 @@ sub parse_receive_msg{
                         type        =>  'buddies_status_change',
                         uin         =>  $m->{value}{uin},
                         state       =>  $m->{value}{status},
-                        client_type =>  $m->{value}{client_type},
+                        client_type =>  code2client($m->{value}{client_type}),
                     };
                     $client->msg_put($msg); 
                 }   

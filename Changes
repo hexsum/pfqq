@@ -1,5 +1,10 @@
 版本更新记录:
 
+2015-02-09 Webqq::Client v7.9
+1）新增最近联系人列表功能 感谢@wxg的补丁
+2）用户、好友、群、讨论组增加客户端类型(client_type)属性 感谢@wxg的补丁
+3）修复CpanRecentModule模块当发现新模块时进入死循环的bug
+
 2015-02-07 Webqq::Client v7.8
 1）个人、群、讨论组成员增加状态属性(state)
 2）新增对buddies_status_change消息类型的处理
