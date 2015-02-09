@@ -50,6 +50,8 @@ use Webqq::Client::Method::_get_discuss_list_info;
 use Webqq::Client::Method::_get_discuss_info;
 use Webqq::Client::Method::change_state;
 use Webqq::Client::Method::_send_discuss_message;
+use Webqq::Client::Method::_get_online_list_info;
+use Webqq::Client::Method::_get_recent_list;
 
 
 sub new {
@@ -100,6 +102,7 @@ sub new {
             discuss_list  =>  [],
             group       =>  [],
             discuss     =>  [],
+            recent_list =>  [],
         },
         is_first_login              =>  -1,
         cache_for_uin_to_qq         => Webqq::Client::Cache->new,
@@ -124,7 +127,7 @@ sub new {
         on_new_discuss_member       =>  undef,
         on_loss_discuss_member      =>  undef,
         on_input_img_verifycode     =>  undef,
-        on_friend_change_state             =>  undef,
+        on_friend_change_state      =>  undef,
         on_run                      =>  undef,
         receive_message_queue       =>  Webqq::Message::Queue->new,
         send_message_queue          =>  Webqq::Message::Queue->new,
@@ -307,6 +310,10 @@ sub login{
     $self->update_group_info();
     #更新讨论组信息
     $self->update_discuss_info();
+    #更新用户在线状态信息
+    $self->update_online_info();
+    #更新最近对话列表信息
+    $self->update_recent_info();
     #执行on_login回调
     if(ref $self->{on_login} eq 'CODE'){
         eval{
@@ -367,6 +374,8 @@ sub _get_offpic;
 sub _relink;
 sub _get_discuss_list_info;
 sub _get_discuss_info;
+sub _get_online_list_info;
+sub _get_recent_list;
 
 #接受一个消息，将它放到发送消息队列中
 sub send_message{
@@ -451,7 +460,7 @@ sub _prepare {
             $self->_detect_new_discuss_member($msg->{did},$msg->{send_uin});
         }
         elsif($msg->{type} eq 'buddies_status_change'){
-            my $who = $self->update_state_info($msg->{uin},$msg->{state});
+            my $who = $self->update_friend_state_info($msg->{uin},$msg->{state});
             if(defined $who and ref $self->{on_friend_change_state} eq 'CODE'){
                 eval{
                     $self->{on_friend_change_state}->($who);
@@ -532,7 +541,6 @@ sub run{
         };
         console "$@\n" if $@;
     }
-
 
     console "客户端运行中...\n";
     $self->{cv} = AE::cv;
@@ -969,6 +977,30 @@ sub update_friend_state_info{
     }
     return undef;
 }
+
+sub update_online_info {
+  my $self = shift;
+  console "更新在线状态列表信息...\n";
+  my $online_list_info = $self->_get_online_list_info();
+  if(defined $online_list_info){
+    for(@{ $self->{qq_database}{friends} }){
+      my $uin = $_->{uin};
+      $_->{state}       = $online_list_info->{$uin}{state};
+      $_->{client_type} = $online_list_info->{$uin}{client_type};
+    }
+  }
+  else{console "更新在线状态列表信息失败\n";}
+} 
+
+sub update_recent_info {
+  my $self = shift;
+  console "更新最近对话列表信息...\n";
+  my $recent_list = $self->_get_recent_list();
+  if(defined $recent_list){
+    $self->{qq_database}{recent_list} = $recent_list;
+  }
+  else{console "更新最近对话列表信息失败\n";}
+} 
 
 sub get_group_code_from_gid {
     my $self = shift;
