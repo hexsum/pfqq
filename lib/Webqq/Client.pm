@@ -127,7 +127,7 @@ sub new {
         on_new_discuss_member       =>  undef,
         on_loss_discuss_member      =>  undef,
         on_input_img_verifycode     =>  undef,
-        on_friend_change_state             =>  undef,
+        on_friend_change_state      =>  undef,
         on_run                      =>  undef,
         receive_message_queue       =>  Webqq::Message::Queue->new,
         send_message_queue          =>  Webqq::Message::Queue->new,
@@ -460,7 +460,7 @@ sub _prepare {
             $self->_detect_new_discuss_member($msg->{did},$msg->{send_uin});
         }
         elsif($msg->{type} eq 'buddies_status_change'){
-            my $who = $self->update_state_info($msg->{uin},$msg->{state});
+            my $who = $self->update_friend_state_info($msg->{uin},$msg->{state});
             if(defined $who and ref $self->{on_friend_change_state} eq 'CODE'){
                 eval{
                     $self->{on_friend_change_state}->($who);
