@@ -11,7 +11,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "7.9";
+our $VERSION = "8.0";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use Webqq::UserAgent;#异步HTTP请求客户端
@@ -68,6 +68,7 @@ sub new {
         qq_param        =>  {
             qq                      =>  undef,
             pwd                     =>  undef,    
+            is_https                =>  defined $p{security}?$p{security}:0,
             is_need_img_verifycode  =>  0,
             img_verifycode_source  =>   'TTY',   #NONE|TTY|CALLBACK
             send_msg_id             =>  $send_msg_id,
@@ -126,7 +127,7 @@ sub new {
         on_new_discuss_member       =>  undef,
         on_loss_discuss_member      =>  undef,
         on_input_img_verifycode     =>  undef,
-        on_friend_change_state             =>  undef,
+        on_friend_change_state      =>  undef,
         on_run                      =>  undef,
         receive_message_queue       =>  Webqq::Message::Queue->new,
         send_message_queue          =>  Webqq::Message::Queue->new,
@@ -258,8 +259,9 @@ sub login{
 
     @{$self->{default_qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
     @{$self->{qq_param}}{qw(qq pwd)} = @p{qw(qq pwd)};
+    $self->{qq_param}{security} = $p{security} if defined $p{security};
     $self->{qq_param}{state} = $p{state} 
-        if defined $p{state} and grep {$_ eq $p{state}} qw(online away busy silent hidden offline);
+        if defined $p{state} and first {$_ eq $p{state}} qw(online away busy silent hidden offline);
     console "QQ账号: $self->{default_qq_param}{qq}\n";
     #my $is_big_endian = unpack( 'xc', pack( 's', 1 ) ); 
     $self->{qq_param}{qq} = $self->{default_qq_param}{qq};
@@ -939,7 +941,7 @@ sub update_group_list_info{
             $_->{name} = encode("utf8",$_->{name});
         }
     }
-    else{console "更新群列表信息失败\n";}    
+    #else{console "更新群列表信息失败\n";}    
 }
 
 sub update_friend_state_info{

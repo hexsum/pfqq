@@ -6,7 +6,7 @@ sub Webqq::Client::_send_discuss_message {
     return if $self->{type} ne 'smartqq';
     my $msg = shift;
     my $ua = $self->{asyn_ua};
-    my $api_url = 'http://d.web2.qq.com/channel/send_discu_msg2';
+    my $api_url = ($self->{is_https}?'https':'http') . '://d.web2.qq.com/channel/send_discu_msg2';
 
     my $send_message_callback = $msg->{cb} || $self->{on_send_message};
     my $callback = sub{

@@ -24,7 +24,7 @@ sub Webqq::Client::_send_group_message{
         } 
     };
     
-    my $api_url = 'http://d.web2.qq.com/channel/send_qun_msg2';
+    my $api_url = ($self->{qq_param}{is_https}?'https':'http') . '://d.web2.qq.com/channel/send_qun_msg2';
     my @headers = $self->{type} eq 'webqq'? (Referer =>'http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=3')
                 :                           (Referer =>'http://d.web2.qq.com/proxy.html?v=20130916001&callback=1&id=2')
                 ;
