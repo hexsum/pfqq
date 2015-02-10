@@ -590,6 +590,10 @@ debug=>0|1 ,设置debug=>1来打印调试信息
 
 type=>"webqq"|"smartqq",设置type来切换使用webqq或者smartqq，默认使用smartqq
 
+state=>"online"|"away"|"busy"|"silent"|"hidden"|"offline",设置登录状态，默认"online"
+
+security=>1, 设置是否使用https进行消息发送和接收，默认值为 0, 使用https会导致处理速度稍慢
+
 webqq是腾讯的老版本，smartqq是最新版本
 
     my $client = Webqq::Client->new(debug=>1);
@@ -818,7 +822,7 @@ smartqq则完全不会显示新成员发送的消息
         console "好友 \@$who->{nick} 状态变更为：[$s{$who->{state}}]\n";
     };
 
-=item login(qq=>$qq,pwd=>$pwd,state=>$state)
+=item login(qq=>$qq,pwd=>$pwd,[state=>$state,security=>1])
 
 客户端登录，登录成功后才能够正常收发消息，登录失败该函数会die，登录成功返回true
 
