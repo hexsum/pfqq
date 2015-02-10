@@ -913,7 +913,7 @@ sub update_group_info{
 sub update_recent_info {
     my $self = shift;
     my $recent = $self->_get_recent_info();
-    $self->{qq_database}{recent} = $recent;
+    $self->{qq_database}{recent} = $recent if defined $recent;
 }
 sub update_group_list_info{
     my $self = shift;
