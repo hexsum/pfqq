@@ -11,7 +11,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "8.0";
+our $VERSION = "8.1";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use Webqq::UserAgent;#异步HTTP请求客户端
@@ -53,6 +53,10 @@ use Webqq::Client::Method::_send_discuss_message;
 use Webqq::Client::Method::_get_friends_state;
 use Webqq::Client::Method::_get_recent_info;
 
+our $LAST_DISPATCH_TIME = undef;
+our $SEND_INTERVAL      = 3;
+our $CLIENT_COUNT       = 0;
+
 sub new {
     my $class = shift;
     my %p = @_;
@@ -62,7 +66,6 @@ sub new {
     my $send_msg_id = $second*1000+$microsecond;
     $send_msg_id=($send_msg_id-$send_msg_id%1000)/1000;
     $send_msg_id=($send_msg_id%10000)*10000;
-
     my $self = {
         cookie_jar  => HTTP::Cookies->new(hide_cookie2=>1), 
         qq_param        =>  {
@@ -105,6 +108,7 @@ sub new {
             discuss     =>  [],
         },
         is_first_login              =>  -1,
+        is_stop                     =>  0,
         cache_for_uin_to_qq         => Webqq::Client::Cache->new,
         cache_for_group_sig         => Webqq::Client::Cache->new,
         cache_for_stranger          => Webqq::Client::Cache->new,
@@ -129,6 +133,7 @@ sub new {
         on_input_img_verifycode     =>  undef,
         on_friend_change_state      =>  undef,
         on_run                      =>  undef,
+        on_ready                    =>  undef,
         receive_message_queue       =>  Webqq::Message::Queue->new,
         send_message_queue          =>  Webqq::Message::Queue->new,
         debug                       => $p{debug}, 
@@ -139,10 +144,9 @@ sub new {
         plugins                     =>  {},
         ua_retry_times              =>  5, 
         je                          =>  undef,
-        last_dispatch_time          =>  undef,
-        send_interval               =>  3,
         poll_failure_count_max      =>  3,
         poll_failure_count          =>  0,
+        client_version              =>  $VERSION,
         
     };
     $self->{ua} = LWP::UserAgent->new(
@@ -176,8 +180,6 @@ sub new {
 
     bless $self,$class;
     $self->_prepare();
-    #全局变量，方便其他包引用$self
-    $Webqq::Client::_CLIENT = $self;
     return $self;
 }
 sub on_send_message :lvalue {
@@ -198,6 +200,10 @@ sub on_receive_offpic :lvalue{
 sub on_login :lvalue {
     my $self = shift;
     $self->{on_login};
+}
+sub on_ready :lvalue {
+    my $self = shift;
+    $self->{on_ready};
 }
 sub on_run :lvalue {
     my $self = shift;
@@ -296,7 +302,7 @@ sub login{
     #登录不成功，客户端退出运行
     if($self->{login_state} ne 'success'){
         console "登录失败，客户端退出（可能网络不稳定，请多尝试几次）\n";
-        exit;
+        $self->stop();
     }
     else{
         console "登录成功\n";
@@ -438,7 +444,7 @@ sub _prepare {
     #设置从接收消息队列中接收到消息后对应的处理函数
     $self->{receive_message_queue}->get(sub{
         my $msg = shift;
-    
+        return if $self->{is_stop}; 
         #触发on_new_friend/on_new_group_member回调
         if($msg->{type} eq 'message'){
             if(ref $self->{on_receive_offpic} eq 'CODE'){
@@ -480,12 +486,19 @@ sub _prepare {
     #设置从发送消息队列中提取到消息后对应的处理函数
     $self->{send_message_queue}->get(sub{
         my $msg = shift;
+        return if $self->{is_stop}; 
         #消息的ttl值减少到0则丢弃消息
         if($msg->{ttl} <= 0){
             my $status = {is_success=>0,status=>"发送失败"};
-            my $send_message_callback = $msg->{cb} || $self->{on_send_message};
-            if(ref $send_message_callback eq 'CODE'){
-                $send_message_callback->(
+            if(ref $msg->{cb} eq 'CODE'){
+                $msg->{cb}->(
+                    $msg,
+                    $status->{is_success},
+                    $status->{status},
+                );
+            }
+            if(ref $self->{on_send_message} eq 'CODE'){
+                $self->{on_send_message}->(
                     $msg,
                     $status->{is_success},
                     $status->{status},
@@ -499,9 +512,9 @@ sub _prepare {
         my $rand_watcher_id = rand();
         my $delay = 0;
         my $now = time;
-        if(defined $self->{last_dispatch_time}){
-            $delay = $now<$self->{last_dispatch_time}+$self->{send_interval}?
-                        $self->{last_dispatch_time}+$self->{send_interval}-$now
+        if(defined $LAST_DISPATCH_TIME){
+            $delay = $now<$LAST_DISPATCH_TIME+$SEND_INTERVAL?
+                        $LAST_DISPATCH_TIME+$SEND_INTERVAL-$now
                     :   0;
         }
         $self->{watchers}{$rand_watcher_id} = AE::timer $delay,0,sub{
@@ -514,13 +527,13 @@ sub _prepare {
             :                                           undef
             ;
         };
-        $self->{last_dispatch_time} = $now+$delay;
+        $LAST_DISPATCH_TIME = $now+$delay;
         
     });
 
 };
 
-sub run{
+sub ready{
     my $self = shift;
 
     $self->{watchers}{rand()} = AE::timer 600,600,sub{
@@ -534,17 +547,55 @@ sub run{
     console "开始接收消息\n";
     $self->_recv_message();
 
+    if(ref $self->{on_ready} eq 'CODE'){
+        eval{
+            $self->{on_ready}->();
+        };
+        console "$@\n" if $@;
+    }
+    $CLIENT_COUNT++;
+}
+
+sub stop {
+    my $self = shift;
+    $self->{is_stop} = 1;
+    if($CLIENT_COUNT > 1){
+        $CLIENT_COUNT--;
+        $self->{watchers}{rand()} = AE::timer 600,0,sub{
+            undef %$self; 
+        };
+    }
+    else{
+        exit;         
+    }
+}
+
+sub exit {
+    my $self = shift;
+    exit;
+}
+
+sub EXIT {
+    exit;
+}
+
+sub run{
+    my $self = shift;
+    $self->ready();
     if(ref $self->{on_run} eq 'CODE'){
         eval{
             $self->{on_run}->();
         };
         console "$@\n" if $@;
     }
-
-
     console "客户端运行中...\n";
     $self->{cv} = AE::cv;
-    $self->{cv}->recv;
+    $self->{cv}->recv
+} 
+
+sub RUN{
+    console "启动全局事件循环...\n";
+    AE::cv->recv;
 }
 sub search_cookie{
     my($self,$cookie) = @_;

@@ -43,11 +43,11 @@ sub Webqq::Client::_get_img_verify_code{
                     $self->{qq_param}{verifycode} = $code;
                     $self->{qq_param}{img_verifycode_source} = 'CALLBACK';
                 }
-                else{console "无法从回调函数中获取有效的验证码，程序退出\n";exit;}
+                else{console "无法从回调函数中获取有效的验证码，客户端终止\n";$self->stop();}
             }
             else{
-                console "STDIN未连接到tty，无法输入验证码，程序退出...\n";
-                exit;
+                console "STDIN未连接到tty，无法输入验证码，客户端终止...\n";
+                $self->stop();
             }
             return 1;
         }

@@ -4,7 +4,6 @@ sub Webqq::Client::_send_sess_message{
     my($self,$msg) = @_;
     return unless defined $msg->{group_sig};
     my $ua = $self->{asyn_ua};
-    my $send_message_callback = $msg->{cb} || $self->{on_send_message};
     my $callback = sub{
         my $response = shift;
         print $response->content() if $self->{debug};
@@ -13,12 +12,21 @@ sub Webqq::Client::_send_sess_message{
             $self->send_sess_message($msg);
             return;
         } 
-        elsif(defined $status and ref $send_message_callback eq 'CODE'){
-            $send_message_callback->(
-                $msg,                   #msg
-                $status->{is_success},  #is_success
-                $status->{status}       #status
-            );
+        elsif(defined $status){
+            if(ref $msg->{cb} eq 'CODE'){
+                $msg->{cb}->(
+                    $msg,                   #msg
+                    $status->{is_success},  #is_success
+                    $status->{status}       #status
+                );
+            }
+            if(ref $self->{on_send_message} eq 'CODE'){
+                $self->{on_send_message}->(
+                    $msg,                   #msg
+                    $status->{is_success},  #is_success
+                    $status->{status}       #status
+                );
+            }
         }
     };
 

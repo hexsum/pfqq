@@ -25,8 +25,16 @@ sub Webqq::Client::_login1{
             $je = $self->{je};
         }
         else{
-            local $/ = undef;
-            $javascript = <DATA>;
+            my $javascript;
+            if(defined $Webqq::Client::_javascript){
+                $javascript = $Webqq::Client::_javascript;
+            }
+            else{
+                local $/ = undef;
+                $javascript = <DATA>;
+                $Webqq::Client::_javascript = $javascript;
+                close DATA;
+            }
             $je = JE->new;
             $je->eval($javascript); 
             if($@){
@@ -113,12 +121,12 @@ sub Webqq::Client::_login1{
                 return -1;
             }
             elsif($d{retcode} == 3){
-                console "您输入的帐号或密码不正确，客户端退出...\n";
-                exit;
+                console "您输入的帐号或密码不正确，客户端终止运行...\n";
+                $self->stop();
             }   
             elsif($d{retcode} != 0){
-                console "$d{status}，客户端退出...\n";
-                exit;
+                console "$d{status}，客户端终止运行...\n";
+                $self->stop();
             }
             $self->{qq_param}{api_check_sig} = $d{api_check_sig};
             $self->{qq_param}{ptwebqq} = $self->search_cookie('ptwebqq');

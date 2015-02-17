@@ -1,6 +1,7 @@
 use JSON;
 sub Webqq::Client::_recv_message{
     my $self = shift;
+    return if $self->{is_stop};
     my $ua = $self->{asyn_ua};
     my $api_url = ($self->{qq_param}{is_https}?'https':'http') . '://d.web2.qq.com/channel/poll2';
     my $callback = sub {

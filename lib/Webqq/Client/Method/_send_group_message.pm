@@ -6,7 +6,6 @@ sub Webqq::Client::_send_group_message{
     #将整个hash从UTF8还原回uincode编码
     my $ua = $self->{asyn_ua};
 
-    my $send_message_callback = $msg->{cb}||$self->{on_send_message};
     my $callback = sub{
         my $response = shift;
         print $response->content() if $self->{debug};
@@ -15,13 +14,22 @@ sub Webqq::Client::_send_group_message{
             $self->send_group_message($msg);
             return;
         }
-        elsif(defined $status and ref $send_message_callback eq 'CODE'){
-            $send_message_callback->(
-                $msg,
-                $status->{is_success},
-                $status->{status},
-            );
-        } 
+        elsif(defined $status){
+            if(ref $msg->{cb} eq 'CODE'){
+                $msg->{cb}->(
+                    $msg,                   #msg
+                    $status->{is_success},  #is_success
+                    $status->{status}       #status
+                );
+            }
+            if(ref $self->{on_send_message} eq 'CODE'){
+                $self->{on_send_message}->(
+                    $msg,                   #msg
+                    $status->{is_success},  #is_success
+                    $status->{status}       #status
+                );
+            }
+        }
     };
     
     my $api_url = ($self->{qq_param}{is_https}?'https':'http') . '://d.web2.qq.com/channel/send_qun_msg2';
