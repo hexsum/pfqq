@@ -1,5 +1,6 @@
 package Webqq::Client::Plugin::CpanRecentModule;
 use AE;
+use Encode;
 use XML::Simple;
 use POSIX qw(mktime);
 use Storable qw(store retrieve);
@@ -61,6 +62,7 @@ sub call{
                         ;
                     }
                     my $msg = "Hi, CPAN有新模块发布:\n" . join("\n",@msg);
+                    $msg = encode("utf8",$msg);
                     for my $g (@{ $client->{qq_database}{group} }){
                         $client->send_group_message(to_uin=>$g->{ginfo}{gid},content=>$msg);
                     }
