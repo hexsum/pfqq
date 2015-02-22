@@ -1403,6 +1403,33 @@ $clent->search_group()/$clent->search_member_in_group()会自动调用update_gro
     };
     $client->run();
 
+=item Webqq::Client::Plugin::Openqq
+
+如果并不熟悉Perl语言，你可能更希望提供api接口的方式给外部调用
+
+该插件运行时会产生一个监听本地指定端口的HTTP服务器，用于接收api请求
+
+返回数据完全为JSON格式，接口包括：
+
+    获取个人信息        /openqq/get_user_info
+    获取好友信息        /openqq/get_friend_info
+    获取群信息          /openqq/get_group_info
+    获取讨论组信息      /openqq/get_discuss_info
+    获取最近联系人列表  /openqq/get_recent_info
+    发送好友消息        /openqq/send_message?uin=xxx&content=xxx
+    发送群消息          /openqq/send_group_message?gid=xxx&content=xxx
+    发送讨论组消息      /openqq/send_discuss_message?did=xxx&content=xxx(由于腾讯限制，该功能暂时无法发送成功)
+    发送群临时消息      /openqq/send_sess_message?gid=xxx&uin=xxx&content=xxx
+    发送讨论组临时消息  /openqq/send_sess_message?did=xxx&uin=xxx&content=xxx
+
+插件使用代码示例
+    
+    $client->load("Openqq");
+    $client->on_run = sub{
+        $client->call("Openqq",host=>"127.0.0.0",port=>5000);
+    };
+    $client->run();
+
 =item Webqq::Client::Plugin::SendMsgControl
 
 =item Webqq::Client::Plugin::PicLimit
