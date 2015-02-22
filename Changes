@@ -1,5 +1,9 @@
 版本更新记录:
 
+2015-02-22 Webqq::Client v8.2
+1）Openqq插件进一步完善，提供获取信息、发送消息完整api
+2）pod文档增加Openqq api的详细说明
+
 2015-02-10 Webqq::Client v8.1
 1）新增Webqq::Client::Plugin::Openqq插件，使用PSGI+Twiggy框架，提供RESTful API
 2）新增$client->ready()/stop()/exit()/Webqq::Client::RUN()来支持单进程多账号模式
