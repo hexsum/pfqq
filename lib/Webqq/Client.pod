@@ -520,7 +520,7 @@ $msg除上述hash的key以外绑定的方法：
 =item 接收到的讨论组消息结构
 
     $msg = {
-        type         =  "group_message"
+        type         =  "discuss_message"
         msg_id       #系统自动维护
         from_uin     #消息来源讨论组的uin，也就是讨论组的did，可以使用此uin进行群消息回复
         to_uin       #消息接收者的uin，也就是自己的uin

@@ -82,7 +82,14 @@ sub call{
             print $res->as_string,"\n";
         }
         my $reply;
-        my $data = JSON->new->utf8->decode($res->content);
+        my $data = {}; 
+        eval{
+            $data = JSON->new->utf8->decode($res->content);
+        };
+        if($@){
+            print $@,"\n" if $client->{debug}; 
+            return 1;
+        }
         return 1 if $data->{code}=~/^4000[1-7]$/;
         if($data->{code} == 100000){
             $reply = encode("utf8",$data->{text});
