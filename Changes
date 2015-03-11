@@ -1,5 +1,15 @@
 版本更新记录:
 
+2015-03-11 Webqq::Client v8.3
+1）Plugin函数使用eval执行，防止插件出错导致整个程序退出
+2）更新获取好友列表和群列表的hash函数
+由于腾讯更新了hash算法，导致旧版本无法获取到好友信息和群信息，请尽快更新到此版本
+
+2015-03-10 Webqq::Client v8.2.1
+1）使用git tag进行版本号管理
+2）修复pod文档错误 感谢 @wxg 反馈
+3）修复SmartReply插件api接口获取数据失败后导致主程序退出的bug
+
 2015-02-22 Webqq::Client v8.2
 1）Openqq插件进一步完善，提供获取信息、发送消息完整api
 2）pod文档增加Openqq api的详细说明
