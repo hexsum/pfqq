@@ -12,35 +12,35 @@ sub console_stderr{
     print STDERR encode("locale",decode("utf8",$bytes));
 }
 
-#腾讯hash函数js代码 http://pidginlwqq.sinaapp.com/hash.js
-#感谢[PERL学习交流 @小狼]贡献代码
+#获取好友列表和群列表的hash函数
 sub hash {
     my $ptwebqq = shift;
     my $uin = shift;
-    my $a = $ptwebqq  . "password error";
-    my $i = "";
-    my @E = ();
-    while(1){
-        if(length($i)<= length($a) ){
-            $i .= $uin;
-            last if length($i) == length($a);
-        }
-        else{
-            $i = substr($i,0,length($a)); 
-            last;   
-        }
-    }   
 
-    for(my $c=0;$c<length($i);$c++){
-        $E[$c] = ord(substr($i,$c,1)) ^ ord(substr($a,$c,1));
+    $uin .= "";
+    my @N;
+    for(my $T =0;$T<length($ptwebqq);$T++){
+        $N[$T % 4] ^= ord(substr($ptwebqq,$T,1));
     }
-    my @a= ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F");
-    $i = "" ;
-    for(my $c=0;$c<@E;$c++){
-        $i .= $a[  $E[$c] >>4 & 15  ];
-        $i .= $a[  $E[$c]     & 15  ];  
+    my @U = ("EC", "OK");
+    my @V;
+    $V[0] =  $uin >> 24 & 255 ^ ord(substr($U[0],0,1));
+    $V[1] =  $uin >> 16 & 255 ^ ord(substr($U[0],1,1));
+    $V[2] =  $uin >> 8  & 255 ^ ord(substr($U[1],0,1));
+    $V[3] =  $uin       & 255 ^ ord(substr($U[1],1,1));
+    @U = ();
+    for(my $T=0;$T<8;$T++){
+        $U[$T] = $T%2==0?$N[$T>>1]:$V[$T>>1]; 
     }
-    return $i;
+    @N = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F");
+    my $V = "";
+    for($T=0;$T<@U;$T++){
+        $V .= $N[$U[$T] >> 4 & 15];
+        $V .= $N[$U[$T] & 15];
+    }
+
+    return $V;
+            
 }
 
 sub truncate {
@@ -83,3 +83,35 @@ sub code2client {
 }
 
 1;
+
+__END__
+#腾讯获取好友和群列表的hash函数会经常变动，历史版本的hash函数都放在__END__之后
+sub hash {
+    #感谢[PERL学习交流 @小狼]贡献代码
+    my $ptwebqq = shift;
+    my $uin = shift;
+    my $a = $ptwebqq  . "password error";
+    my $i = "";
+    my @E = ();
+    while(1){
+        if(length($i)<= length($a) ){
+            $i .= $uin;
+            last if length($i) == length($a);
+        }
+        else{
+            $i = substr($i,0,length($a)); 
+            last;   
+        }
+    }   
+
+    for(my $c=0;$c<length($i);$c++){
+        $E[$c] = ord(substr($i,$c,1)) ^ ord(substr($a,$c,1));
+    }
+    my @a= ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F");
+    $i = "" ;
+    for(my $c=0;$c<@E;$c++){
+        $i .= $a[  $E[$c] >>4 & 15  ];
+        $i .= $a[  $E[$c]     & 15  ];  
+    }
+    return $i;
+}

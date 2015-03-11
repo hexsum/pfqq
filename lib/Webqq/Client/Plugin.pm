@@ -51,7 +51,10 @@ sub call{
 
     for(@plugins){
         if(exists $self->{plugins}{$_}){
-            &{$self->{plugins}{$_}{code}}($self,@_);   
+            eval {
+                &{$self->{plugins}{$_}{code}}($self,@_);   
+            };
+            print $@,"\n" if $@;            
         }
         else{
             die "运行插件[ $_ ]失败：找不到该插件\n"; 
