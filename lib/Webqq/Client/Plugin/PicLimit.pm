@@ -1,6 +1,7 @@
 package Webqq::Client::Plugin::PicLimit;
 use AE;
 use POSIX qw(strftime);
+use List::Util qw(first);
 my %limit;
 my @limit_reply = (
     "警告，请不要频繁发图",
@@ -15,12 +16,15 @@ my $once = 1;
 sub call{
     my $client = shift;
     my $msg = shift;
+    my $except_qq = shift;
     return if $msg->{type} ne 'group_message';
 
     for(@{$msg->{raw_content}}){
         next if $_->{type} ne 'cface';
         if($_->{name}=~/\.gif$/i){ 
             my $from_nick = $msg->from_card || $msg->from_nick;
+            my $from_qq   = $msg->from_qq;
+            return if ref $except_qq eq 'ARRAY' and first {$from_qq == $_} @$except_qq ;
             $client->reply_message($msg,"\@$from_nick " . $spam_reply[ int(rand($#spam_reply+1)) ]);
             return;
         }
@@ -29,6 +33,7 @@ sub call{
     return if $msg->{content} !~ /\[图片\]|\[[^\[\]]+\]\x01/;
     my $from_nick = $msg->from_card || $msg->from_nick;
     my $from_qq   = $msg->from_qq;
+    return if ref $except_qq eq 'ARRAY' and first {$from_qq == $_} @$except_qq;
     #my $group_name = $msg->group_name;
     #my $group_code = $msg->group_code;
     my $key = strftime("%H",localtime(time));     
