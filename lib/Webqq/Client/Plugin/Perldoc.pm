@@ -77,12 +77,13 @@ sub call{
             eval{ $json = JSON->new->utf8->decode($response->content);};
             unless($@){ 
                 if($json->{code} == 404){
-                    $doc = "模块名称: $module ($json->{message})" ;
-                    $code = 404;
+                    return 0;
+                    #$doc = "模块名称: $module ($json->{message})" ;
+                    #$code = 404;
 
-                    $client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
-                    $client->reply_message($msg,$doc)  ;
-                    $last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
+                    #$client->{cache_for_metacpan}->store($module,{code=>$code,doc=>$doc},604800);
+                    #$client->reply_message($msg,$doc)  ;
+                    #$last_module_time{$msg->{type}}{$msg->{from_uin}}{$module} = time;
                 }
                 else{
                     $code = 200;

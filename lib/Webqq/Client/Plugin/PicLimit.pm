@@ -19,16 +19,16 @@ sub call{
     my $except_qq = shift;
     return if $msg->{type} ne 'group_message';
 
-    for(@{$msg->{raw_content}}){
-        next if $_->{type} ne 'cface';
-        if($_->{name}=~/\.gif$/i){ 
-            my $from_nick = $msg->from_card || $msg->from_nick;
-            my $from_qq   = $msg->from_qq;
-            return if ref $except_qq eq 'ARRAY' and first {$from_qq == $_} @$except_qq ;
-            $client->reply_message($msg,"\@$from_nick " . $spam_reply[ int(rand($#spam_reply+1)) ]);
-            return;
-        }
-    };
+    #for(@{$msg->{raw_content}}){
+    #    next if $_->{type} ne 'cface';
+    #    if($_->{name}=~/\.gif$/i){ 
+    #        my $from_nick = $msg->from_card || $msg->from_nick;
+    #        my $from_qq   = $msg->from_qq;
+    #        return if ref $except_qq eq 'ARRAY' and first {$from_qq == $_} @$except_qq ;
+    #        $client->reply_message($msg,"\@$from_nick " . $spam_reply[ int(rand($#spam_reply+1)) ]);
+    #        return;
+    #    }
+    #};
 
     return if $msg->{content} !~ /\[图片\]|\[[^\[\]]+\]\x01/;
     my $from_nick = $msg->from_card || $msg->from_nick;

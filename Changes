@@ -1,5 +1,9 @@
 版本更新记录:
 
+2015-03-31 Webqq::Client v8.4
+1）新增Webqq::Encryption模块，将登录加密中涉及到的TEA/RSA算法进行了分离
+2）可以通过安装Crypt::OpenSSL::RSA/Crypt::OpenSSL::Bignum/MIME::Base64模块来提升计算速度10倍以上
+
 2015-03-11 Webqq::Client v8.3.1
 1）修复少了文档错误
 

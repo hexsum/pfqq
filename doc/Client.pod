@@ -1457,11 +1457,15 @@ api调用示例
 
 =head1 SEE ALSO
 
-https://github.com/sjdy521/Webqq-Client
+L<https://github.com/sjdy521/Webqq-Client>
+
+L<https://git.oschina.net/sjdy521/Webqq-Client>
+
+L<Webqq::Qun>
 
 =head1 AUTHOR
 
-Perfi, E<lt>sjdy521@163.comE<gt>
+sjdy521, E<lt>sjdy521@163.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
