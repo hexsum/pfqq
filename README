@@ -40,8 +40,7 @@ client
 可选模块（安装后可提升登录加密算法计算速度）
 
   MIME::Base64
-  Crypt::OpenSSL::RSA
-  Crypt::OpenSSL::Bignum
+  Crypt::RSA（或者Crypt::OpenSSL::RSA Crypt::OpenSSL::Bignum)
 
 版本更新记录
 
