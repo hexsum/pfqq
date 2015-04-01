@@ -3,6 +3,14 @@ use strict;
 use Carp;
 use JE;
 
+BEGIN{
+    eval{require MIME::Base64;};
+    unless($@){ 
+        $Webqq::Encryption::TEA::has_mime_base64 = 1 ;
+        *Webqq::Encryption::TEA::encode_base64 = *MIME::Base64::encode_base64;
+    }
+}
+
 sub strToBytes{
     my $str = shift;
     #$str = join "",map {"\\x$_"} unpack "H2"x length($str),$str;
@@ -75,13 +83,10 @@ sub encrypt {
     #    tea.initkey("");
     #    return(r);
     ##;
-    my $has_mime_base64;
-    eval{
-        require MIME::Base64;
-        *Webqq::Encryption::TEA::encode_base64 = *MIME::Base64::encode_base64;
-    };
-    $has_mime_base64 = 1 unless $@;
-    my $js_code = $has_mime_base64?"var r = tea.enWithoutBase64('$data')":"var r = tea.enAsBase64('$data')"; 
+    my $js_code = $Webqq::Encryption::TEA::has_mime_base64?
+                    "var r = tea.enWithoutBase64('$data')"
+                :   "var r = tea.enAsBase64('$data')"
+    ; 
     my $p = $je->eval(qq#
         var tea = TEA();
         tea.initkey('$key');
@@ -90,7 +95,7 @@ sub encrypt {
         return(r);
     #);
     if($p and !$@){
-        return $has_mime_base64?encode_base64($p,""):$p;
+        return $Webqq::Encryption::TEA::has_mime_base64?encode_base64($p,""):$p;
     }
     else{
         croak "Webqq::Encryption::TEA error: $@\n";

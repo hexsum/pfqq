@@ -23,7 +23,7 @@ sub call{
     my ($client,$msg,$perl_path) = @_;
     return 1 if time - $msg->{msg_time} > 10;
     $PERL_COMMAND = $perl_path if defined $perl_path;
-    if($msg->{content} =~/(?::c|>>>)(.*?)(?::e$|__END__|$)/s or $msg->{content} =~/perl\s+-e\s+'([^']+)'/s){
+    if($msg->{content} =~/(?:>>>)(.*?)(?:__END__|$)/s or $msg->{content} =~/perl\s+-e\s+'([^']+)'/s){
         $msg->{allow_plugin} = 0;
         my $doc = '';
         my $code = $1;

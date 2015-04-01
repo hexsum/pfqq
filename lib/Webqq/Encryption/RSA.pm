@@ -3,13 +3,27 @@ use strict;
 use JE;
 use Carp;
 
-sub encrypt {
-    my $data = shift;
-    eval {
+BEGIN{
+    eval{
         require Crypt::RSA::ES::PKCS1v15;
         require Crypt::RSA::Key::Public;
     };
     unless($@){
+        $Webqq::Encryption::RSA::has_crypt_rsa = 1;
+    }
+    else{
+        eval{
+            require Crypt::OpenSSL::RSA;
+            require Crypt::OpenSSL::Bignum;
+        };
+        $Webqq::Encryption::RSA::has_crypt_openssl_rsa = 1 unless $@;
+    }
+    
+}
+
+sub encrypt {
+    my $data = shift;
+    if($Webqq::Encryption::RSA::has_crypt_rsa){
         my $n = "0xF20CE00BAE5361F8FA3AE9CEFA495362FF7DA1BA628F64A347F0A8C012BF0B254A30CD92ABFFE7A6EE0DC424CB6166F8819EFA5BCCB20EDFB4AD02E412CCF579B1CA711D55B8B0B3AEB60153D5E0693A2A86F3167D7847A0CB8B00004716A9095D9BADC977CBB804DBDCBA6029A9710869A453F27DFDDF83C016D928B3CBF4C7";
         my $public = Crypt::RSA::Key::Public->new();
         $public->e("0x3");
@@ -17,18 +31,12 @@ sub encrypt {
         my $rsa = Crypt::RSA::ES::PKCS1v15->new();
         return lc join "",unpack "H*", $rsa->encrypt(Message=>$data,Key=>$public,);
     }
-    else{
-        eval{
-            require Crypt::OpenSSL::RSA;
-            require Crypt::OpenSSL::Bignum;
-        };
-        unless($@){
-            my $n = Crypt::OpenSSL::Bignum->new_from_hex("F20CE00BAE5361F8FA3AE9CEFA495362FF7DA1BA628F64A347F0A8C012BF0B254A30CD92ABFFE7A6EE0DC424CB6166F8819EFA5BCCB20EDFB4AD02E412CCF579B1CA711D55B8B0B3AEB60153D5E0693A2A86F3167D7847A0CB8B00004716A9095D9BADC977CBB804DBDCBA6029A9710869A453F27DFDDF83C016D928B3CBF4C7");
-            my $e = Crypt::OpenSSL::Bignum->new_from_hex("3");
-            my $rsa = Crypt::OpenSSL::RSA->new_key_from_parameters($n,$e);
-            $rsa->use_pkcs1_padding();
-            return lc join "",unpack "H*", $rsa->encrypt($data);    
-        }
+    elsif($Webqq::Encryption::RSA::has_crypt_openssl_rsa){
+        my $n = Crypt::OpenSSL::Bignum->new_from_hex("F20CE00BAE5361F8FA3AE9CEFA495362FF7DA1BA628F64A347F0A8C012BF0B254A30CD92ABFFE7A6EE0DC424CB6166F8819EFA5BCCB20EDFB4AD02E412CCF579B1CA711D55B8B0B3AEB60153D5E0693A2A86F3167D7847A0CB8B00004716A9095D9BADC977CBB804DBDCBA6029A9710869A453F27DFDDF83C016D928B3CBF4C7");
+        my $e = Crypt::OpenSSL::Bignum->new_from_hex("3");
+        my $rsa = Crypt::OpenSSL::RSA->new_key_from_parameters($n,$e);
+        $rsa->use_pkcs1_padding();
+        return lc join "",unpack "H*", $rsa->encrypt($data);    
     }
     $data = join "",map {"\\x$_"} unpack "H2"x length($data),$data;
     my $je;
