@@ -1,4 +1,4 @@
-Webqq-Client v8.4.1
+Webqq-Client v8.4.2
 ========================
 使用Perl语言编写的Webqq客户端，并且可通过插件提供基于HTTP协议的api接口供其他语言或系统调用
 
@@ -39,7 +39,6 @@ client
 
 可选模块（安装后可提升登录加密算法计算速度）
 
-  MIME::Base64
   Crypt::RSA（或者Crypt::OpenSSL::RSA Crypt::OpenSSL::Bignum)
 
 版本更新记录

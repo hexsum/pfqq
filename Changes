@@ -1,5 +1,8 @@
 版本更新记录:
 
+2015-03-31 Webqq::Client v8.4.2
+1）新增Webqq::Encryption::TEA::Perl模块，TEA算法纯perl实现
+
 2015-03-31 Webqq::Client v8.4.1
 1）支持Crypt:::RSA模块进行RSA计算，该模块是纯Perl编写，更易安装
 
