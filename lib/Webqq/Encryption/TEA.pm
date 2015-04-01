@@ -1,14 +1,12 @@
 package Webqq::Encryption::TEA;
 use strict;
 use Carp;
-use JE;
+use MIME::Base64 ();
+use Webqq::Encryption::TEA::Perl;
 
 BEGIN{
-    eval{require MIME::Base64;};
-    unless($@){ 
-        $Webqq::Encryption::TEA::has_mime_base64 = 1 ;
-        *Webqq::Encryption::TEA::encode_base64 = *MIME::Base64::encode_base64;
-    }
+        eval{require JE;};
+        $Webqq::Encryption::TEA::has_je = 1 unless $@;
 }
 
 sub strToBytes{
@@ -16,27 +14,6 @@ sub strToBytes{
     #$str = join "",map {"\\x$_"} unpack "H2"x length($str),$str;
     my $return = "";   
     for(split //,$str){$return .= sprintf "%02x",ord($_)};
-    #my $je;
-    #if(defined $Webqq::Encryption::TEA::_je ){
-    #    $je = $Webqq::Encryption::TEA::_je ;
-    #}
-    #else{
-    #    my $javascript;
-    #    if(defined $Webqq::Encryption::TEA::_javascript){
-    #        $javascript = $Webqq::Encryption::TEA::_javascript;
-    #    }
-    #    else{
-    #        local $/ = undef;
-    #        $javascript = <DATA>;
-    #        $Webqq::Encryption::TEA::_javascript = $javascript;
-    #        close DATA;
-    #    }
-    #    $je = JE->new;
-    #    $je->eval($javascript);
-    #    croak "Webqq::Encryption::TEA load javascript error: $@\n" if $@;
-    #    $Webqq::Encryption::TEA::_je = $je;
-    #}  
-    
     #print qq#
     #    var tea = TEA();
     #    var r = tea.strToBytes('$str');
@@ -51,17 +28,16 @@ sub strToBytes{
     #croak $@ if $@;
     return $return;
 }
-sub encrypt {
-    my ($key,$data) = @_;
-    $key = join "",map {"\\x$_"} unpack "H2"x length($key),$key;
+sub _load_je{
     my $je;
+    croak "The JE module is not found, You may install it first\n" unless $Webqq::Encryption::TEA::has_je;
     if(defined $Webqq::Encryption::TEA::_je ){
         $je = $Webqq::Encryption::TEA::_je ;
     }
     else{
         my $javascript;
         if(defined $Webqq::Encryption::TEA::_javascript){
-            $javascript = $Webqq::Encryption::TEA::_javascript; 
+            $javascript = $Webqq::Encryption::TEA::_javascript;
         }
         else{
             local $/ = undef;
@@ -73,7 +49,14 @@ sub encrypt {
         $je->eval($javascript);
         croak "Webqq::Encryption::TEA load javascript error: $@\n" if $@;
         $Webqq::Encryption::TEA::_je = $je;
-    }
+    }    
+    return $je;
+}
+sub encrypt {
+    my ($key,$data) = @_;
+    #$key = join "",map {"\\x$_"} unpack "H2"x length($key),$key;
+    my $p = Webqq::Encryption::TEA::Perl::encrypt($key,$data);
+    return  MIME::Base64::encode_base64($p,"") if $p;
 
     #print qq#
     #    var tea = TEA();
@@ -83,24 +66,22 @@ sub encrypt {
     #    tea.initkey("");
     #    return(r);
     ##;
-    my $js_code = $Webqq::Encryption::TEA::has_mime_base64?
-                    "var r = tea.enWithoutBase64('$data')"
-                :   "var r = tea.enAsBase64('$data')"
-    ; 
+    my $je = _load_je();
     my $p = $je->eval(qq#
         var tea = TEA();
         tea.initkey('$key');
-        $js_code;
-        tea.initkey("");
+        var r = tea.encrypt('$data');    
+        tea.initkey('');
         return(r);
     #);
     if($p and !$@){
-        return $Webqq::Encryption::TEA::has_mime_base64?encode_base64($p,""):$p;
+        return MIME::Base64::encode_base64($p,"");
     }
     else{
         croak "Webqq::Encryption::TEA error: $@\n";
     }
 }
+
 1;
 __DATA__
 function TEA() {
@@ -373,57 +354,13 @@ function TEA() {
         return A
     }
 
-    var d = {};
-    d.PADCHAR = "=";
-    d.ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    d.getbyte = function(A, z) {
-        var y = A.charCodeAt(z);
-        if (y > 255) {
-            throw "INVALID_CHARACTER_ERR: DOM Exception 5"
-        }
-        return y
-    };
-    d.encode = function(C) {
-        if (arguments.length != 1) {
-            throw "SyntaxError: Not enough arguments"
-        }
-        var z = d.PADCHAR;
-        var E = d.ALPHA;
-        var D = d.getbyte;
-        var B, F;
-        var y = [];
-        C = "" + C;
-        var A = C.length - C.length % 3;
-        if (C.length == 0) {
-            return C
-        }
-        for (B = 0; B < A; B += 3) {
-            F = (D(C, B) << 16) | (D(C, B + 1) << 8) | D(C, B + 2);
-            y.push(E.charAt(F >> 18));
-            y.push(E.charAt((F >> 12) & 63));
-            y.push(E.charAt((F >> 6) & 63));
-            y.push(E.charAt(F & 63))
-        }
-        switch (C.length - A) {
-        case 1:
-            F = D(C, B) << 16;
-            y.push(E.charAt(F >> 18) + E.charAt((F >> 12) & 63) + z + z);
-            break;
-        case 2:
-            F = (D(C, B) << 16) | (D(C, B + 1) << 8);
-            y.push(E.charAt(F >> 18) + E.charAt((F >> 12) & 63) + E.charAt((F >> 6) & 63) + z);
-            break
-        }
-        return y.join("")
-    };
-
     return {
-        encrypt: function(B, A) {
+        encrypt2: function(B, A) {
             var z = n(B, A);
             var y = h(z);
             return v(y)
         },
-        enWithoutBase64: function(D, C) {
+        encrypt: function(D, C) {
             var B = n(D, C);
             var A = h(B);   
             var y = "";
@@ -432,15 +369,6 @@ function TEA() {
             }
             return y;
         }, 
-        enAsBase64: function(D, C) {
-            var B = n(D, C);
-            var A = h(B);
-            var y = "";
-            for (var z = 0; z < A.length; z++) {
-                y += String.fromCharCode(A[z])
-            }
-            return d.encode(y)
-        },
         decrypt: function(A) {
             var z = n(A, false);
             var y = p(z);
@@ -452,6 +380,6 @@ function TEA() {
         bytesToStr: u,
         strToBytes: c,
         bytesInStr: v,
-        dataFromStr: n
+        dataFromStr: n,
     }
 };

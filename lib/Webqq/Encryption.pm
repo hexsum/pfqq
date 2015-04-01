@@ -1,11 +1,15 @@
 package Webqq::Encryption;
-use JE;
 use Carp;
 use Exporter 'import';
 use Digest::MD5 qw(md5_hex);
 use Webqq::Encryption::TEA;
 use Webqq::Encryption::RSA;
 our @EXPORT_OK = qw(pwd_encrypt pwd_encrypt_js);
+
+BEGIN{
+    eval{require JE;};
+    $Webqq::Encryption::has_je = 1 unless $@;
+}
 
 sub pwd_encrypt{
     my ($pwd,$md5_salt,$verifycode,$is_md5_pwd) = @_;
@@ -29,6 +33,7 @@ sub pwd_encrypt{
 }
 
 sub pwd_encrypt_js {
+    croak "The JE module is not found, You must install it first\n" unless $Webqq::Encryption::has_je;
     my ($pwd,$md5_salt,$verifycode,$is_md5_pwd) = @_;
     $is_md5_pwd = 1 unless defined $is_md5_pwd;
     my $je;

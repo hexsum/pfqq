@@ -1,6 +1,5 @@
 package Webqq::Encryption::RSA;
 use strict;
-use JE;
 use Carp;
 
 BEGIN{
@@ -16,7 +15,18 @@ BEGIN{
             require Crypt::OpenSSL::RSA;
             require Crypt::OpenSSL::Bignum;
         };
-        $Webqq::Encryption::RSA::has_crypt_openssl_rsa = 1 unless $@;
+        unless($@){
+            $Webqq::Encryption::RSA::has_crypt_openssl_rsa = 1;
+        }
+        else{
+            eval{require JE;};
+            unless($@){
+                $Webqq::Encryption::RSA::has_je = 1;
+            }
+            else{
+                croak "You must install Crypt::RSA or Crypt::OpenSSL::RSA or JE module to support rsa encrypt\n";
+            }
+        }
     }
     
 }
@@ -38,6 +48,7 @@ sub encrypt {
         $rsa->use_pkcs1_padding();
         return lc join "",unpack "H*", $rsa->encrypt($data);    
     }
+
     $data = join "",map {"\\x$_"} unpack "H2"x length($data),$data;
     my $je;
     if(defined $Webqq::Encryption::RSA::_je ){

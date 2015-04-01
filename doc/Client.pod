@@ -834,6 +834,14 @@ smartqq则完全不会显示新成员发送的消息
 
     $client->login(qq=>xxxx, pwd=> xxxx, state=>"online"); #pwd是经过md5加密后的，默认使用online状态登录
 
+请注意，登录过程涉及的密码加密算法比较复杂，smartqq采用的是md5+rsa+tea+base64组合的方式
+
+客户端默认会尝试采用L<JE>模块按照原始的javascript代码进行计算，速度非常慢
+
+你可以尝试安装L<Crypt::RSA> (或者L<Crypt::OpenSSL::RSA> 和 L<Crypt::OpenSSL::Bignum>) 
+
+能够极大的提升RSA加密的计算速度
+
 =item relogin()
 
 客户端长期运行一段时间，会收到kick的消息要求强制下线
