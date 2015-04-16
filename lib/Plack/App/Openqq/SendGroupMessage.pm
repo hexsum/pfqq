@@ -14,6 +14,8 @@ sub call{
     }  
     my $uin = $query_string{uin} || $query_string{gid};
     my $content = uri_unescape($query_string{content});   
+    $content=~s/\\n/\n/g;
+    $content=~s/\\t/\t/g;
 
     return sub {
         my $responder = shift;

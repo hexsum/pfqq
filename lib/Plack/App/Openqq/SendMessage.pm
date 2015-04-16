@@ -15,6 +15,9 @@ sub call{
     my $uin = $query_string{uin};
     my $content = uri_unescape($query_string{content});   
 
+    $content=~s/\\n/\n/g;
+    $content=~s/\\t/\t/g;
+
     return sub {
         my $responder = shift;
         my $msg = $client->create_msg(to_uin=>$uin,content=>$content);

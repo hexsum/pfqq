@@ -17,6 +17,9 @@ sub call{
     my $gid = $query_string{gid};   
     my $did = $query_string{did};   
 
+    $content=~s/\\n/\n/g;
+    $content=~s/\\t/\t/g;
+
     return sub {
         my $responder = shift;
         my $msg = $client->create_sess_msg(to_uin=>$uin,content=>$content,gid=>$gid,did=>$did);

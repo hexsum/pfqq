@@ -33,5 +33,5 @@ WriteMakefile(
       (
        #ABSTRACT_FROM  => 'lib/Webqq/Client.pm', # retrieve abstract from module
        ABSTRACT       => 'A webqq client in Perl Language',
-       AUTHOR         => 'Perfi <sjdy521@163.com>') : ()),
+       AUTHOR         => 'sjdy521 <sjdy521@163.com>') : ()),
 );
