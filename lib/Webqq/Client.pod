@@ -131,7 +131,7 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
     [
          {#数组中第1个元素-好友1
             flag        =>   #作用未知
-            qq          =>   #好友的qq号码
+            qq          =>   #好友的qq号码，需要安装Webqq::Qun模块
             uin         =>   #发送接收消息唯一uin
             categories  =>   #好友所属分组
             nick        =>   #好有昵称
@@ -185,8 +185,8 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
             gid         =>      #群的uin，发送接收消息时使用
             code        =>      #群的gcode，查找群信息时需要用到        
             markname    =>      #群备注名称
-            type        =>      #create|attend|manage 分别表示创建的群|加入的群|管理的群
-            number      =>      #群号码
+            type        =>      #create|attend|manage 分别表示创建的群|加入的群|管理的群,   需要安装Webqq::Qun模块
+            number      =>      #群号码                                                     需要安装Webqq::Qun模块
         },
         {#数组中第2个元素，群2
             flag        =>
@@ -248,8 +248,8 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
                 name        =>      #群名称
                 gid         =>      #群gid ，和$client->{qq_database}{group_list}一致
                 owner       =>      #群主的uin
-                number      =>      #群号码
-                type        =>      #create|attend|manage 分别表示创建的群|加入的群|管理的群
+                number      =>      #群号码,                                                    需要安装Webqq::Qun模块
+                type        =>      #create|attend|manage 分别表示创建的群|加入的群|管理的群,   需要安装Webqq::Qun模块
                 
             },
             minfo   => [
@@ -263,13 +263,13 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
                     card        =>  #群名片
                     state       =>  #online|offline|away|busy|callme|silent
                     client_type =>  #pc|mobile|iphone|web|known
-                    qq          =>  #qq号
-                    qage        =>  #q龄
-                    join_time   =>  #入群时间
-                    last_speak_time => #最后发言时间
-                    level       =>  #等级 灌水|传说|潜水 等
-                    role        =>  #角色 admin|owner|member
-                    bad_record  =>  #是否有不良记录 0|1
+                    qq          =>  #qq号,                      需要安装Webqq::Qun模块
+                    qage        =>  #q龄,                       需要安装Webqq::Qun模块
+                    join_time   =>  #入群时间,                  需要安装Webqq::Qun模块
+                    last_speak_time => #最后发言时间,           需要安装Webqq::Qun模块
+                    level       =>  #等级 灌水|传说|潜水 等,    需要安装Webqq::Qun模块
+                    role        =>  #角色 admin|owner|member,   需要安装Webqq::Qun模块
+                    bad_record  =>  #是否有不良记录 0|1，       需要安装Webqq::Qun模块
                 
                 },
                 {#群里第2个成员

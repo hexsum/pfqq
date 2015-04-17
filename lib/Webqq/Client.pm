@@ -110,6 +110,9 @@ sub new {
         is_first_login              =>  -1,
         is_stop                     =>  0,
         cache_for_uin_to_qq         => Webqq::Client::Cache->new,
+        cache_for_qq_to_uin         => Webqq::Client::Cache->new,
+        cache_for_number_to_uin     => Webqq::Client::Cache->new,
+        cache_for_uin_to_number     => Webqq::Client::Cache->new,
         cache_for_group_sig         => Webqq::Client::Cache->new,
         cache_for_stranger          => Webqq::Client::Cache->new,
         cache_for_friend            => Webqq::Client::Cache->new,
@@ -319,9 +322,8 @@ sub login{
     $self->update_discuss_info();
     #更新最近联系人信息
     $self->update_recent_info();
-
+    #使用Webqq::Qun添加更多好友和群属性信息
     $self->_update_extra_info();
-
     #执行on_login回调
     if(ref $self->{on_login} eq 'CODE'){
         eval{
@@ -344,6 +346,9 @@ sub relogin{
     $self->{asyn_ua}->{cookie_jar} = $self->{cookie_jar};
     #重新设置初始化参数
     $self->{cache_for_uin_to_qq}        = Webqq::Client::Cache->new;
+    $self->{cache_for_qq_to_uin}        = Webqq::Client::Cache->new;
+    $self->{cache_for_number_to_uin}    = Webqq::Client::Cache->new;
+    $self->{cache_for_uin_to_number}    = Webqq::Client::Cache->new;
     $self->{cache_for_group_sig}        = Webqq::Client::Cache->new;
     $self->{cache_for_group}            = Webqq::Client::Cache->new;
     $self->{cache_for_group_member}     = Webqq::Client::Cache->new;
@@ -541,6 +546,7 @@ sub ready{
 
     $self->{watchers}{rand()} = AE::timer 600,600,sub{
         $self->update_group_info();
+        $self->_update_extra_group_info(type=>"group");
     };
 
     $self->{watchers}{rand()} = AE::timer 600*2,600,sub{
@@ -927,7 +933,6 @@ sub update_group_info{
         push @{$self->{qq_database}{group}},$group;
         if(!$is_init and ref $self->{on_new_group} eq 'CODE'){
             eval {
-                $self->_update_extra_info(type=>"group");
                 $self->{on_new_group}->(dclone($group));
             };
             console $@ . "\n" if $@;
@@ -956,7 +961,6 @@ sub update_group_info{
                 push @{ $self->{qq_database}{group} }, $group_info;
                 if( !$is_init and ref $self->{on_new_group} eq 'CODE'){
                     eval {
-                        $self->_update_extra_info(type=>"group");
                         $self->{on_new_group}->(dclone($group_info));
                     };
                     console $@ . "\n" if $@;
@@ -1063,7 +1067,6 @@ sub _detect_new_group{
         push @{$self->{qq_database}{group}},$group_info;
         if(ref $self->{on_new_group} eq 'CODE'){
             eval{
-                $self->_update_extra_info(type=>"group");
                 $self->{on_new_group}->(dclone($group_info));
             };  
             console $@ . "\n" if  $@;
@@ -1117,7 +1120,6 @@ sub _detect_new_group_member{
         push @{$group->{minfo}},$new_group_member;
         if(ref $self->{on_new_group_member} eq 'CODE'){
             eval{
-                $self->_update_extra_info(type=>"group");
                 $self->{on_new_group_member}->(dclone($group),dclone($new_group_member));
             };
             console $@ . "\n" if $@;
@@ -1140,7 +1142,6 @@ sub _detect_new_group_member2 {
         unless(exists $e{$new->{uin}}){
             if(ref $self->{on_new_group_member} eq 'CODE'){
                 eval{
-                    $self->_update_extra_info(type=>"group");
                     $self->{on_new_group_member}->(dclone($group_new),dclone($new));
                 };
                 console $@ . "\n" if $@;
@@ -1331,6 +1332,8 @@ sub _update_extra_friend_info{
     }      
     for(@{$self->{qq_database}{friends}}){
         $_->{qq} = $map{$_->{nick}} if exists $map{$_->{nick}};
+        $self->{cache_for_qq_to_uin}->store($_->{qq},$_->{uin});
+        $self->{cache_for_uin_to_qq}->store($_->{uin},$_->{qq});
     }
     return 1;
 }
@@ -1366,6 +1369,8 @@ sub _update_extra_group_info{
         if(exists $map_group{$_->{name}}){
             $_->{number} = $map_group{$_->{name}}{number};
             $_->{type} = $map_group{$_->{name}}{type} ; 
+            $self->{cache_for_number_to_uin}->store($_->{number},$_->{gid});
+            $self->{cache_for_uin_to_number}->store($_->{gid},$_->{number});
         }
     }
     for(@{$self->{qq_database}{group}}){
@@ -1382,11 +1387,28 @@ sub _update_extra_group_info{
                 $m->{role}              = $map_member{$_->{ginfo}{name},$m->{nick}}{role} ;
                 $m->{bad_record}        = $map_member{$_->{ginfo}{name},$m->{nick}}{bad_record} ;
                 $self->{cache_for_uin_to_qq}->store($m->{uin},$m->{qq});
+                $self->{cache_for_qq_to_uin}->store($m->{qq},$m->{uin});
             }
         } 
     }
 }
 
+sub get_uin_from_qq{
+    my $self = shift;
+    my $qq   = shift;   
+    return $self->{cache_for_qq_to_uin}->retrieve($qq);
+}
+
+sub get_uin_from_number {
+    my $self = shift;
+    my $number = shift;
+    return $self->{cache_for_number_to_uin}->retrieve($number);    
+}
+sub get_number_from_uin {
+    my $self = shift;
+    my $uin = shift;
+    return $self->{cache_for_uin_to_number}->retrieve($uin);
+}
 1;
 __END__
 

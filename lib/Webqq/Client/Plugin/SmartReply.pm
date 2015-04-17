@@ -23,7 +23,7 @@ sub call{
     return if $msg->{allow_plugin} == 0;
     my $msg_type = $msg->{type};    
     if($msg_type eq 'group_message'){
-        return 1  if $msg->{content} !~/\@\Q$self_nick\E/;
+        return 1  if $msg->{content} !~/\@\Q$self_nick \E/;
     }
     my $userid = $msg->from_qq;
     return 1 if exists $ban{$userid};

@@ -11,6 +11,7 @@ use Plack::App::Openqq::GetFriendInfo;
 use Plack::App::Openqq::GetGroupInfo;
 use Plack::App::Openqq::GetDiscussInfo;
 use Plack::App::Openqq::GetRecentInfo;
+use Plack::Middleware::Openqq::SelfTalkForbid;
 use Twiggy::Server;
 my $server;
 sub call{
@@ -22,6 +23,7 @@ sub call{
     my $app = 
     builder {
         enable "Header",set => ['Server',"Openqq-Server-$client->{client_version}"];
+        enable "Openqq::SelfTalkForbid",client=>$client;
         builder{
             #mount "//"           => builder {
             #    

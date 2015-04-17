@@ -12,10 +12,14 @@ sub call{
         my($key,$value) = split /=/,$query_string;
         $query_string{$key} = $value;
     }  
-    my $uin = $query_string{uin} || $query_string{gid};
+    my $uin;
+    if(defined $query_string{number}){
+        $uin = $client->get_uin_from_number($query_string{number});
+    }
+    else{
+        $uin = $query_string{uin} || $query_string{gid};
+    }
     my $content = uri_unescape($query_string{content});   
-    $content=~s/\\n/\n/g;
-    $content=~s/\\t/\t/g;
 
     return sub {
         my $responder = shift;

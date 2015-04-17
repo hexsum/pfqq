@@ -39,6 +39,7 @@ sub Webqq::Client::get_qq_from_uin{
             return undef;
         }
         $self->{cache_for_uin_to_qq}->store($uin,$json->{result}{account});
+        $self->{cache_for_qq_to_uin}->store($json->{result}{account},$uin);
         return $json->{result}{account};
     }
 }
