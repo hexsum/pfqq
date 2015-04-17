@@ -546,7 +546,7 @@ sub ready{
 
     $self->{watchers}{rand()} = AE::timer 600,600,sub{
         $self->update_group_info();
-        $self->_update_extra_group_info(type=>"group");
+        $self->_update_extra_info(type=>"group");
     };
 
     $self->{watchers}{rand()} = AE::timer 600*2,600,sub{
@@ -1286,7 +1286,10 @@ sub _update_extra_info{
     my %p = @_;
     $p{type} = "all" unless defined  $p{type};
     eval{require Webqq::Qun;};
-    return if $@;
+    if($@){
+        console "Webqq::Qun模块未找到，已忽略相关功能\n" if $self->{debug};
+        return;
+    }
     eval{
         my $qun = Webqq::Qun->new(qq=>$self->{qq_param}{qq},pwd=>$self->{qq_param}{pwd},debug=>$self->{debug}); 
         $qun->authorize() or die "authorize fail\n";
@@ -1315,7 +1318,10 @@ sub _update_extra_info{
             $self->_update_extra_group_info();
         }
     };
-    return if $@;
+    if($@){
+        console "Webqq::Qun模块执行失败：$@\n" if $self->{debug};
+        return;
+    }
     return 1;
     
 }
