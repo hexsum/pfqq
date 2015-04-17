@@ -59,7 +59,7 @@ Webqq::Client - A webqq client in Perl Language
 
 由于采用了单线程异步框架
 
-你不应该在任何回调函数中产生阻塞或者长时间sleep
+你不应该在任何回调函数中产生长时间的阻塞
 
 这会导致整个进程被阻塞，无法正常响应处理其他回调
 
@@ -95,6 +95,7 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
     occupation  =>  #职业
     allow       =>  #权限
     college     =>  #大学
+    qq          =>  #qq号码
     uin         =>  #本次登录唯一标识，发送消息时需要用到
     blood       =>  #血型
     constel     =>  #星座
@@ -130,6 +131,7 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
     [
          {#数组中第1个元素-好友1
             flag        =>   #作用未知
+            qq          =>   #好友的qq号码
             uin         =>   #发送接收消息唯一uin
             categories  =>   #好友所属分组
             nick        =>   #好有昵称
@@ -183,12 +185,17 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
             gid         =>      #群的uin，发送接收消息时使用
             code        =>      #群的gcode，查找群信息时需要用到        
             markname    =>      #群备注名称
+            type        =>      #create|attend|manage 分别表示创建的群|加入的群|管理的群
+            number      =>      #群号码
         },
         {#数组中第2个元素，群2
-            flag    =>
-            name    =>
-            gid     =>
-            code    =>
+            flag        =>
+            name        =>
+            gid         =>
+            code        =>  
+            markname    =>
+            type        =>
+            number      =>
         },
         ...#依此类推
     ]    
@@ -240,7 +247,9 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
                 level       =>      #群等级
                 name        =>      #群名称
                 gid         =>      #群gid ，和$client->{qq_database}{group_list}一致
-                owner       =>
+                owner       =>      #群主的uin
+                number      =>      #群号码
+                type        =>      #create|attend|manage 分别表示创建的群|加入的群|管理的群
                 
             },
             minfo   => [
@@ -254,6 +263,14 @@ hash包含的key及相关说明,注意有些key的值并不是直接的结果，
                     card        =>  #群名片
                     state       =>  #online|offline|away|busy|callme|silent
                     client_type =>  #pc|mobile|iphone|web|known
+                    qq          =>  #qq号
+                    qage        =>  #q龄
+                    join_time   =>  #入群时间
+                    last_speak_time => #最后发言时间
+                    level       =>  #等级 灌水|传说|潜水 等
+                    role        =>  #角色 admin|owner|member
+                    bad_record  =>  #是否有不良记录 0|1
+                
                 },
                 {#群里第2个成员
 

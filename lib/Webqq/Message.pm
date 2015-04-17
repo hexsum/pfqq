@@ -194,6 +194,8 @@ sub _load_extra_accessor {
     *Webqq::Message::GroupMessage::Recv::from_qq = sub{
         my $msg = shift;
         my $client = $msg->{client};
+        #my $m = $client->search_member_in_group($msg->{group_code},$msg->{send_uin});
+        #return $m->{qq} if(defined $m and defined $m->{qq});
         return $client->get_qq_from_uin($msg->{send_uin});
     };
     *Webqq::Message::GroupMessage::Recv::from_nick = sub{
@@ -344,6 +346,8 @@ sub _load_extra_accessor {
     *Webqq::Message::Message::Recv::from_qq = sub{
         my $msg = shift;
         my $client = $msg->{client};
+        #my $f = $client->search_friend($msg->{from_uin});
+        #return $f->{qq} if(defined $f and defined $f->{qq});
         return $client->get_qq_from_uin($msg->{from_uin});
     };
     *Webqq::Message::Message::Recv::from_markname = sub{

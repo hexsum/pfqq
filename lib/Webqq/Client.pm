@@ -319,6 +319,9 @@ sub login{
     $self->update_discuss_info();
     #更新最近联系人信息
     $self->update_recent_info();
+
+    $self->_update_extra_info();
+
     #执行on_login回调
     if(ref $self->{on_login} eq 'CODE'){
         eval{
@@ -805,6 +808,7 @@ sub update_user_info{
         if(defined $single_long_nick){
             $self->{qq_database}{user}{single_long_nick} = $single_long_nick;
         }   
+        $self->{qq_database}{user}{qq} = $self->{qq_param}{qq};
     }
     else{console "更新个人信息失败\n";}
 }
@@ -923,6 +927,7 @@ sub update_group_info{
         push @{$self->{qq_database}{group}},$group;
         if(!$is_init and ref $self->{on_new_group} eq 'CODE'){
             eval {
+                $self->_update_extra_info(type=>"group");
                 $self->{on_new_group}->(dclone($group));
             };
             console $@ . "\n" if $@;
@@ -951,6 +956,7 @@ sub update_group_info{
                 push @{ $self->{qq_database}{group} }, $group_info;
                 if( !$is_init and ref $self->{on_new_group} eq 'CODE'){
                     eval {
+                        $self->_update_extra_info(type=>"group");
                         $self->{on_new_group}->(dclone($group_info));
                     };
                     console $@ . "\n" if $@;
@@ -958,7 +964,6 @@ sub update_group_info{
             }
         }
         else{console "更新[ $gl->{name} ]群信息失败\n";}
-            
     }
 }
 sub update_recent_info {
@@ -1058,6 +1063,7 @@ sub _detect_new_group{
         push @{$self->{qq_database}{group}},$group_info;
         if(ref $self->{on_new_group} eq 'CODE'){
             eval{
+                $self->_update_extra_info(type=>"group");
                 $self->{on_new_group}->(dclone($group_info));
             };  
             console $@ . "\n" if  $@;
@@ -1111,6 +1117,7 @@ sub _detect_new_group_member{
         push @{$group->{minfo}},$new_group_member;
         if(ref $self->{on_new_group_member} eq 'CODE'){
             eval{
+                $self->_update_extra_info(type=>"group");
                 $self->{on_new_group_member}->(dclone($group),dclone($new_group_member));
             };
             console $@ . "\n" if $@;
@@ -1133,6 +1140,7 @@ sub _detect_new_group_member2 {
         unless(exists $e{$new->{uin}}){
             if(ref $self->{on_new_group_member} eq 'CODE'){
                 eval{
+                    $self->_update_extra_info(type=>"group");
                     $self->{on_new_group_member}->(dclone($group_new),dclone($new));
                 };
                 console $@ . "\n" if $@;
@@ -1272,6 +1280,112 @@ sub _detect_new_discuss_member2 {
     }
 }
 
+sub _update_extra_info{
+    my $self = shift;
+    my %p = @_;
+    $p{type} = "all" unless defined  $p{type};
+    eval{require Webqq::Qun;};
+    return if $@;
+    eval{
+        my $qun = Webqq::Qun->new(qq=>$self->{qq_param}{qq},pwd=>$self->{qq_param}{pwd},debug=>$self->{debug}); 
+        $qun->authorize() or die "authorize fail\n";
+        if($p{type} eq "all"){
+            $qun->get_friend();
+            $qun->get_qun();
+            $self->{extra_qq_database} = {
+                friends  =>  $qun->{friend},
+                group   =>  $qun->{data},
+            };
+            $self->_update_extra_friend_info();
+            $self->_update_extra_group_info();
+        }
+        elsif($p{type} eq "friend"){
+            $qun->get_friend();
+            $self->{extra_qq_database} = {
+                friends =>  $qun->{friend},
+            };
+            $self->_update_extra_friend_info();
+        }
+        elsif($p{type} eq "group"){
+            $qun->get_qun();
+            $self->{extra_qq_database} = {
+                group   =>  $qun->{data},
+            };
+            $self->_update_extra_group_info();
+        }
+    };
+    return if $@;
+    return 1;
+    
+}
+sub _update_extra_friend_info{
+    my $self = shift;
+    return unless defined $self->{extra_qq_database}{friends};
+    my %map;
+    for (@{$self->{extra_qq_database}{friends}}){
+        if(exists $map{$_->{nick}}){
+            delete $map{$_->{nick}};
+            next;
+        }
+        $map{$_->{nick}} = $_->{qq} ;
+    }      
+    for(@{$self->{qq_database}{friends}}){
+        $_->{qq} = $map{$_->{nick}} if exists $map{$_->{nick}};
+    }
+    return 1;
+}
+sub _update_extra_group_info{
+    my $self = shift;
+    return unless defined $self->{extra_qq_database}{group};
+    my %map_group;
+    my %map_member;
+    my @members;
+    for (@{$self->{extra_qq_database}{group}}){
+        if(exists $map_group{$_->{qun_name}}){
+            delete $map_group{$_->{qun_name}};
+            next;
+        }
+        push @members,@{$_->{members}} ;
+        $map_group{$_->{qun_name}}{number} = $_->{qun_number};
+        $map_group{$_->{qun_name}}{type} = $_->{qun_type};
+    }
+    for(@members){
+        if(exists $map_member{$_->{qun_name},$_->{nick}}){
+            delete $map_member{$_->{qun_name},$_->{nick}};
+            next;
+        }
+        $map_member{$_->{qun_name},$_->{nick}}{qq}                 = $_->{qq};
+        $map_member{$_->{qun_name},$_->{nick}}{qage}               = $_->{qage};
+        $map_member{$_->{qun_name},$_->{nick}}{join_time}          = $_->{join_time};
+        $map_member{$_->{qun_name},$_->{nick}}{last_speak_time}    = $_->{last_speak_time};
+        $map_member{$_->{qun_name},$_->{nick}}{level}              = $_->{level};
+        $map_member{$_->{qun_name},$_->{nick}}{role}               = $_->{role};
+        $map_member{$_->{qun_name},$_->{nick}}{bad_record}         = $_->{bad_record};
+    }
+    for(@{$self->{qq_database}{group_list}}){
+        if(exists $map_group{$_->{name}}){
+            $_->{number} = $map_group{$_->{name}}{number};
+            $_->{type} = $map_group{$_->{name}}{type} ; 
+        }
+    }
+    for(@{$self->{qq_database}{group}}){
+        $_->{ginfo}{number} = $map_group{$_->{ginfo}{name}}{number} if exists $map_group{$_->{ginfo}{name}}{number};
+        $_->{ginfo}{type} = $map_group{$_->{ginfo}{name}}{type} if exists $map_group{$_->{ginfo}{name}}{type};
+        next unless ref $_->{minfo} eq 'ARRAY';
+        for my $m (@{$_->{minfo}}){
+            if(exists $map_member{$_->{ginfo}{name},$m->{nick}}){
+                $m->{qq}                = $map_member{$_->{ginfo}{name},$m->{nick}}{qq} ;
+                $m->{qage}              = $map_member{$_->{ginfo}{name},$m->{nick}}{qage} ;
+                $m->{join_time}         = $map_member{$_->{ginfo}{name},$m->{nick}}{join_time} ;
+                $m->{last_speak_time}   = $map_member{$_->{ginfo}{name},$m->{nick}}{last_speak_time} ;
+                $m->{level}             = $map_member{$_->{ginfo}{name},$m->{nick}}{level} ;
+                $m->{role}              = $map_member{$_->{ginfo}{name},$m->{nick}}{role} ;
+                $m->{bad_record}        = $map_member{$_->{ginfo}{name},$m->{nick}}{bad_record} ;
+                $self->{cache_for_uin_to_qq}->store($m->{uin},$m->{qq});
+            }
+        } 
+    }
+}
 
 1;
 __END__
