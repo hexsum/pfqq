@@ -1329,11 +1329,10 @@ sub _update_extra_friend_info{
     my $self = shift;
     return unless defined $self->{extra_qq_database}{friends};
     my %map;
+    my %map_ignore;
     for (@{$self->{extra_qq_database}{friends}}){
-        if(exists $map{$_->{nick}}){
-            delete $map{$_->{nick}};
-            next;
-        }
+        next if exists $map_ignore{$_->{nick}};
+        $map_ignore{$_->{nick}} = 1;
         $map{$_->{nick}} = $_->{qq} ;
     }      
     for(@{$self->{qq_database}{friends}}){
@@ -1347,22 +1346,23 @@ sub _update_extra_group_info{
     my $self = shift;
     return unless defined $self->{extra_qq_database}{group};
     my %map_group;
+    my %map_group_ignore;
     my %map_member;
+    my %map_member_ignore;
     my @members;
     for (@{$self->{extra_qq_database}{group}}){
-        if(exists $map_group{$_->{qun_name}}){
-            delete $map_group{$_->{qun_name}};
-            next;
-        }
+        next if exists $map_group_ignore{$_->{qun_name}};
+        $map_group_ignore{$_->{qun_name}} = 1;
+        
         push @members,@{$_->{members}} ;
         $map_group{$_->{qun_name}}{number} = $_->{qun_number};
         $map_group{$_->{qun_name}}{type} = $_->{qun_type};
     }
     for(@members){
-        if(exists $map_member{$_->{qun_name},$_->{nick}}){
-            delete $map_member{$_->{qun_name},$_->{nick}};
-            next;
-        }
+        next if exists $map_member_ignore{$_->{qun_name},$_->{nick}};
+        $map_member_ignore{$_->{qun_name},$_->{nick}} = 1;
+        
+        $map_member{$_->{qun_name},$_->{nick}}{_count}++;
         $map_member{$_->{qun_name},$_->{nick}}{qq}                 = $_->{qq};
         $map_member{$_->{qun_name},$_->{nick}}{qage}               = $_->{qage};
         $map_member{$_->{qun_name},$_->{nick}}{join_time}          = $_->{join_time};
