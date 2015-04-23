@@ -13,14 +13,10 @@ sub Webqq::Client::_get_img_verify_code{
                 ;
     my @query_string = (
         aid        => $self->{qq_param}{g_appid},
-        uin        => $self->{qq_param}{qq}, 
         r          => rand(),
+        uin        => $self->{qq_param}{qq}, 
+        cap_cd     => $self->{qq_param}{cap_cd},
     );    
-    if($self->{type} eq 'webqq'){
-        push @query_string,(
-            cap_cd     => $self->{qq_param}{cap_cd},
-        );
-    }
 
     my @query_string_pairs;
     push @query_string_pairs , shift(@query_string) . "=" . shift(@query_string) while(@query_string) ;
