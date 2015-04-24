@@ -1,4 +1,4 @@
-Webqq-Client v8.4.6
+Webqq-Client v8.4.7
 ========================
 使用Perl语言编写的Webqq客户端，并且可通过插件提供基于HTTP协议的api接口供其他语言或系统调用
 
@@ -27,19 +27,23 @@ client
    make
    make test
    make install
+   
+   推荐使用CPAN安装
+
+   cpan -i Webqq::Client
 
 核心依赖模块
 
-  JE
   JSON
-  Digest::MD5
+  Encode::Locale
   AnyEvent::HTTP
   LWP::UserAgent
   LWP::Protocol::https
+  Webqq::Encryption
 
-可选模块（安装后可提升登录加密算法计算速度）
+可选模块
 
-  Crypt::RSA（或者Crypt::OpenSSL::RSA Crypt::OpenSSL::Bignum)
+  Webqq::Qun
 
 版本更新记录
 

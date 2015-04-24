@@ -9,11 +9,9 @@ WriteMakefile(
     LICENSE             => "perl",
     PREREQ_PM         => {
         "JSON"                  => 0,
-        "Digest::MD5"           => 0,
         "AnyEvent::HTTP"        => 0,
         "LWP::UserAgent"        => 0,
         "LWP::Protocol::https"  => 0,
-        "JE"                    => 0,
         "Time::Piece"           => 0,
         "Time::Seconds"         => 0,
         "Encode::Locale"        => 0,

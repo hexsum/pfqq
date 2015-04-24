@@ -1,5 +1,8 @@
 版本更新记录:
 
+2015-04-23 Webqq::Client v8.4.7
+1）修复依赖模块信息
+
 2015-04-23 Webqq::Client v8.4.6
 1）修复Makefile.PL错误
 2）将Webqq::Encryption单独发布
