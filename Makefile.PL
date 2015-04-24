@@ -17,15 +17,16 @@ WriteMakefile(
         "Time::Piece"           => 0,
         "Time::Seconds"         => 0,
         "Encode::Locale"        => 0,
+        "Webqq::Encryption"     => 0,
     }, # e.g., Module::Name => 1.1
     dist              => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean               => { FILES => 'Webqq-Client-*' },
+    clean               => { FILES => 'Webqq-Client-* MANIFEST' },
     META_MERGE => {
         resources => {     
             repository=>{
                 type    => 'git',
-                url     => 'git://github.com/sjdy521/Webqq-Client.git',
-                web     =>  'https://github.com/sjdy521/Webqq-Client',
+                url     => 'git://github.com/sjdy521/pfqq.git',
+                web     =>  'https://github.com/sjdy521/pfqq',
             },
         },
     },
