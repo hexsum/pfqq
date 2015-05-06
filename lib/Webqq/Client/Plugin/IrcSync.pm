@@ -31,13 +31,14 @@ sub call {
                 my $sender_nick = substr($ircmsg->{prefix},0,index($ircmsg->{prefix},"!~")) || "UnknownNick";
                 my $msg_content = $ircmsg->{params}[1];
                 return if $ircmsg->{command} ne "PRIVMSG";
-                if($debug){
+                return if $msg_content =~/^[~ ]/;
+                if($client->{debug}){
                     print "[Webqq::Client::Plugin::IrcSync] \@$sender_nick (in $channel) say: $msg_content\n";
                 }
                 my $group = first {$_->{name} eq $p{group_name}} @{$client->{qq_database}{group_list}} or return ;
                 $client->send_group_message(
                     to_uin  =>  $group->{gid},
-                    content =>  $msg_content . "\n[该消息来自 \@${sender_nick} (irc${channel})]"
+                    content =>  "[${sender_nick}#irc] " . $msg_content
                 );
             },
             disconnect => sub { print "[Webqq::Client::Plugin::IrcSync] $nick has quit $server:$port\n" if $debug;},
@@ -47,7 +48,7 @@ sub call {
         $once = 0;
     }
     return 1 unless $join;
-    return 1 if ($msg->{msg_class} eq "send" and $msg->{content}=~/^\[该消息来自.*irc.*\]$/m);
+    return 1 if ($msg->{msg_class} eq "send" and $msg->{content}=~/^\[.*#irc\]/);
     my $group_name = $msg->group_name;
     return 1 if $p{group_name} ne $group_name;
     my $msg_sender_nick = $msg->from_nick;
