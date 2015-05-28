@@ -648,7 +648,10 @@ sub parse_receive_msg{
             $client->{poll_failure_count} = 0;
         }
         #更新客户端ptwebqq值
-        elsif($json->{retcode} == 116){$client->{qq_param}{ptwebqq} = $json->{p};}
+        elsif($json->{retcode} == 116){
+            $client->{qq_param}{ptwebqq} = $json->{p};
+            $self->{cookie_jar}->set_cookie(0,"ptwebqq",$json->{p},"/","qq.com",);
+        }
         #未重新登录
         elsif($json->{retcode} ==100){
             console "因网络或其他原因与服务器失去联系，客户端需要重新登录...\n";

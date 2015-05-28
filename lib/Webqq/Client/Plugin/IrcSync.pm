@@ -32,9 +32,9 @@ sub call {
                 my $msg_content = $ircmsg->{params}[1];
                 return if $ircmsg->{command} ne "PRIVMSG";
                 return if $msg_content =~/^[~ ]/;
-                if($client->{debug}){
-                    print "[Webqq::Client::Plugin::IrcSync] \@$sender_nick (in $channel) say: $msg_content\n";
-                }
+                #if($client->{debug}){
+                #    print "[Webqq::Client::Plugin::IrcSync] \@$sender_nick (in $channel) say: $msg_content\n";
+                #}
                 my $group = first {$_->{name} eq $p{group_name}} @{$client->{qq_database}{group_list}} or return ;
                 $client->send_group_message(
                     to_uin  =>  $group->{gid},

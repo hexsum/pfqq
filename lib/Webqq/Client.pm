@@ -11,7 +11,7 @@ use Webqq::Client::Cache;
 use Webqq::Message::Queue;
 
 #定义模块的版本号
-our $VERSION = "8.4.7";
+our $VERSION = "8.4.8";
 
 use LWP::UserAgent;#同步HTTP请求客户端
 use Webqq::UserAgent;#异步HTTP请求客户端
@@ -107,6 +107,7 @@ sub new {
             group       =>  [],
             discuss     =>  [],
         },
+        encrypt_method              => "perl", #perl|js
         is_first_login              =>  -1,
         is_stop                     =>  0,
         cache_for_uin_to_qq         => Webqq::Client::Cache->new,
@@ -288,6 +289,12 @@ sub login{
             if($ret == -1){
                 $self->_get_img_verify_code();
                 next;
+            }
+            elsif($ret == -2 and $self->{encrypt_method} ne "js"){#encrypt_method fail,change another
+                console "登录失败，尝试更换加密算法计算方式，重新登录...\n";
+                $self->{encrypt_method} = "js";
+                $self->relogin();
+                last;
             }
             elsif($ret == 1){
                    $self->_report()
@@ -549,7 +556,7 @@ sub ready{
         $self->_update_extra_info(type=>"group");
     };
 
-    $self->{watchers}{rand()} = AE::timer 600*2,600,sub{
+    $self->{watchers}{rand()} = AE::timer 600+60,600,sub{
         $self->update_discuss_info();
     };
 

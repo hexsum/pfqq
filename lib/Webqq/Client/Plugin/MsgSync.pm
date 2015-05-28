@@ -1,6 +1,7 @@
 package Webqq::Client::Plugin::MsgSync;
 use strict;
 use AnyEvent::IRC::Client;
+use AnyEvent::IRC::Util qw(prefix_nick);
 use List::Util qw(first);
 my $irc_client  = new AnyEvent::IRC::Client;
 my $once = 1;
@@ -45,13 +46,13 @@ sub call {
                 },
                 publicmsg  => sub { 
                     my($self,$channel, $ircmsg) = @_;
-                    my $sender_nick = substr($ircmsg->{prefix},0,index($ircmsg->{prefix},"!~")) || "UnknownNick";
+                    my $sender_nick = prefix_nick($ircmsg) || "UnknownNick";
                     my $msg_content = $ircmsg->{params}[1];
                     return if $ircmsg->{command} ne "PRIVMSG";
                     return if $msg_content =~/^[~ ]/;
-                    if($debug){
-                        print "[".__PACKAGE__."] \@$sender_nick (in $channel) say: $msg_content\n";
-                    }
+                    #if($debug){
+                    #    print "[".__PACKAGE__."] \@$sender_nick (in $channel) say: $msg_content\n";
+                    #}
                     for(@group_list){
                         $client->send_group_message(
                             to_uin  =>  $_->{gid},
@@ -112,7 +113,7 @@ sub call {
 
     if($is_irc_join){
         for(split /\n/,$msg->{content}){
-            $irc_client->send_msg(PRIVMSG => $irc->{channel}, "[\@$msg_sender] ". $_);
+            $irc_client->send_msg(PRIVMSG => $irc->{channel}, "[$msg_sender] ". $_);
         }
     }
 }
