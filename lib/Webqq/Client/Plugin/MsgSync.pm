@@ -3,6 +3,7 @@ use strict;
 use AnyEvent::IRC::Client;
 use AnyEvent::IRC::Util qw(prefix_nick);
 use List::Util qw(first);
+use Webqq::Client::Util qw(truncate);
 my $irc_client  = new AnyEvent::IRC::Client;
 my $once = 1;
 my $is_irc_join = 0;
@@ -112,7 +113,7 @@ sub call {
     }
 
     if($is_irc_join){
-        for(split /\n/,$msg->{content}){
+        for(split /\n/,truncate($msg->{content},max_bytes=>2000,max_lines=>10) ){
             $irc_client->send_msg(PRIVMSG => $irc->{channel}, "[$msg_sender] ". $_);
         }
     }
