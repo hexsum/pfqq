@@ -294,7 +294,7 @@ sub login{
                 console "登录失败，尝试更换加密算法计算方式，重新登录...\n";
                 $self->{encrypt_method} = "js";
                 $self->relogin();
-                last;
+                return;
             }
             elsif($ret == 1){
                    $self->_report()

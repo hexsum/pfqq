@@ -27,7 +27,7 @@ sub Webqq::Client::_login2{
             my $data = JSON->new->utf8->decode($content);
             if($data->{retcode} ==0){
                 $self->{qq_param}{psessionid} = $data->{result}{psessionid};
-                $self->{qq_param}{vfwebqq} = $data->{result}{vfwebqq};
+                #$self->{qq_param}{vfwebqq} = $data->{result}{vfwebqq};
                 $self->_cookie_proxy();
                 $self->{login_state} = 'success';
                 return 1;
