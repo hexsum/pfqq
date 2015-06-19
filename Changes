@@ -1,4 +1,8 @@
 版本更新记录:
+2015-06-19 Webqq::Client v8.5.0
+1）修复pfqq版本号错误
+2）修复Webqq/Message.pm文件代码拼写错误 感谢 arrow.wang 的反馈
+
 2015-06-02 Webqq::Client v8.4.9
 1）修复登录死循环问题
 2）MsgSync插件对发送到irc的消息进行截断防止大量发送被服务器踢下线
