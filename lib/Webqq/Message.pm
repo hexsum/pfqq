@@ -650,7 +650,7 @@ sub parse_receive_msg{
         #更新客户端ptwebqq值
         elsif($json->{retcode} == 116){
             $client->{qq_param}{ptwebqq} = $json->{p};
-            $self->{cookie_jar}->set_cookie(0,"ptwebqq",$json->{p},"/","qq.com",);
+            $client->{cookie_jar}->set_cookie(0,"ptwebqq",$json->{p},"/","qq.com",);
         }
         #未重新登录
         elsif($json->{retcode} ==100){
