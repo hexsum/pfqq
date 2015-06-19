@@ -36,6 +36,14 @@ Webqq::Client - A webqq client in Perl Language
     #客户端进入事件循环,正式开始运行
     $client->run();
 
+=head1 IMPORTANT NOTICE
+
+该模块会逐步停止维护，取而代之的是该模块的重构模块 L<Mojo::Webqq> 具有如下优势：
+
+基于L<Mojolicious>框架，实现统一的阻塞和非阻塞HTTP请求，统一的日志系统，更好的对象支持，更灵活的事件管理机制
+
+弊端：要求perl版本5.10+
+
 =head1 CLIENT ASYNCHRONOUS FRAMEWORK
 
     client 
@@ -1495,6 +1503,8 @@ L<https://github.com/sjdy521/Webqq-Client>
 L<https://git.oschina.net/sjdy521/Webqq-Client>
 
 L<Webqq::Qun>
+
+L<Mojo::Webqq>
 
 =head1 AUTHOR
 
