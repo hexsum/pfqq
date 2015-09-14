@@ -1,4 +1,7 @@
 版本更新记录:
+2015-09-14 Webqq::Client v8.5.1
+1）BUG修复rt.cpan.org#107067
+
 2015-06-19 Webqq::Client v8.5.0
 1）修复pfqq版本号错误
 2）修复Webqq/Message.pm文件代码拼写错误 感谢 arrow.wang 的反馈
