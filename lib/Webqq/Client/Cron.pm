@@ -1,4 +1,5 @@
 package Webqq::Client::Cron;
+use AE;
 use Webqq::Client::Util qw(console_stderr console);
 use POSIX qw(mktime);
 use Time::Piece;
