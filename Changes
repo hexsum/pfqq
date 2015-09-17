@@ -1,4 +1,7 @@
 版本更新记录:
+2015-09-17 Webqq::Client v8.5.2
+1）修复add_job无法执行回调函数的bug 感谢 林海
+
 2015-09-14 Webqq::Client v8.5.1
 1）BUG修复rt.cpan.org#107067
 
