@@ -60,6 +60,9 @@ our $CLIENT_COUNT       = 0;
 sub new {
     my $class = shift;
     my %p = @_;
+
+    console "该模块已经停止使用和开发，请换用 Mojo::Webqq 参考文档: https://metacpan.org/pod/Mojo::Webqq\n";
+    exit;
     my $agent = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062';
 
     my ($second,$microsecond)=gettimeofday;
@@ -582,17 +585,17 @@ sub stop {
         };
     }
     else{
-        exit;         
+        CORE::exit;         
     }
 }
 
 sub exit {
     my $self = shift;
-    exit;
+    CORE::exit();
 }
 
 sub EXIT {
-    exit;
+    CORE::exit();
 }
 
 sub run{

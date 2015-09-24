@@ -4,7 +4,6 @@ sub Webqq::Client::_get_discuss_list_info {
     my $self = shift;
     my $ua = $self->{ua};
     return undef if $self->{type} ne 'smartqq';
-    my $ua = $self->{ua};
     my $api_url = 'http://s.web2.qq.com/api/get_discus_list';   
     my @query_string = (
         clientid    =>  $self->{qq_param}{clientid},
